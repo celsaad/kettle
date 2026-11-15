@@ -5,8 +5,10 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.sizeIn
@@ -18,9 +20,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -46,31 +50,110 @@ internal fun BottomRow(
     back: (() -> Unit)?,
     side: RowAction? = null,
 ) {
-    Row(horizontalArrangement = Arrangement.spacedBy(Spacing.two), verticalAlignment = Alignment.CenterVertically) {
-        if (back != null) SlotButton(RowAction(stringResource(R.string.session_prev), R.drawable.icon_back, back))
-        MainButton(main, Modifier.weight(1f))
-        if (side != null) SlotButton(side)
+    val backAction = back?.let { RowAction(stringResource(R.string.session_prev), R.drawable.icon_back, it) }
+    val slots = listOfNotNull(backAction, side)
+    val measurer = rememberTextMeasurer()
+    val density = LocalDensity.current
+    BoxWithConstraints {
+        // At 200% text "Voltar", "Continuar" and "Concluir" can't share one line at any split, and the
+        // main action's word broke mid-word (#469). Then it takes a line of its own, over the slots.
+        val need =
+            with(density) {
+                val slotWidths =
+                    slots.map {
+                        maxOf(
+                            SLOT_WIDTH,
+                            measurer
+                                .measure(it.label, SlotLabel)
+                                .size.width
+                                .toDp() + Spacing.two * 2,
+                        )
+                    }
+                val mainWidth =
+                    measurer
+                        .measure(main.label, KettleType.heading)
+                        .size.width
+                        .toDp() + Spacing.two * 2
+                slotWidths.fold(mainWidth) { sum, width -> sum + width + Spacing.two }
+            }
+        if (need <= maxWidth) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(Spacing.two),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                backAction?.let { SlotButton(it) }
+                MainButton(main, Modifier.weight(1f))
+                side?.let { SlotButton(it) }
+            }
+        } else {
+            Column(verticalArrangement = Arrangement.spacedBy(Spacing.two)) {
+                MainButton(main, Modifier.fillMaxWidth())
+                if (slots.isNotEmpty()) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(Spacing.two)) {
+                        // Back stays on the left and the way out on the right, as on one line.
+                        backAction?.let { SlotButton(it, Modifier.weight(1f)) }
+                        side?.let { SlotButton(it, Modifier.weight(1f)) }
+                    }
+                }
+            }
+        }
     }
 }
 
-/** The filled one, the field's inverse: its ink with the field's colour on it, never orange. */
+/**
+ * The filled one, the field's inverse: its ink with the field's colour on it, never orange. Its symbol
+ * sits beside the words, or above them when the two can't share a line: at 200% text, between two
+ * side slots, "Pausar" beside its symbol broke as "Pausa / r" (#469).
+ */
 @Composable
 private fun MainButton(
     action: RowAction,
     modifier: Modifier,
 ) {
-    Row(
+    val measurer = rememberTextMeasurer()
+    val density = LocalDensity.current
+    BoxWithConstraints(
         modifier
             .heightIn(min = ROW_HEIGHT)
             .clip(RowShape)
             .background(runnerColors.accent)
             .clickable(role = Role.Button, onClick = action.onClick)
             .padding(horizontal = Spacing.two, vertical = Spacing.one),
-        horizontalArrangement = Arrangement.spacedBy(Spacing.two, Alignment.CenterHorizontally),
-        verticalAlignment = Alignment.CenterVertically,
+        contentAlignment = Alignment.Center,
     ) {
-        action.icon?.let { TypeIcon(it, KettleType.heading, runnerColors.onAccent) }
-        Text(action.label, style = KettleType.heading, color = runnerColors.onAccent, textAlign = TextAlign.Center)
+        val words =
+            with(density) {
+                measurer
+                    .measure(action.label, KettleType.heading)
+                    .size.width
+                    .toDp()
+            }
+        val symbol = with(density) { KettleType.heading.fontSize.toDp() }
+        val beside = action.icon == null || words + symbol + Spacing.two <= maxWidth
+        val icon = @Composable { action.icon?.let { TypeIcon(it, KettleType.heading, runnerColors.onAccent) } }
+        val label =
+            @Composable {
+                Text(
+                    action.label,
+                    style = KettleType.heading,
+                    color = runnerColors.onAccent,
+                    textAlign = TextAlign.Center,
+                )
+            }
+        if (beside) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(Spacing.two, Alignment.CenterHorizontally),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                icon()
+                label()
+            }
+        } else {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                icon()
+                label()
+            }
+        }
     }
 }
 
@@ -79,15 +162,20 @@ private fun MainButton(
  * word, so Voice Control matches what's on screen.
  */
 @Composable
-private fun SlotButton(action: RowAction) {
+private fun SlotButton(
+    action: RowAction,
+    modifier: Modifier = Modifier,
+) {
     Column(
-        Modifier
+        modifier
             .widthIn(min = SLOT_WIDTH)
             .heightIn(min = ROW_HEIGHT)
             .clip(RowShape)
             .border(SLOT_BORDER, runnerColors.outline, RowShape)
             .clickable(role = Role.Button, onClick = action.onClick)
-            .padding(horizontal = Spacing.one, vertical = Spacing.two),
+            // 8dp, not 4: at 200% text the word grew to the slot's edge and touched its outline (#469).
+            // The slot widens past 64dp instead, which the main button gives up.
+            .padding(horizontal = Spacing.two, vertical = Spacing.two),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(Spacing.one, Alignment.CenterVertically),
     ) {

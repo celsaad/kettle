@@ -5,12 +5,14 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.text.BasicTextField
@@ -25,11 +27,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -166,10 +170,34 @@ internal fun PickerRow(
     onClick: () -> Unit,
 ) {
     if (!first) RunnerHairline()
-    Box(Modifier.clickable(role = Role.Button, onClick = onClick)) {
+    BoxWithConstraints(Modifier.clickable(role = Role.Button, onClick = onClick)) {
+        // The plan gets what the name leaves, the name keeping its own width up to two thirds of the
+        // row: unbounded, the plan took the width it asked for and squeezed the name to a letter a line
+        // at 200% text (#469). Two thirds, since a name is one long word ("Bodyweight") where the plan
+        // wraps between words; and from the name's own width, so a short name leaves the plan its line.
+        val measurer = rememberTextMeasurer()
+        val nameWidth =
+            with(LocalDensity.current) {
+                measurer
+                    .measure(name, KettleType.heading)
+                    .size.width
+                    .toDp()
+            }
+        val planMax = maxWidth - Spacing.two - minOf(nameWidth, maxWidth * NAME_MAX_SHARE)
         ListRow {
             Text(name, Modifier.weight(1f), style = KettleType.heading, color = runnerColors.text)
-            if (detail != null) Text(detail, style = KettleType.small, color = runnerColors.textSecondary)
+            if (detail != null) {
+                Text(
+                    detail,
+                    Modifier.widthIn(max = planMax),
+                    style = KettleType.small,
+                    color = runnerColors.textSecondary,
+                    textAlign = TextAlign.End,
+                )
+            }
         }
     }
 }
+
+/** The most of a row a name keeps before its plan, which wraps between words where a name can't. */
+private const val NAME_MAX_SHARE = 2f / 3f

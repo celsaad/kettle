@@ -12,7 +12,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import com.casco.kettle.domain.LoggedUnit
 import com.casco.kettle.domain.RunnerCommand
@@ -47,17 +49,19 @@ internal fun LoggedPanel(
         horizontalArrangement = Arrangement.spacedBy(Spacing.two),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Row(
-            Modifier.weight(1f).semantics(mergeDescendants = true) {},
-            horizontalArrangement = Arrangement.spacedBy(Spacing.one),
-        ) {
-            Text(
-                stringResource(R.string.session_logged_title),
-                style = KettleType.default,
-                color = runnerColors.textSecondary,
-            )
-            Text(logged, style = KettleType.default, color = runnerColors.text)
-        }
+        // One text in two inks rather than two Texts side by side: at 200% text the pair split the
+        // width into two columns and each broke mid-phrase (#469), where one line of prose wraps whole.
+        val title = stringResource(R.string.session_logged_title)
+        Text(
+            buildAnnotatedString {
+                withStyle(SpanStyle(color = runnerColors.textSecondary)) { append(title) }
+                append(" ")
+                append(logged)
+            },
+            Modifier.weight(1f),
+            style = KettleType.default,
+            color = runnerColors.text,
+        )
         OutlinedPill(stringResource(R.string.session_undo), undo)
     }
 }

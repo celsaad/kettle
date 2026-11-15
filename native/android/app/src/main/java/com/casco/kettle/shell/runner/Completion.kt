@@ -3,10 +3,10 @@ package com.casco.kettle.shell.runner
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
@@ -21,12 +22,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
 import com.casco.kettle.domain.ExerciseAgainstLast
 import com.casco.kettle.domain.Session
@@ -112,46 +115,76 @@ private fun Heading(view: RunnerView.Completed) {
     }
 }
 
-/** Time, Sets and Exercises in a ruled row, as Overview's tiles. */
+/**
+ * Time, Sets and Exercises in a ruled row, as Overview's tiles. At 200% text a third of the row is
+ * narrower than "Exercícios", which broke mid-word (#469), so the words are measured: in a row while the
+ * widest fits its third, else one tile under another, each still a value over its label.
+ */
 @Composable
 private fun Tiles(
     session: Session,
     exercises: Int,
 ) {
-    Column {
-        Rule()
-        Row(Modifier.height(IntrinsicSize.Min)) {
-            Tile(
-                stringResource(R.string.format_minutes, sessionDurationMinutes(session)),
+    val tiles =
+        listOf(
+            stringResource(R.string.format_minutes, sessionDurationMinutes(session)) to
                 stringResource(R.string.session_complete_time),
-            )
-            Divider()
-            Tile(
-                sessionSetCount(session).toString(),
-                stringResource(R.string.session_complete_sets),
-                Modifier.padding(start = Spacing.three),
-            )
-            Divider()
-            Tile(
-                exercises.toString(),
-                stringResource(R.string.session_complete_exercises),
-                Modifier.padding(start = Spacing.three),
-            )
+            sessionSetCount(session).toString() to stringResource(R.string.session_complete_sets),
+            exercises.toString() to stringResource(R.string.session_complete_exercises),
+        )
+    val measurer = rememberTextMeasurer()
+    val density = LocalDensity.current
+    val widest =
+        with(density) {
+            tiles.maxOf { (value, label) ->
+                maxOf(
+                    measurer.measure(value, KettleType.heading).size.width,
+                    measurer.measure(label, KettleType.small).size.width,
+                ).toDp()
+            }
         }
-        Rule()
+    BoxWithConstraints {
+        val fits = widest + Spacing.three <= maxWidth / tiles.size
+        Column {
+            Rule()
+            if (fits) {
+                Row(Modifier.height(IntrinsicSize.Min)) {
+                    tiles.forEachIndexed { index, (value, label) ->
+                        if (index > 0) Divider()
+                        Tile(
+                            value,
+                            label,
+                            Modifier.weight(1f).then(
+                                if (index >
+                                    0
+                                ) {
+                                    Modifier.padding(start = Spacing.three)
+                                } else {
+                                    Modifier
+                                },
+                            ),
+                        )
+                    }
+                }
+            } else {
+                tiles.forEachIndexed { index, (value, label) ->
+                    if (index > 0) Rule()
+                    Tile(value, label, Modifier.fillMaxWidth())
+                }
+            }
+            Rule()
+        }
     }
 }
 
 @Composable
-private fun RowScope.Tile(
+private fun Tile(
     value: String,
     label: String,
-    modifier: Modifier = Modifier,
+    modifier: Modifier,
 ) = Column(
-    Modifier
-        .weight(1f)
+    modifier
         .padding(vertical = Spacing.two)
-        .then(modifier)
         .semantics(mergeDescendants = true) {},
 ) {
     Text(value, style = KettleType.heading, color = runnerColors.text)
@@ -245,11 +278,14 @@ private fun Pinned(
     onDone: () -> Unit,
 ) = Column {
     Rule()
-    Row(
-        Modifier.fillMaxWidth().padding(vertical = Spacing.three),
-        horizontalArrangement = Arrangement.spacedBy(Spacing.two),
-    ) {
-        OutlineButton(stringResource(R.string.session_complete_editLog), onEditLog)
-        PrimaryButton(stringResource(R.string.session_complete_done), onDone, Modifier.weight(1f))
+    BoxWithConstraints(Modifier.fillMaxWidth().padding(vertical = Spacing.three)) {
+        // Edit log at most half the row, Done the rest: unbounded at 200% text, Edit log took its full
+        // words' width and left Done too narrow for "Concluir", which broke mid-word (#469). A cap, not
+        // an unfilled weight, which would leave the half it doesn't use empty instead of Done's.
+        val half = (maxWidth - Spacing.two) / 2
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Spacing.two)) {
+            OutlineButton(stringResource(R.string.session_complete_editLog), onEditLog, Modifier.widthIn(max = half))
+            PrimaryButton(stringResource(R.string.session_complete_done), onDone, Modifier.weight(1f))
+        }
     }
 }

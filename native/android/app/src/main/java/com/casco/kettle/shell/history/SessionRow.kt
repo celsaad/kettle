@@ -13,11 +13,13 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -25,8 +27,10 @@ import androidx.compose.ui.semantics.collapse
 import androidx.compose.ui.semantics.expand
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.casco.kettle.domain.HistorySessionView
 import com.casco.kettle.domain.UnitSystem
@@ -41,6 +45,9 @@ import com.casco.kettle.shell.theme.Chevron
 import com.casco.kettle.shell.theme.KettleTheme
 import com.casco.kettle.shell.theme.KettleType
 import com.casco.kettle.shell.theme.Spacing
+import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.plus
 
 /**
  * One session: a row, not a card, that expands in place. It can't be a `ListRow`, since the detail
@@ -120,10 +127,31 @@ internal data class RowState(
     val units: UnitSystem,
 )
 
+/**
+ * As wide as the widest short weekday or two-digit day at the reader's text size, and never under the
+ * board's 38dp: a fixed 38dp broke "qua." mid-word at 200% (#480), and one width for every row keeps the
+ * names lined up down the list, where each row sizing itself would stagger them.
+ */
+@Composable
+private fun dayColumnWidth(): Dp {
+    val locale = LocalConfiguration.current.locales[0]
+    val density = LocalDensity.current
+    val measurer = rememberTextMeasurer()
+    return remember(locale, density) {
+        // Any seven consecutive days are the seven weekdays.
+        val anyDay = LocalDate.fromEpochDays(0)
+        val weekdays = (0 until DAYS_IN_WEEK).map { formatShortWeekday(anyDay.plus(it, DateTimeUnit.DAY), locale) }
+        val widest =
+            (weekdays.map { measurer.measure(it, KettleType.small) } + measurer.measure(WIDEST_DAY, KettleType.heading))
+                .maxOf { it.size.width }
+        with(density) { maxOf(DAY_COLUMN_MIN, widest.toDp()) }
+    }
+}
+
 /** The day of the month over its short weekday, the column a row's words line up beside. */
 @Composable
 private fun DayColumn(row: HistorySessionView) =
-    Column(Modifier.width(38.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+    Column(Modifier.width(dayColumnWidth()), horizontalAlignment = Alignment.CenterHorizontally) {
         val locale = LocalConfiguration.current.locales[0]
         Text(
             row.day
@@ -255,3 +283,10 @@ private fun Detail(
 }
 
 private const val HALF_TURN = 180f
+
+private val DAY_COLUMN_MIN = 38.dp
+
+private const val DAYS_IN_WEEK = 7
+
+/** The widest day of the month in the column's digits, as wide as any two. */
+private const val WIDEST_DAY = "30"

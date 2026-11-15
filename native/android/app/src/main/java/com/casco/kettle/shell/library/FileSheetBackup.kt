@@ -5,10 +5,11 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -68,12 +69,18 @@ internal fun BackupRow(
     }
     val label = folderUri?.let(::backupFolderLabel)
     ListRowSeparator()
-    Row(
+    // A flow, not a row: at a large text size Back up now keeps its width and the folder's path was
+    // squeezed until it broke as "Documents/ / Kettle" (#480). The folder keeps a floor, and the button
+    // moves under it once the two can't share a line.
+    FlowRow(
         Modifier.fillMaxWidth().heightIn(min = ListRowMinHeight),
         horizontalArrangement = Arrangement.spacedBy(Spacing.two),
-        verticalAlignment = Alignment.CenterVertically,
+        verticalArrangement = Arrangement.spacedBy(Spacing.one),
+        itemVerticalAlignment = Alignment.CenterVertically,
     ) {
-        Folder(label, Modifier.weight(1f)) { if (label == null) chooseFolder() else asking = true }
+        Folder(label, Modifier.weight(1f).widthIn(min = FOLDER_MIN_WIDTH)) {
+            if (label == null) chooseFolder() else asking = true
+        }
         if (folderUri != null) {
             BackUpNow(enabled = sessions != null && !backingUp, running = backingUp) {
                 val log = sessions ?: return@BackUpNow
@@ -173,3 +180,6 @@ private fun FolderDialog(
 )
 
 private val PillShape = RoundedCornerShape(percent = 50)
+
+/** Room for "Backup folder" and a path beside the button at the default size. */
+private val FOLDER_MIN_WIDTH = 200.dp

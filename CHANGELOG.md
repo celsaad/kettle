@@ -166,6 +166,10 @@ here, next to what it describes.
 - **Shorter labels**: workouts list their exercise types plainly, "reps, hold" or "EMOM", and
   Settings' switches are Sounds and Rest-day nudge. The training calendar's key says "45 min or
   more" in full (#484).
+- **Large text no longer breaks words in half**: at the biggest text sizes, Library's tabs, the
+  session's buttons and the finish screen's numbers used to split words across lines. The tabs now
+  scroll sideways, and the session buttons and the finish screen's numbers stack instead. The
+  sets list scrolls to its end, and swap rows keep exercise names whole (#469, #480).
 
 ---
 

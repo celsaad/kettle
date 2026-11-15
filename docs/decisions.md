@@ -1161,6 +1161,12 @@ decision assembled across several commits. Open work belongs in the sections at 
   as a resource-id (`:benchmark` waits on `home-screen`); a Compose `testTag` only does with
   `testTagsAsResourceId`, which the shell doesn't set yet. Stable ids are what would lift the English
   texts the checks match on today, and the same strings land in XCUITest's `identifier` on iOS.
+- **Achievement takes no hue (#414, #485).** A record, a PR or a rise reads in ink, with ▲ or a badge,
+  never in the accent or a third colour. Orange already means "the clock is running your work" in the
+  runner (#418) and "act here" on buttons, and blue means rest; a gold or green for progress would
+  make a fourth meaning to learn, and a ▼ in red would turn information into a failure. One exception
+  is still in the code: the runner receipt's PR badge is rest-blue (`RecordBadge` in `RunnerParts.kt`)
+  until #475 turns it into the board's ink pill.
 
 
 

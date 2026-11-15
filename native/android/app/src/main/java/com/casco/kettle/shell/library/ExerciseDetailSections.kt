@@ -23,7 +23,6 @@ import com.casco.kettle.domain.ExerciseProgress
 import com.casco.kettle.domain.ExerciseTrend
 import com.casco.kettle.domain.Library
 import com.casco.kettle.domain.TREND_WEEKS
-import com.casco.kettle.domain.UnitSystem
 import com.casco.kettle.domain.exerciseHistory
 import com.casco.kettle.domain.exerciseTrend
 import com.casco.kettle.domain.programWorkoutIds
@@ -31,8 +30,8 @@ import com.casco.kettle.domain.trendWindowStart
 import com.casco.kettle.domain.workoutsUsing
 import com.casco.kettle.shell.R
 import com.casco.kettle.shell.files.LatestFiles
+import com.casco.kettle.shell.files.unitsOrDevice
 import com.casco.kettle.shell.history.entryResultText
-import com.casco.kettle.shell.i18n.deviceUnitSystem
 import com.casco.kettle.shell.i18n.formatMonthDay
 import com.casco.kettle.shell.list.ListRow
 import com.casco.kettle.shell.list.ListRowSeparator
@@ -49,11 +48,6 @@ import com.casco.kettle.shell.theme.KettleType
 import com.casco.kettle.shell.theme.Spacing
 import kotlinx.datetime.TimeZone
 import kotlin.time.Instant
-
-/** The reader's units: their setting, or their device's until they've chosen. */
-@Composable
-internal fun LatestFiles.unitsOrDevice(): UnitSystem =
-    preferences?.unitSystem ?: deviceUnitSystem(LocalConfiguration.current.locales[0])
 
 /**
  * Progress: Stats' own reading of this exercise (#413), the same selector, window and chart its Getting
@@ -158,7 +152,11 @@ internal fun RecentSessions(
                 style = KettleType.default,
                 color = colors.text,
             )
-            Text(resources.entryResultText(entry.result), style = KettleType.smallMedium, color = colors.textSecondary)
+            Text(
+                resources.entryResultText(entry.result, units),
+                style = KettleType.smallMedium,
+                color = colors.textSecondary,
+            )
         }
     }
 }

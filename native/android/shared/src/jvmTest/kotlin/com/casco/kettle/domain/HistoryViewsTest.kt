@@ -13,7 +13,7 @@ import org.junit.jupiter.api.Test
  * `historySessionsView`'s cases from RN's `history-views.test.ts`, which went with RN History
  * (#202). RN's asserted the finished labels; here the selector returns their numbers, and the words
  * are History's screen test's (`HistoryScreenTest`, in `pt`). The rest pin what RN's view did without
- * a case of its own: rest entries dropped, "mixed", the editable flag and the day in the reader's zone.
+ * a case of its own: rest entries dropped, a session of rounds, the editable flag and the day in the reader's zone.
  */
 class HistoryViewsTest {
     private val library =
@@ -70,16 +70,20 @@ class HistoryViewsTest {
         assertEquals(
             listOf(
                 HistoryEntryView("L-Sit", EntryResult.Holds(listOf(20.0, 18.5)), 0),
-                HistoryEntryView("gone", EntryResult.Reps(listOf(8L)), 2),
+                HistoryEntryView("gone", EntryResult.Reps(listOf(8L), listOf(null)), 2),
             ),
             row.entries,
         )
     }
 
     @Test
-    fun `calls a session mixed only when it logged more than one kind of work`() {
-        assertFalse(view(session(hold(20.0), SessionEntry.Rest("rest", 60.0), hold(10.0))).mixed)
-        assertTrue(view(session(hold(20.0), SessionEntry.Hiit("burpees", 4))).mixed)
+    fun `counts in rounds only a session of intervals alone`() {
+        val emom = SessionEntry.Emom("swings", List(10) { EmomMinuteLog() })
+        assertTrue(view(session(emom, SessionEntry.Rest("rest", 60.0), SessionEntry.Amrap("grind", 4))).inRounds)
+        assertFalse(view(session(emom, hold(20.0))).inRounds)
+        assertFalse(view(session(emom, SessionEntry.Cardio("row", durationSec = 600.0))).inRounds)
+        // Nothing logged but rests is no rounds, and its count of 0 reads as sets.
+        assertFalse(view(session(SessionEntry.Rest("rest", 60.0))).inRounds)
     }
 
     // The runner owns a running session's file and writes through its own copy, so an edit would be lost.

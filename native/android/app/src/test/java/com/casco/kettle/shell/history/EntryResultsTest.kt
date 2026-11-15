@@ -46,6 +46,13 @@ class EntryResultsTest {
         assertEquals("50 lb · 10", text(EntryResult.Reps(listOf(10), listOf(22.6796185)), UnitSystem.IMPERIAL))
     }
 
+    // The schema reads `sets: []` as valid, so a hand-edited file can carry one; a crash here would cost
+    // the whole Sessions tab.
+    @Test
+    fun `an entry with no sets reads as none rather than crashing`() {
+        assertEquals(" repetições", text(EntryResult.Reps(emptyList(), emptyList())))
+    }
+
     // The session editor saves a typed "0" as a load; records count it as none, and so does this.
     @Test
     fun `a load of zero is no load`() {

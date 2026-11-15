@@ -31,7 +31,10 @@ fun TypeIcon(
     tint = color,
 )
 
-/** A row's trailing chevron: › for one that opens something, ⌄ for one that is open. */
+/**
+ * A row's trailing chevron: › for one that opens something, ⌄ ([expanded]) for one that is open, or the ⌄
+ * turned by [modifier] where a row that opens in place points down while shut.
+ */
 @Composable
 fun Chevron(
     modifier: Modifier = Modifier,

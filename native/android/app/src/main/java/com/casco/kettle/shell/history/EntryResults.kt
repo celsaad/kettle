@@ -71,7 +71,7 @@ private fun Resources.repsText(
 ): String {
     val loads = result.weightsKg.map { kg -> kg?.takeIf { it > 0 } }
     val shown = loads.map { kg -> kg?.let { toDisplayWeight(it, units) } }.distinct()
-    val load = loads.first().takeIf { shown.singleOrNull() != null }
+    val load = loads.firstOrNull().takeIf { shown.singleOrNull() != null }
     return when {
         shown.all { it == null } -> {
             getString(R.string.format_repsList, result.reps.joinToString(" · "))

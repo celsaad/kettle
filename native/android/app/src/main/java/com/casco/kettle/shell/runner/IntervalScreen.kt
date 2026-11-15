@@ -3,11 +3,11 @@ package com.casco.kettle.shell.runner
 import android.content.res.Resources
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -22,7 +22,6 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.casco.kettle.domain.IntervalVariant
 import com.casco.kettle.domain.RunnerCommand
@@ -60,7 +59,8 @@ internal fun IntervalScreen(
                 step.exerciseName,
                 resources.circuitSpoken(step),
             )
-            StepNotes(step.notes)
+            // Off while the minute rests out (#477): the countdown to the next one is what matters then.
+            if (!resting) StepNotes(step.notes)
         },
         middle = {
             PausedLine(context.paused)
@@ -83,7 +83,6 @@ internal fun IntervalScreen(
             }
             if (emom) {
                 Stepper(
-                    stringResource(R.string.session_interval_repsThisMinuteCaps),
                     stringResource(R.string.session_interval_repsThisMinute),
                     context.snapshot.inputs.reps,
                     context,
@@ -215,7 +214,6 @@ private fun AmrapScreen(
             PaceLine(rounds, context.readings.lastRounds)
             if (context.remaining <= LAST_MINUTE_SEC) {
                 Stepper(
-                    stringResource(R.string.session_interval_repsIntoRoundCaps, "$round"),
                     stringResource(R.string.session_interval_repsIntoRound, "$round"),
                     inputs.extraReps,
                     context,
@@ -259,52 +257,43 @@ private fun PaceLine(
     )
 }
 
-/** A whole-number stepper whose numeral opens the pad. [label] is the caps kicker, [name] the pad's. */
+/**
+ * A whole-number stepper whose numeral opens the pad, the Load stepper's look as the board draws both
+ * (#477): outlined 56dp rounded squares at the column's edges, [name] in sentence case over a 28sp value.
+ * [name] is the pad's title and what each button says it changes.
+ */
 @Composable
 private fun Stepper(
-    label: String,
     name: String,
     value: Long,
     context: StepContext,
     command: (Long) -> RunnerCommand,
 ) {
     val set = { next: Long -> context.send(command(maxOf(0, next))) }
-    val description = stringResource(R.string.session_stepperAccessibility, label, "$value")
-    Column(
-        Modifier.padding(top = Spacing.three),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(Spacing.one),
+    val description = stringResource(R.string.session_stepperAccessibility, name, "$value")
+    Row(
+        Modifier.fillMaxWidth().padding(top = Spacing.three),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(Spacing.two),
     ) {
-        Caps(label, tracking = 1.2.sp)
-        // RN spaces a 44dp circle 14dp from a 36dp value. Here the circle sits in a 48dp target and the
-        // value is one, so the gap is what puts each circle where RN draws it; RN's own would leave two
-        // AMRAP steppers 16dp wider than the column, squeezing the last + into an oval.
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(STEPPER_ROW_GAP),
+        SymbolButton(R.drawable.icon_remove, stringResource(R.string.common_decrease, name), {
+            set(value - 1)
+        }, look = SymbolLook.Load)
+        Column(
+            Modifier
+                .weight(1f)
+                .heightIn(min = MinTarget)
+                .clickable(role = Role.Button) {
+                    context.controls.openPad(PadRequest(name, value.toDouble(), false, null) { set(Math.round(it)) })
+                }.semantics(mergeDescendants = true) { contentDescription = description },
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            SymbolButton(
-                R.drawable.icon_remove,
-                stringResource(R.string.common_decrease, label),
-                { set(value - 1) },
-                look = SymbolLook.Stepper,
-            )
-            Box(
-                Modifier
-                    .sizeIn(minWidth = MinTarget, minHeight = MinTarget)
-                    .clickable(role = Role.Button) {
-                        context.controls.openPad(
-                            PadRequest(name, value.toDouble(), false, null) { set(Math.round(it)) },
-                        )
-                    }.semantics(mergeDescendants = true) { contentDescription = description },
-                contentAlignment = Alignment.Center,
-            ) {
-                Text("$value", style = KettleType.heading, color = runnerColors.text, textAlign = TextAlign.Center)
-            }
-            SymbolButton(R.drawable.icon_add, stringResource(R.string.common_increase, label), {
-                set(value + 1)
-            }, look = SymbolLook.Stepper.copy(accent = true))
+            Secondary(name)
+            Text("$value", style = KettleType.heading.copy(fontSize = STEPPER_VALUE), color = runnerColors.text)
         }
+        SymbolButton(R.drawable.icon_add, stringResource(R.string.common_increase, name), {
+            set(value + 1)
+        }, look = SymbolLook.Load)
     }
 }
 
@@ -312,4 +301,6 @@ private val CLOCK_NUMERAL = 88.sp
 
 /** When an AMRAP offers its extra reps: the cap's last minute. A span of time, not the length [isMinute] checks. */
 private const val LAST_MINUTE_SEC = 60.0
-private val STEPPER_ROW_GAP = 6.dp
+
+/** The board's 28px stepper value. */
+private val STEPPER_VALUE = 28.sp

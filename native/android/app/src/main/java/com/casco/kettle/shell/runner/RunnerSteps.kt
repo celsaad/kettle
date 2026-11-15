@@ -149,8 +149,8 @@ internal fun RestScreen(context: StepContext) {
     StepLayout(
         top = { context.snapshot.step?.let { RestHeader(it, context) } },
         middle = {
+            // The clock alone (#477): −15s and +30s move it in place, and an "of 1:30" under it said it twice.
             Numeral(formatClock(context.remaining), REST_NUMERAL)
-            Secondary(stringResource(R.string.session_rest_remaining, formatClock(context.snapshot.clock.stepEndSec)))
             Row(Modifier.padding(top = Spacing.two), horizontalArrangement = Arrangement.spacedBy(Spacing.two)) {
                 val width = Modifier.widthIn(min = REST_BUTTON_MIN_WIDTH)
                 OutlineButton(

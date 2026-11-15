@@ -195,9 +195,6 @@ internal data class SymbolLook(
         /** Coming up's ×: the app's sheet close, in runner colours. */
         val Close = SymbolLook(32.dp, KettleType.code.copy(fontSize = KettleType.heading.fontSize), filled = true)
 
-        /** An interval's steppers; [accent] for the +. */
-        val Stepper = SymbolLook(44.dp, KettleType.title.copy(fontSize = 22.sp), HeavyBorder)
-
         /** Reps' big −/+. */
         val Big = SymbolLook(60.dp, KettleType.title.copy(fontSize = 28.sp), HeavyBorder)
     }

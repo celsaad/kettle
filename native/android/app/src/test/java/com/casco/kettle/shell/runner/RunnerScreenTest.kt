@@ -303,7 +303,7 @@ class RunnerScreenTest : RunnerScreenHarness() {
         entry = running(plan, start.advanced())
         compose.waitForIdle()
         compose.onNodeWithText("A seguir").assertDoesNotExist()
-        compose.onNodeWithText("de 1:30 restantes").assertExists()
+        button("Pular descanso").assertExists()
     }
 
     @Test
@@ -573,8 +573,8 @@ class RunnerScreenTest : RunnerScreenHarness() {
     @Test
     fun `an EMOM says its minute, and its stepper sends the minute's reps`() {
         show(running(plan(block(everyMinute))))
-        compose.onNodeWithText("REPS NESTE MINUTO").assertExists()
-        button("Aumentar REPS NESTE MINUTO").performClick()
+        compose.onNodeWithText("Reps neste minuto").assertExists()
+        button("Aumentar Reps neste minuto").performClick()
         assertEquals(RunnerCommand.SetReps(11), sent.last())
     }
 

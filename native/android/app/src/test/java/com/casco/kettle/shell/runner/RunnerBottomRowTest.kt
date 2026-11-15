@@ -91,7 +91,8 @@ class RunnerBottomRowTest : RunnerScreenHarness() {
     fun `a rest has +30s and Skip, and no Pause`() {
         val resting = started(plan(block(squat))).advanced()
         show(running(plan(block(squat)), resting))
-        compose.onNodeWithText("de 1:30 restantes").assertExists()
+        // The clock alone under the rest (#477): its total no longer repeats under it.
+        compose.onNodeWithText("restantes", substring = true).assertDoesNotExist()
         button("Pausar").assertDoesNotExist()
         button("+30s").performClick()
         assertEquals(RunnerCommand.AddRestSeconds(30.0), sent.last())

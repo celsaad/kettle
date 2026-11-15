@@ -26,7 +26,7 @@ describe('formatEntryResult', () => {
   });
 
   it('joins per-set values', () => {
-    expect(formatEntryResult({ kind: 'holds', holdSecs: [20, 18, 15] })).toBe('20s · 18s · 15s');
+    expect(formatEntryResult({ kind: 'holds', holdSecs: [20, 18, 15] })).toBe('20 s · 18 s · 15 s');
     expect(formatEntryResult({ kind: 'reps', reps: [8, 7, 5], weightsKg: [undefined, undefined, undefined] })).toBe(
       '8 · 7 · 5 reps',
     );
@@ -36,6 +36,6 @@ describe('formatEntryResult', () => {
     expect(formatEntryResult({ kind: 'rounds', rounds: 7 })).toBe('7 rounds');
     expect(formatEntryResult({ kind: 'intervals', intervals: 10 })).toBe('10 intervals');
     expect(formatEntryResult({ kind: 'cardio', distanceMeters: 2000 })).toBe('2000 m');
-    expect(formatEntryResult({ kind: 'cardio', durationSec: 480, distanceMeters: 2000 })).toBe('480s · 2000 m');
+    expect(formatEntryResult({ kind: 'cardio', durationSec: 480, distanceMeters: 2000 })).toBe('480 s · 2000 m');
   });
 });

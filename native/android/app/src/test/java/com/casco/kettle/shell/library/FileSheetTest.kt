@@ -226,7 +226,7 @@ class FileSheetTest {
         show()
 
         row("Exportar registro").performScrollTo().assertIsNotEnabled()
-        compose.onNodeWithText("Nada registrado ainda — conclua uma sessão primeiro.").assertExists()
+        compose.onNodeWithText("Nada registrado ainda — conclua uma sessão primeiro").assertExists()
     }
 
     /** A device with no folder picker gets no row promising what can't work. */

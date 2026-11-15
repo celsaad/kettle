@@ -40,11 +40,28 @@ class WorkoutShapeTextTest {
         assertReads(WorkoutShape(3, listOf(ExerciseType.Reps)), "3 blocos · repetições")
     }
 
+    // The boards' "reps, hold": the types listed plainly, with no "mixed" in front.
     @Test
-    fun `lists several types as mixed, in the order they came`() {
+    fun `lists several types in the order they came`() {
         assertReads(
             WorkoutShape(4, listOf(ExerciseType.TimedHold, ExerciseType.Reps)),
-            "4 blocos · misto: isometria + repetições",
+            "4 blocos · isometria, repetições",
+        )
+    }
+
+    // Each language's own list separator, where a hardcoded ", " would put a Latin comma in Japanese.
+    @Test
+    @Config(qualifiers = "ja")
+    fun `separates the types as the reader's language does`() {
+        assertReads(WorkoutShape(4, listOf(ExerciseType.TimedHold, ExerciseType.Reps)), "4ブロック · ホールド、レップ")
+    }
+
+    // An acronym is a name with its own case, "EMOM", where the plain words stay lower case.
+    @Test
+    fun `writes the interval types in their own case`() {
+        assertReads(
+            WorkoutShape(2, listOf(ExerciseType.Emom, ExerciseType.Hiit, ExerciseType.Amrap)),
+            "2 blocos · EMOM, HIIT, AMRAP",
         )
     }
 

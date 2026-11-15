@@ -159,6 +159,9 @@ here, next to what it describes.
 - **A program keeps your place when the day you last trained is gone**: if an import removes it,
   or you rename it, Home used to start the program over at week 1. It now carries on after the
   last day you trained that's still there (#456).
+- **Shorter labels**: workouts list their exercise types plainly, "reps, hold" or "EMOM", and
+  Settings' switches are Sounds and Rest-day nudge. The training calendar's key says "45 min or
+  more" in full (#484).
 
 ---
 

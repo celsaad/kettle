@@ -394,7 +394,7 @@
       "of": "de {{clock}}",
       "endsByItself": "termina sozinho",
       "thenRest": "Depois, descanso de {{clock}}",
-      "thenNext": "Depois: {{name}}",
+      "thenNext": "Depois, {{name}}",
       "leftInMinute": "restantes neste minuto",
       "leftInInterval": "restantes neste intervalo",
       "repsThisMinuteCaps": "REPS NESTE MINUTO",

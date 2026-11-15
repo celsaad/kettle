@@ -63,8 +63,8 @@ internal fun IntervalScreen(
             StepNotes(step.notes)
         },
         middle = {
+            PausedLine(context.paused)
             if (resting) Secondary(resources.nextStartsIn(step))
-            PausedHeading(context.paused)
             Numeral(
                 formatClock(if (step.countUp) context.elapsed.toDouble() else context.remaining),
                 CLOCK_NUMERAL,
@@ -154,19 +154,36 @@ private fun Resources.caption(step: RunnerStep.Interval): String {
 }
 
 /**
- * What a HIIT round's clock leads to, the line's far end (#471): the rest after it, else the exercise
- * that follows, and nothing at the session's end. Only HIIT's: an EMOM's minute and cardio say how
- * they end instead.
+ * What a HIIT round's clock leads to, the line's far end (#471): the rest after it, the next round where
+ * no rest comes between, the exercise that follows, and nothing at the session's end. A repeat round
+ * isn't named as an exercise: "Then Burpees" during Burpees, with `rest_sec: 0`, read as a change of
+ * exercise. A zero-second Rest block, kept as an entry, says nothing either. Only HIIT's: an EMOM's
+ * minute and cardio say how they end instead.
  */
 private fun Resources.thenHint(
     step: RunnerStep.Interval,
     next: RunnerStep?,
 ): String? {
-    if (step.variant != IntervalVariant.HIIT || step.countUp) return null
+    if (step.variant != IntervalVariant.HIIT) return null
     return when (next) {
-        is RunnerStep.Rest -> getString(R.string.session_interval_thenRest, formatClock(next.seconds))
-        is WorkStep -> getString(R.string.session_interval_thenNext, next.exerciseName)
-        null -> null
+        is RunnerStep.Rest -> {
+            next.seconds.takeIf { it > 0 }?.let { getString(R.string.session_interval_thenRest, formatClock(it)) }
+        }
+
+        is WorkStep -> {
+            when {
+                next.memberKey != step.memberKey -> getString(R.string.session_interval_thenNext, next.exerciseName)
+
+                next.setIndex > step.setIndex -> getString(R.string.session_comingUp_thenRound, "${next.setIndex}")
+
+                // A one-member circuit's next visit: the same exercise again, from its first round.
+                else -> null
+            }
+        }
+
+        null -> {
+            null
+        }
     }
 }
 
@@ -192,7 +209,7 @@ private fun AmrapScreen(
             StepNotes(step.notes)
         },
         middle = {
-            PausedHeading(context.paused)
+            PausedLine(context.paused)
             Numeral(formatClock(context.remaining), CLOCK_NUMERAL, color = clockInk(context.paused))
             FillBar(context.spent, fill = barFill(context.paused))
             PaceLine(rounds, context.readings.lastRounds)

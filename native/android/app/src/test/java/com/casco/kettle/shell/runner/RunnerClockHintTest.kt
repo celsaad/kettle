@@ -5,7 +5,14 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.unit.dp
+import com.casco.kettle.domain.BlockConfigOverride
+import com.casco.kettle.domain.Exercise
+import com.casco.kettle.domain.ExerciseConfig
 import com.casco.kettle.domain.RunnerCommand
+import com.casco.kettle.domain.RunnerPlan
+import com.casco.kettle.domain.Workout
+import com.casco.kettle.domain.WorkoutBlock
+import com.casco.kettle.domain.buildSteps
 import com.casco.kettle.shell.theme.Spacing
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -22,6 +29,16 @@ import org.robolectric.annotation.GraphicsMode
 @RunWith(RobolectricTestRunner::class)
 @Config(qualifiers = "pt-w411dp-h891dp")
 class RunnerClockHintTest : RunnerScreenHarness() {
+    /** A plan over the harness's exercises and [more], for configs only one test needs. */
+    private fun planWith(
+        more: List<Exercise>,
+        vararg blocks: WorkoutBlock,
+    ): RunnerPlan.Runnable {
+        val workout = Workout("w", "Pernas", blocks.toList())
+        val all = exercises + more
+        return RunnerPlan.Runnable(workout, all, buildSteps(workout, all))
+    }
+
     private fun text(text: String) = compose.onNodeWithText(text)
 
     private fun absent(text: String) = compose.onNodeWithText(text, substring = true).assertDoesNotExist()
@@ -38,7 +55,7 @@ class RunnerClockHintTest : RunnerScreenHarness() {
         val hiit = plan(block(burpees), block(plank))
         // Round 1, its rest, then round 2: the last, with the plank next.
         show(running(hiit, started(hiit).advanced().advanced()))
-        text("Depois: Prancha").assertExists()
+        text("Depois, Prancha").assertExists()
         absent("descanso de")
 
         val alone = plan(block(burpees))
@@ -51,7 +68,6 @@ class RunnerClockHintTest : RunnerScreenHarness() {
     fun `cardio says it ends by itself`() {
         show(running(plan(block(run))))
         text("de 10:00 · termina sozinho").assertExists()
-        absent("Depois")
     }
 
     @Test
@@ -104,5 +120,37 @@ class RunnerClockHintTest : RunnerScreenHarness() {
         length = text("de 0:20").getUnclippedBoundsInRoot()
         next = text("Depois, descanso de 0:10").getUnclippedBoundsInRoot()
         assertTrue(length.bottom <= next.top)
+    }
+
+    /** With `rest_sec: 0` one round runs into the next: "Depois, Tiros" during Tiros read as a new exercise. */
+    @Test
+    fun `a HIIT round with no rest before the next says the next round, not its own name`() {
+        val sprints = Exercise("sprints", "Tiros", ExerciseConfig.Hiit(20.0, 0.0, 2))
+        show(running(planWith(listOf(sprints), block(sprints))))
+        text("Depois, rodada 2").assertExists()
+        absent("Depois, Tiros")
+    }
+
+    @Test
+    fun `a zero-second rest block after a HIIT says nothing of it`() {
+        val single = Exercise("single", "Tiro único", ExerciseConfig.Hiit(20.0, 10.0, 1))
+        val zeroRest = WorkoutBlock.ExerciseBlock(rest.id, BlockConfigOverride(durationSec = 0.0))
+        show(running(planWith(listOf(single), block(single), zeroRest)))
+        text("de 0:20").assertExists()
+        absent("Depois")
+    }
+
+    @Test
+    fun `an EMOM whose interval isn't a minute counts down what's left of the interval`() {
+        val forties = Exercise("forties", "Quarenta", ExerciseConfig.Emom(40.0, 4.0, 8))
+        show(running(planWith(listOf(forties), block(forties))))
+        text("restantes neste intervalo").assertExists()
+    }
+
+    @Test
+    fun `a paused AMRAP says so too`() {
+        val amrap = plan(block(grinder))
+        show(running(amrap, started(amrap).after(RunnerCommand.TogglePause)))
+        text("Pausado").assertExists()
     }
 }

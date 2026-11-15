@@ -175,10 +175,11 @@ here, next to what it describes.
   sometimes stayed white, at the start of a timed step or after you came back to the app. They are
   dark there now. Switching between light and dark, on your phone or in Settings, no longer leaves
   the strip above an open sheet in the old colours (#470, #481).
-- **The timer says what comes next**: the bar under a running timer now spans the screen, and the
-  line under it says what the clock leads to. An interval says "Then rest 0:20" or names the next
-  exercise, cardio says it ends by itself, and an EMOM counts down what's left of the minute. A
-  paused timer says "Paused" above it and dims, so you can tell at a glance that it's stopped (#471).
+- **The timer says what comes next**: the bar under a running timer now runs full width, and the
+  line under it says what the clock leads to. An interval says "Then rest 0:20", the next round or
+  the next exercise, cardio says it ends by itself, and an EMOM says its clock is what's left of the
+  minute; the reps you aim for are where the reps stepper starts. A paused timer says "Paused" above
+  it and dims, so you can tell at a glance that it's stopped (#471).
 
 ---
 

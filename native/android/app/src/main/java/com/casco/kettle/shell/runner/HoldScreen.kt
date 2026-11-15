@@ -52,7 +52,7 @@ private fun HoldClock(
     paused: Boolean,
 ) {
     val target = step.holdTargetSec
-    PausedHeading(paused)
+    PausedLine(paused)
     Row {
         Numeral("$elapsed", HOLD_NUMERAL, Modifier.alignByBaseline(), clockInk(paused))
         Numeral("s", UNIT_NUMERAL, Modifier.alignByBaseline(), runnerColors.textSecondary, leading = null)

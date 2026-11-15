@@ -54,14 +54,15 @@ internal fun ClockHint(
 }
 
 /**
- * "Paused" over a clock that's stopped (#471), polite so TalkBack says it as the pause lands; the clock
- * and its bar dim under it ([clockInk], [barFill]), so a glance tells a stopped clock from a running one.
+ * "Paused" over a clock that's stopped (#471); the clock and its bar dim under it ([clockInk], [barFill]),
+ * so a glance tells a stopped clock from a running one. Always laid out, blank while the clock runs: a
+ * line that came and went moved the clock by half its height on every pause, and a live region is
+ * spoken when its words change, not when it first appears.
  */
 @Composable
-internal fun PausedHeading(paused: Boolean) {
-    if (!paused) return
+internal fun PausedLine(paused: Boolean) {
     Text(
-        stringResource(R.string.session_paused),
+        if (paused) stringResource(R.string.session_paused) else "",
         Modifier.semantics { liveRegion = LiveRegionMode.Polite },
         style = KettleType.subtitle,
         color = runnerColors.text,

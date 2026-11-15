@@ -15,7 +15,7 @@ import com.casco.kettle.shell.i18n.weightUnit
 
 // The runner's words, as RN's `domain/format.ts` and the session components assemble them. In one
 // place because `:strings` numbers a key's placeholders in the alphabetical order of their names, not
-// in the order they read: `preview.reps` is (index, target, total). Every call here is in that
+// in the order they read: `preview.interval` is (progress, variant). Every call here is in that
 // order, and the Compose tests in `pt` catch one that isn't. User data (names, notes) goes in verbatim.
 
 /** A stored weight in the user's own unit with its unit, "60 kg". */
@@ -33,18 +33,16 @@ internal fun Resources.reps(count: Long): String =
 internal fun Resources.seconds(value: Double): String = getString(R.string.format_seconds, jsNumber(value))
 
 /**
- * What Undo would take back, after "Logged": "set 1 · 10 × 48.5 lb", "round 3", or the entry's name. In
- * a circuit, a member's set is its round, so [inCircuit] says round: "set 2" there read as a second set
- * of the same move (#473).
+ * What Undo would take back, after "Logged": "set 1 · 10 × 48.5 lb", "round 3", or the entry's name. A
+ * circuit's member logs a round, which "set 2" read as a second set of the same move (#473).
  */
 fun Resources.loggedText(
     logged: LoggedUnit,
     units: UnitSystem,
-    inCircuit: Boolean = false,
 ): String =
     when (logged) {
         is LoggedUnit.Set -> {
-            setText(logged.number, logged.set, units, if (inCircuit) ROUND_KEYS else SET_KEYS)
+            setText(logged.number, logged.set, units, if (logged.inCircuit) ROUND_KEYS else SET_KEYS)
         }
 
         is LoggedUnit.Round -> {
@@ -102,8 +100,8 @@ private val ROUND_KEYS =
 
 /**
  * A rest's line under "Next: Squat" (#473), as the board writes it: "Set 2 of 4 · 48.5 lb · 8–12 reps".
- * In a circuit its [circuit] round stands in for the set, since a member's set there is the round; the
- * load is what the set will open on ([openingLoadKg]), so the rest and the set can't disagree.
+ * In a circuit a set or hold's [circuit] round stands in for the set, since a member's set there is the
+ * round; the load is what the set will open on ([openingLoadKg]), so the rest and the set can't disagree.
  */
 fun Resources.previewDetail(
     preview: StepPreview,
@@ -125,17 +123,21 @@ fun Resources.previewDetail(
                 listOfNotNull(
                     round ?: getString(R.string.preview_set, "${preview.setIndex}", "${preview.setTotal}"),
                     loadKg?.takeIf { it > 0 }?.let { weightText(it, units) },
-                    getString(R.string.preview_repsTarget, repsTargetText(preview.target)),
+                    // A single target is a count, so it takes the plural forms: "1 rep", not "1 reps".
+                    preview.target.max?.let { getString(R.string.preview_repsTarget, repsTargetText(preview.target)) }
+                        ?: reps(preview.target.min),
                 )
             }
 
             is StepPreview.Interval -> {
-                listOf(
-                    round ?: when (val at = preview.progress) {
-                        is IntervalProgress.Round -> getString(R.string.preview_roundOf, "${at.index}", "${at.total}")
+                // Unchanged (#473 named the reps line): an interval's own round, which in a circuit a HIIT
+                // member runs all of on each visit, so the circuit's round would misname it.
+                val progress =
+                    when (val at = preview.progress) {
+                        is IntervalProgress.Round -> getString(R.string.preview_round, "${at.index}", "${at.total}")
                         is IntervalProgress.Seconds -> getString(R.string.preview_seconds, jsNumber(at.seconds))
-                    },
-                )
+                    }
+                listOf(getString(R.string.preview_interval, progress, preview.variant.json))
             }
         }
     return parts.joinToString(" · ")

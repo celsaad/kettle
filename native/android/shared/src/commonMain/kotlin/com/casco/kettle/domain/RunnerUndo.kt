@@ -73,10 +73,15 @@ internal fun undoableCommit(state: RunnerState): LastCommit? =
 
 /** What an undo would take back, for the runner to name beside its Undo. */
 sealed interface LoggedUnit {
-    /** A reps or hold set: the member's [number]th, as logged. */
+    /**
+     * A reps or hold set: the member's [number]th, as logged. [inCircuit] where the member is a circuit's,
+     * whose set is its round (#473): said of the set logged, not of the step on screen, which after a
+     * circuit's last round can be a Rest block of its own.
+     */
     data class Set(
         val number: Int,
         val set: PreviousSet,
+        val inCircuit: Boolean = false,
     ) : LoggedUnit
 
     /** A HIIT round, the member's [number]th. */
@@ -112,23 +117,26 @@ fun lastLogged(state: RunnerState): LoggedUnit? {
         }
 
         else -> {
-            loggedUnit(state.memberEntry(commit.memberKey))
+            loggedUnit(state.memberEntry(commit.memberKey), inCircuit(state.snapshot.steps, commit.memberKey))
         }
     }
 }
 
 /** The last unit of a member's [entry]; null for an entry Prev would leave as it is. */
-private fun loggedUnit(entry: SessionEntry?): LoggedUnit? =
+private fun loggedUnit(
+    entry: SessionEntry?,
+    inCircuit: Boolean,
+): LoggedUnit? =
     when (entry) {
         is SessionEntry.Reps -> {
             entry.sets.lastOrNull()?.let {
-                LoggedUnit.Set(entry.sets.size, PreviousSet.Reps(it.reps, it.weightKg))
+                LoggedUnit.Set(entry.sets.size, PreviousSet.Reps(it.reps, it.weightKg), inCircuit)
             }
         }
 
         is SessionEntry.TimedHold -> {
             entry.sets.lastOrNull()?.let {
-                LoggedUnit.Set(entry.sets.size, PreviousSet.Hold(it.holdSec))
+                LoggedUnit.Set(entry.sets.size, PreviousSet.Hold(it.holdSec), inCircuit)
             }
         }
 

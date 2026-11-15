@@ -2,8 +2,13 @@ package com.casco.kettle.shell.runner
 
 import androidx.compose.ui.test.onNodeWithText
 import com.casco.kettle.domain.CircuitMember
+import com.casco.kettle.domain.Exercise
+import com.casco.kettle.domain.ExerciseConfig
 import com.casco.kettle.domain.RunnerCommand
+import com.casco.kettle.domain.RunnerPlan
+import com.casco.kettle.domain.Workout
 import com.casco.kettle.domain.WorkoutBlock
+import com.casco.kettle.domain.buildSteps
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -57,5 +62,51 @@ class RunnerRestLineTest : RunnerScreenHarness() {
         text("Rodada 1 de 2 · 8 repetições").assertExists()
         text("Registrado rodada 1 · 5 × 60 kg").assertExists()
         compose.onNodeWithText("Série", substring = true).assertDoesNotExist()
+    }
+
+    /** After a circuit's last round no circuit rest follows; a Rest block's still says the round logged. */
+    @Test
+    fun `after a circuit, a Rest block still says the round just logged`() {
+        val circuitThenRest =
+            plan(
+                WorkoutBlock.Circuit(rounds = 1, members = listOf(CircuitMember(squat.id))),
+                block(rest),
+                block(plank),
+            )
+        show(running(circuitThenRest, started(circuitThenRest).advanced()))
+        text("Registrado rodada 1 · 5 × 60 kg").assertExists()
+    }
+
+    /** A single target is a count: "1 repetição", where a hard-coded noun said "1 repetições". */
+    @Test
+    fun `a single target takes the count's own plural`() {
+        val single = Exercise("single", "Levantamento", ExerciseConfig.Reps(2, 1, null, 100.0, 120.0))
+        show(
+            running(
+                planWith(listOf(single), block(single)),
+                started(planWith(listOf(single), block(single))).advanced(),
+            ),
+        )
+        text("Série 2 de 2 · 100 kg · 1 repetição").assertExists()
+    }
+
+    /** An interval's line is its own, unchanged: inside a circuit a HIIT member runs all its rounds per visit. */
+    @Test
+    fun `a HIIT's rest names its own round, in a circuit too`() {
+        show(running(plan(block(burpees)), started(plan(block(burpees))).advanced()))
+        text("hiit · rodada 2 de 2").assertExists()
+
+        val circuit = plan(WorkoutBlock.Circuit(rounds = 2, members = listOf(CircuitMember(burpees.id))))
+        show(running(circuit, started(circuit).advanced()))
+        text("hiit · rodada 2 de 2").assertExists()
+    }
+
+    private fun planWith(
+        more: List<Exercise>,
+        vararg blocks: WorkoutBlock,
+    ): RunnerPlan.Runnable {
+        val workout = Workout("w", "Pernas", blocks.toList())
+        val all = exercises + more
+        return RunnerPlan.Runnable(workout, all, buildSteps(workout, all))
     }
 }

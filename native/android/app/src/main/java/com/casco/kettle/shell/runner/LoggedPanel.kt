@@ -30,10 +30,7 @@ import com.casco.kettle.shell.theme.Spacing
 internal fun LoggedPanel(
     logged: LoggedUnit,
     context: StepContext,
-) = LoggedPanel(
-    // The rest after a circuit's member carries its circuit: what was logged there is a round.
-    LocalResources.current.loggedText(logged, context.units, inCircuit = context.snapshot.step?.circuit != null),
-) { context.send(RunnerCommand.Prev) }
+) = LoggedPanel(LocalResources.current.loggedText(logged, context.units)) { context.send(RunnerCommand.Prev) }
 
 /** The panel over [logged]'s words, with [undo] for Undo: an AMRAP's round takes back only its count. */
 @Composable

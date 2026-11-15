@@ -14,29 +14,34 @@
 import theme from '@/constants/theme.json';
 
 /**
- * Contrast notes, measured against WCAG 2.1 AA (4.5:1 for body text, 3:1 for large):
+ * Contrast notes, measured against WCAG 2.1 AA (4.5:1 for body text, 3:1 for large). The palette is the
+ * canvas's since #487, light and dark, which is what moved every number here:
  *
- * - `light.textSecondary` was `#777166`, which measured 4.41 on `background` and 4.01 on
- *   `backgroundSelected` — failing on two of its three surfaces, and it's the app's most-used color
- *   (every caption, count and summary line). Darkened to `#6b6558`: 5.28 on `background`, 5.79 on
- *   `backgroundElement`, 4.79 on `backgroundSelected`.
- * - `dark.backgroundSelected` is translucent and composites over `background` to #2b2823, where
- *   `textSecondary` measures **4.46**, short of 4.5. So a filled field (search, Library's Type) takes
- *   `backgroundElement` in dark (4.97) and `backgroundSelected` only in light (4.79); see `fieldFill`.
- * - `light.onAccent` (white) on `light.accent` is **3.64** — AA-large only. That's fine where it's
- *   used, the 20px semibold "Start session" label, which clears the 18.66px-bold threshold, but it
- *   has no headroom: don't reuse this pairing for body-sized text without darkening `accent` first.
+ * - `textSecondary`: 6.35 on `background`, 7.03 on `backgroundElement`, 5.82 on `backgroundSelected`
+ *   light; 6.83, 6.27 and 5.58 dark. `backgroundSelected` is opaque in both schemes now, so a filled
+ *   field takes it in both (`fieldFill`): dark's used to be translucent and composited to 4.46.
+ * - `onAccent` on `accent`, the filled button's label: 4.99 light (white on the deeper `#b94f24`; the
+ *   old `#cf6a37` took it at 3.64, AA-large only), 6.36 dark.
+ * - `lineStrong` is the 3:1 edge of a control that has no fill of its own, or only the surface's
+ *   (Settings' segmented controls, Back up now): 3.30 on `background` and 3.65 on
+ *   `backgroundElement` light, 3.41 and 3.13 dark. Never on `backgroundSelected`, where it falls short
+ *   (3.02 light, 2.78 dark). `border` stays the decorative hairline, rows' and cards'.
  * - The training calendar sits on the page since #414, and its marks are held to **3:1 against
  *   `background`** — WCAG 1.4.11's bar for a graphic you need to read the chart, which here is
  *   whether a day was trained at all. The rest day's outline (`calendarEmpty`) and the three shades,
- *   dark: 3.85, 4.07, 6.12, 8.32; light: 3.56, 3.32, 5.18, 8.83. The steps *between* levels are
- *   1.36–1.71 and don't have to clear it: every week's row label carries its count and time, and the
- *   legend names the buckets. An early draft had a lowest step at 1.6:1 against the empty cell, which
- *   is why these are measured rather than eyeballed.
+ *   light: 3.53, 3.13, 7.03, 14.41; dark: 4.06, 3.05, 6.36, 13.46. Neighbouring levels are about 2:1
+ *   apart (2.25 and 2.05 light, 2.08 and 2.12 dark), where the old scale's 1.36–1.71 barely told them
+ *   apart; they still needn't clear 3:1, since every week's row label carries its count and time and
+ *   the legend names the buckets. An early draft had a lowest step at 1.6:1 against the empty cell,
+ *   which is why these are measured rather than eyeballed.
+ * - `accentCalmText` is the recover blue for words, `#2a64a0` in light: a shade under the canvas's
+ *   `#2f6fae`, which stays `accentCalm`, the blue for fills and marks. On its own soft tint, the HOLD
+ *   badge's 12sp label, the canvas blue measured 3.95 on the page and 4.34 on a card; this one is 4.62
+ *   and 5.07 (dark, `#6aa6de`, is 5.28 and 4.75).
  * - The YAML view colours a key in `accentText` and a number in `accentCalmText`, on `background`:
- *   5.18 and 5.69 light, 8.32 and 7.79 dark (#444).
- * - The session editor's Undo bar turns the page over, `background` on a `text` pill: 14.41 light,
- *   15.15 dark (#442).
+ *   5.56 and 5.53 light, 8.52 and 7.28 dark (#444).
+ * - The session editor's Undo bar turns the page over, `background` on a `text` pill: 15.47 light,
+ *   16.13 dark (#442).
  *
  * Tokens whose name doesn't say it all:
  *

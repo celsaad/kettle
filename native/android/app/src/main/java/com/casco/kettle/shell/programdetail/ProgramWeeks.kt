@@ -140,7 +140,7 @@ private fun WeekTab(
             .fillMaxWidth()
             .heightIn(min = 48.dp)
             .clip(TabShape)
-            // The filled fields' fill: backgroundSelected under textSecondary is 4.46:1 in dark (theme.ts).
+            // The filled fields' fill (`fieldFill`), so a selected tab reads as the search box does.
             .background(if (selected) fieldFill() else Color.Transparent)
             .selectable(selected = selected, role = Role.Tab, onClick = onSelect)
             .clearAndSetSemantics { contentDescription = description }

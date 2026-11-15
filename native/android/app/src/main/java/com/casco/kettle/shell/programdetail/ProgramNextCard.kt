@@ -105,7 +105,7 @@ private fun RowScope.CardButton(
             .padding(horizontal = Spacing.two, vertical = Spacing.one),
         contentAlignment = Alignment.Center,
     ) {
-        // The heading's size, never smaller: white on the accent is 3.64:1, AA for large text only (theme.ts).
+        // The heading's size, as the board draws it; white on the accent is 4.99:1 (theme.ts).
         Text(
             label,
             style = KettleType.heading,

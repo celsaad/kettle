@@ -75,14 +75,13 @@ fun SearchBar(
 }
 
 /**
- * A filled field's ground: the search box, and Library's Type button beside it. `backgroundSelected` in
- * light, where `textSecondary` on it measures 4.79:1. Not in dark: that one is translucent, and over
- * `background` it composites to #2b2823, where `textSecondary` measures 4.46:1, short of AA's 4.5, so
- * dark takes `backgroundElement`, 4.97:1. `text` clears 12:1 on both.
+ * A filled field's ground: the search box, and Library's Type button beside it. The palette's sunken
+ * `backgroundSelected` in both schemes, as the boards draw inputs (#487): `textSecondary` on it measures
+ * 5.82:1 light and 5.58:1 dark. Dark took `backgroundElement` until #487, its sunken being translucent
+ * then and compositing to 4.46:1, short of AA.
  */
 @Composable
-fun fieldFill(): Color =
-    if (KettleTheme.dark) KettleTheme.colors.backgroundElement else KettleTheme.colors.backgroundSelected
+fun fieldFill(): Color = KettleTheme.colors.backgroundSelected
 
 /** A filled field's corners. */
 val FieldShape = RoundedCornerShape(14.dp)

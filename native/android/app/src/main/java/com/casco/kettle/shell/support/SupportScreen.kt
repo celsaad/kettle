@@ -238,8 +238,7 @@ private fun Tiers(
                 if (busy) {
                     CircularProgressIndicator(Modifier.size(SpinnerSize), color = colors.textSecondary)
                 } else {
-                    // accentText, not accent: white-on-accent clears AA-large only (theme.ts), and this
-                    // sits at body size on a plain surface.
+                    // accentText, the accent for words: this is a price on a plain surface, not a fill.
                     Text(offer.displayPrice, style = KettleType.heading, color = colors.accentText)
                 }
             }

@@ -150,10 +150,10 @@ class GeneratedThemeTest {
     @Test
     fun `the contrast ratios recorded in theme ts hold for the generated colors`() {
         with(LightColors) {
-            assertContrast(5.28, textSecondary, background.surface())
-            assertContrast(5.79, textSecondary, backgroundElement.surface())
-            assertContrast(4.79, textSecondary, backgroundSelected.surface())
-            assertContrast(3.64, onAccent, accent.surface())
+            assertContrast(6.35, textSecondary, background.surface())
+            assertContrast(7.03, textSecondary, backgroundElement.surface())
+            assertContrast(5.82, textSecondary, backgroundSelected.surface())
+            assertContrast(4.99, onAccent, accent.surface())
         }
 
         val fields =
@@ -192,14 +192,55 @@ class GeneratedThemeTest {
         // The calendar sits on the page (#414): the rest day's outline, then each level, against it.
         val calendar =
             mapOf(
-                DarkColors to listOf(3.85, 4.07, 6.12, 8.32),
-                LightColors to listOf(3.56, 3.32, 5.18, 8.83),
+                DarkColors to listOf(4.06, 3.05, 6.36, 13.46),
+                LightColors to listOf(3.53, 3.13, 7.03, 14.41),
             )
         for ((colors, ratios) in calendar) {
             val page = colors.background.surface()
             val marks =
                 listOf(colors.calendarEmpty, colors.calendarLevel1, colors.calendarLevel2, colors.calendarLevel3)
             for ((mark, ratio) in marks.zip(ratios)) assertContrast(ratio, mark, page)
+        }
+    }
+
+    /**
+     * The canvas palette's own (#487): dark's field, now on its opaque sunken fill, and its button label;
+     * and `lineStrong`, the 3:1 outline for an unfilled control, on the page and on a card. Never on a
+     * sunken fill, where it falls short.
+     */
+    @Test
+    fun `the canvas palette's fields, labels and strong line hold their recorded ratios`() {
+        with(DarkColors) {
+            assertContrast(6.83, textSecondary, background.surface())
+            assertContrast(6.27, textSecondary, backgroundElement.surface())
+            assertContrast(5.58, textSecondary, backgroundSelected.surface())
+            assertContrast(6.36, onAccent, accent.surface())
+        }
+        // Page, card, then the sunken fill it is kept off, where it falls short of 3:1.
+        val lines = mapOf(LightColors to Triple(3.30, 3.65, 3.02), DarkColors to Triple(3.41, 3.13, 2.78))
+        for ((colors, ratios) in lines) {
+            with(colors) {
+                assertContrast(ratios.first, lineStrong, background.surface())
+                assertContrast(ratios.second, lineStrong, backgroundElement.surface())
+                assertContrast(ratios.third, lineStrong, backgroundSelected.surface())
+            }
+        }
+        // The calendar's neighbouring levels, about 2:1 apart (#487), where the old scale's were 1.36–1.71.
+        val steps = mapOf(LightColors to (2.25 to 2.05), DarkColors to (2.08 to 2.12))
+        for ((colors, ratios) in steps) {
+            with(colors) {
+                assertContrast(ratios.first, calendarLevel1, calendarLevel2.surface())
+                assertContrast(ratios.second, calendarLevel2, calendarLevel3.surface())
+            }
+        }
+        // The HOLD badge's 12sp label, the text blue on its own soft tint, on the page and on a card: the
+        // canvas blue for words failed it in light, which is why `accentCalmText` is a shade darker there.
+        val badges = mapOf(LightColors to (4.62 to 5.07), DarkColors to (5.28 to 4.75))
+        for ((colors, ratios) in badges) {
+            with(colors) {
+                assertContrast(ratios.first, accentCalmText, accentCalmSoft.over(background.surface()))
+                assertContrast(ratios.second, accentCalmText, accentCalmSoft.over(backgroundElement.surface()))
+            }
         }
     }
 
@@ -211,8 +252,8 @@ class GeneratedThemeTest {
     fun `the page colours theme ts records for the YAML view and the Undo bar hold`() {
         val onPage =
             mapOf(
-                LightColors to Triple(5.18, 5.69, 14.41),
-                DarkColors to Triple(8.32, 7.79, 15.15),
+                LightColors to Triple(5.56, 5.53, 15.47),
+                DarkColors to Triple(8.52, 7.28, 16.13),
             )
         for ((colors, ratios) in onPage) {
             val page = colors.background.surface()

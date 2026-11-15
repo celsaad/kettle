@@ -99,7 +99,7 @@ private fun Header(
 
 /**
  * The +, named for what it makes ("New workout"), since a plus says nothing. A 40dp accent disc inside
- * a 48dp target; white on `accent` is 3.64:1, which clears the 3:1 a meaningful graphic needs.
+ * a 48dp target; white on `accent` is 4.99:1, past the 3:1 a meaningful graphic needs.
  */
 @Composable
 private fun NewButton(

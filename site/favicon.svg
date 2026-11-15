@@ -2,7 +2,7 @@
   <!-- The app's kettle mark, in the brand accent. Deliberately drawn in the one accent that reads
        against both a light and a dark browser chrome, so there is no light/dark variant to keep. -->
   <rect width="120" height="120" rx="26" fill="#17140d"/>
-  <g fill="#e07d47" stroke="#e07d47">
+  <g fill="#e8763e" stroke="#e8763e">
     <path d="M13,32 C8,26 14,21 11,15" stroke-width="3.2" stroke-linecap="round" fill="none" opacity="0.7"/>
     <path d="M22,30 C17,24 23,19 20,13" stroke-width="3.2" stroke-linecap="round" fill="none" opacity="0.45"/>
     <path d="M40,42 C42,23 82,23 84,42" stroke-width="6.5" stroke-linecap="round" fill="none"/>

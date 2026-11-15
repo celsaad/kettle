@@ -203,8 +203,8 @@ are house rules here rather than a backlog — cheap as you go, tedious to retro
   `hitSlop`. Decorative geometry — progress bars, CSS triangles, the grabber — keeps a fixed `height`;
   the rule is about controls, not every box.
 - **Contrast-check new colors** against every surface they sit on, alpha-compositing where the
-  background is translucent. `constants/theme.ts` records the measured ratios and the one pairing that
-  clears AA-large only.
+  background is translucent. `constants/theme.ts` records the measured ratios. A control drawn with
+  no fill takes `lineStrong` for its edge, held to 3:1; `border` is the decorative hairline.
 - **No user-facing string in the logic layer.** Producers return descriptors; `domain/format.ts` and
   the views render them. Counts go through i18next's `count` (never a `=== 1` ternary), and dates
   through `i18n/format.ts` (never `toLocaleDateString('en-US', …)`).

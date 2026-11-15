@@ -19,11 +19,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -34,19 +30,16 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.casco.kettle.domain.Program
+import com.casco.kettle.domain.leadingFirst
 import com.casco.kettle.domain.programSessionsPerWeek
 import com.casco.kettle.domain.programWeekNumbers
-import com.casco.kettle.domain.rankByName
 import com.casco.kettle.shell.R
 import com.casco.kettle.shell.files.LatestFiles
 import com.casco.kettle.shell.files.LocalLatestFiles
 import com.casco.kettle.shell.i18n.pluralText
 import com.casco.kettle.shell.library.rememberProgramPosition
-import com.casco.kettle.shell.list.ListHeaderRule
 import com.casco.kettle.shell.list.ListRow
 import com.casco.kettle.shell.list.ListRowSeparator
-import com.casco.kettle.shell.list.NoResults
-import com.casco.kettle.shell.list.SearchBar
 import com.casco.kettle.shell.nav.Destination
 import com.casco.kettle.shell.nav.LocalNavigator
 import com.casco.kettle.shell.nav.LocalTabReselects
@@ -68,8 +61,9 @@ fun ProgramsRoute() = ProgramsScreen(LocalLatestFiles.current, LocalTabReselects
 
 /**
  * Programs (#232), the library's programs as rows, under Library's tabs (#413), which hold its title
- * and New program: a name search, the rows, and the program guide as a link under them. The program
- * Today runs reads "Active, week 3". [open] pushes a route, a parameter so a test hears each one opened.
+ * and New program: the rows, and the program guide as a link under them. The program Today runs leads
+ * the list and reads "Active, week 3"; the rest keep the file's order (#488). [open] pushes a route,
+ * a parameter so a test hears each one opened.
  *
  * [reselected] carries taps on the tab already showing; one on Programs scrolls back to the top.
  */
@@ -85,9 +79,12 @@ fun ProgramsScreen(
     val listState = rememberLazyListState()
     ScrollsToTopOnReselect(Tab.Library, reselected, listState)
 
-    var query by rememberSaveable { mutableStateOf("") }
     val all = library?.programs.orEmpty()
-    val matching = remember(all, query) { rankByName(all, query) { it.name } }
+    val active = position?.program?.id
+    val ordered = remember(all, active) { leadingFirst(all, listOfNotNull(active)) { it.id } }
+    // No search (#488): five programs with every pack imported fit on one screen, and a field shown only
+    // past some count would change the tab's shape as the library grew. With nothing between the tabs
+    // and the rows, the tabs' own line heads the list, so it takes no header rule of its own either.
     val openGuide = { open(Route(Destination.ProgramGuide)) }
 
     Box(Modifier.fillMaxSize().statusBarsPadding(), contentAlignment = Alignment.TopCenter) {
@@ -102,38 +99,16 @@ fun ProgramsScreen(
                     bottom = Spacing.four,
                 ),
         ) {
-            item(key = "header") {
-                // Keyed off the whole library rather than what's visible: hidden on an empty result, it
-                // would take the field you need to clear the search with it.
-                if (all.isNotEmpty()) {
-                    SearchBar(
-                        query,
-                        { query = it },
-                        pluralText(
-                            R.plurals.programs_searchPlaceholder,
-                            R.string.programs_searchPlaceholder_zero,
-                            all.size,
-                        ),
-                    )
-                }
-                ListHeaderRule()
-            }
-            itemsIndexed(matching, key = { _, program -> program.id }) { index, program ->
+            itemsIndexed(ordered, key = { _, program -> program.id }) { index, program ->
                 if (index > 0) ListRowSeparator()
                 val week = position?.takeIf { it.program.id == program.id }?.weekNumber
                 ProgramRow(program, week) {
                     open(Route(Destination.ProgramDetail, mapOf(PROGRAM_ID_PARAM to program.id)))
                 }
             }
-            if (matching.isNotEmpty()) item(key = "guide") { GuideLink(openGuide) }
-            // Two empty states, told apart: the first-run card invites you to go read the YAML guide,
-            // which is a strange answer to a mistyped program name. Neither before there is a library,
-            // so the screen never says "none" before it has looked.
-            when {
-                library == null -> Unit
-                all.isEmpty() -> item(key = "empty") { FirstRun(openGuide) }
-                matching.isEmpty() -> item(key = "no-results") { NoResults(query) }
-            }
+            if (ordered.isNotEmpty()) item(key = "guide") { GuideLink(openGuide) }
+            // Not before there is a library, so the screen never says "none" before it has looked.
+            if (library != null && all.isEmpty()) item(key = "empty") { FirstRun(openGuide) }
         }
     }
 }

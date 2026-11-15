@@ -206,6 +206,46 @@ class WorkoutsScreenTest {
         compose.onAllNodesWithText("No seu programa", substring = true).assertCountEquals(1)
     }
 
+    /**
+     * The running program's workouts lead (#488), in the order it first trains them, and the rest keep
+     * the file's: Amrap day, trained in week 1, comes before Bench day, trained in week 2.
+     */
+    @Test
+    fun `the running program's workouts come first, in the order it trains them`() {
+        val program =
+            Program(
+                "base",
+                "Base",
+                listOf(ProgramWeek.Training(2, "Day 1", "bench"), ProgramWeek.Training(1, "Day 1", "never")),
+            )
+        show(Files(library(workouts = listOf(zercher, bench, never, pushDay), programs = listOf(program))))
+
+        assertTrue(top(row("Amrap day")) < top(row("Bench day")))
+        assertTrue(top(row("Bench day")) < top(row("Zercher day")))
+        assertTrue(top(row("Zercher day")) < top(row("Push day")))
+    }
+
+    /**
+     * Among equal matches the program's workouts lead: Push day before Bench day. A better match still
+     * beats one: Bench day starts a word with "day", Holiday, in the program, only holds it.
+     */
+    @Test
+    fun `under a search the program's workouts only break ties`() {
+        val program =
+            Program(
+                "base",
+                "Base",
+                listOf(ProgramWeek.Training(1, "Day 1", "holiday"), ProgramWeek.Training(1, "Day 2", "push-day")),
+            )
+        val holiday = Workout("holiday", "Holiday", emptyList())
+        show(Files(library(workouts = listOf(bench, holiday, pushDay), programs = listOf(program))))
+
+        search("day")
+
+        assertTrue(top(row("Push day")) < top(row("Bench day")))
+        assertTrue(top(row("Bench day")) < top(row("Holiday")))
+    }
+
     /** #153 dropped re-tap-to-top with RN's bar; each tab's port brings it back for its own list. */
     @Test
     fun `a tap on the Library tab while Workouts shows scrolls back to the top`() {

@@ -37,9 +37,15 @@ fun programSessionsPerWeek(program: Program): Int? =
         .singleOrNull()
         ?.takeIf { it > 0 }
 
-/** The workouts the program trains, for Library's "In your program" (#413). */
+/**
+ * The workouts the program trains, for Library's "In your program" (#413), in the order it first
+ * trains them: by week number, and a week's days as the file writes them, which is the order Workouts
+ * lists them in at its top (#488).
+ */
 fun programWorkoutIds(program: Program): Set<String> =
-    program.weeks.mapNotNullTo(mutableSetOf()) { (it as? ProgramWeek.Training)?.workoutId }
+    program.weeks
+        .sortedBy { it.week }
+        .mapNotNullTo(linkedSetOf()) { (it as? ProgramWeek.Training)?.workoutId }
 
 /**
  * A week's workout and the library's whole exercise list, each with that week's overrides applied, and

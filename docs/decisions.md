@@ -64,6 +64,11 @@ decision assembled across several commits. Open work belongs in the sections at 
   Every list now renders in **library file order**, which was already the shipped default on all three
   and is the only order a hand-written, hand-shared file can be said to have an opinion about.
 
+  **One exception, and it isn't a sort (#488).** The program Today runs leads Programs, and the
+  workouts it trains lead Workouts, in the order it first trains them; everything else stays in file
+  order, and a search's ranking still beats the lead. That's one privileged object surfacing, with no
+  control and nothing persisted. The canvas's A–Z Exercises was turned down on this entry's grounds.
+
   **One hazard outlives the feature.** `listSort` was a real persisted preference, so every
   `preferences.json` in the field still carries it — it was removed from the app, not from anyone's
   disk. Zod objects strip unknown keys rather than rejecting them, which is the only reason those

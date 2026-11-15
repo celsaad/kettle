@@ -30,6 +30,7 @@ import com.casco.kettle.domain.Exercise
 import com.casco.kettle.domain.RunnerStart
 import com.casco.kettle.domain.SessionParams
 import com.casco.kettle.domain.Workout
+import com.casco.kettle.domain.leadingFirst
 import com.casco.kettle.domain.programWorkoutIds
 import com.casco.kettle.domain.rankByName
 import com.casco.kettle.domain.workoutShape
@@ -85,9 +86,10 @@ fun WorkoutsScreen(
     val library = files.library
     var query by rememberSaveable { mutableStateOf("") }
     val all = library?.workouts.orEmpty()
-    val matching = remember(all, query) { rankByName(all, query) { it.name } }
     val program = rememberProgramPosition(files, clock)?.program
     val inProgram = remember(program) { program?.let(::programWorkoutIds).orEmpty() }
+    val ordered = remember(all, inProgram) { leadingFirst(all, inProgram) { it.id } }
+    val matching = remember(ordered, query) { rankByName(ordered, query) { it.name } }
 
     Box(Modifier.fillMaxSize().statusBarsPadding(), contentAlignment = Alignment.TopCenter) {
         LazyColumn(

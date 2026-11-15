@@ -222,6 +222,9 @@ here, next to what it describes.
   stop wrapping. In Coming up the circuit you're in sits on the line, says "Then round 3: all 3
   again", and shows last round's reps on the move you're on; End says which round finishes the
   workout (#479).
+- **Your program at the top of Library**: the program you're running now leads Programs, and its
+  workouts lead Workouts, in the order you train them. Everything else stays in your file's order.
+  Programs no longer has a search box, since the list is short (#488).
 
 ---
 

@@ -5,6 +5,7 @@ import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsNotDisplayed
 import androidx.compose.ui.test.hasScrollToIndexAction
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
@@ -12,7 +13,6 @@ import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToIndex
-import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.unit.dp
 import com.casco.kettle.domain.Library
 import com.casco.kettle.domain.Program
@@ -69,7 +69,18 @@ class ProgramsScreenTest {
 
     private fun row(name: String) = compose.onNode(hasText(name, substring = true) and isButton)
 
-    private fun search(query: String) = compose.onNode(hasSetTextAction()).performTextInput(query)
+    /** The names of the rows, top to bottom: each row's first text is its program's name. */
+    private fun rowNames() =
+        compose
+            .onAllNodes(isButton)
+            .fetchSemanticsNodes()
+            .sortedBy { it.boundsInRoot.top }
+            .mapNotNull {
+                it.config
+                    .getOrElseNullable(SemanticsProperties.Text) { null }
+                    ?.firstOrNull()
+                    ?.text
+            }.filter { it != "Como escrever um programa à mão" }
 
     @Test
     fun `lists every program`() {
@@ -80,31 +91,10 @@ class ProgramsScreenTest {
     }
 
     @Test
-    fun `narrows the list to matching names`() {
-        show()
-
-        search("peak")
-
-        row("Peak week").assertExists()
-        row("Base building").assertDoesNotExist()
-    }
-
-    @Test
-    fun `says nothing matched rather than offering to teach the YAML format`() {
-        show()
-
-        search("zzz")
-
-        compose.onNodeWithText("Nada encontrado").assertExists()
-        compose.onNodeWithText("Nenhum programa ainda").assertDoesNotExist()
-    }
-
-    @Test
     fun `still tells a library with no programs that it has none yet`() {
         show(Files())
 
         compose.onNodeWithText("Nenhum programa ainda").assertExists()
-        compose.onNode(hasSetTextAction()).assertDoesNotExist()
     }
 
     /** Null is a library not read yet, or not yet seeded on a first launch: neither has "no programs". */
@@ -113,20 +103,23 @@ class ProgramsScreenTest {
         show(Files(library = null))
 
         compose.onNodeWithText("Nenhum programa ainda").assertDoesNotExist()
-        compose.onNode(hasSetTextAction()).assertDoesNotExist()
     }
 
     @Test
     fun `is translated`() {
         show()
 
-        // The field is named by its placeholder, read inside the field's own node.
-        compose.onNode(hasSetTextAction() and hasText("Buscar 2 programas")).assertExists()
         compose.onNodeWithText("Ativo, semana 1 · 1 sessão por semana").assertExists()
         compose.onNodeWithText("Sem semanas").assertExists()
         compose.onNode(hasText("Como escrever um programa à mão") and isButton).assertExists()
-        search("zzz")
-        compose.onNodeWithText("Nada encontrado").assertExists()
+    }
+
+    /** No search (#488): five programs with every pack imported fit on one screen. */
+    @Test
+    fun `has no search field`() {
+        show()
+
+        compose.onNode(hasSetTextAction()).assertDoesNotExist()
     }
 
     @Test
@@ -165,6 +158,29 @@ class ProgramsScreenTest {
         compose.onNodeWithText("1 semana · 1 sessão por semana").assertExists()
     }
 
+    /** The program Today runs leads (#488); the rest keep the order the file wrote them in. */
+    @Test
+    fun `the program Today runs comes first, the rest in file order`() {
+        val last =
+            Program(
+                "last",
+                "Last block",
+                listOf(ProgramWeek.Training(1, "Day 1", "push-day"), ProgramWeek.Training(2, "Day 1", "push-day")),
+            )
+        show(Files(base, peak, last, sessions = listOf(session("last", week = 1, day = "Day 1"))))
+
+        assertEquals(listOf("Last block", "Base building", "Peak week"), rowNames())
+    }
+
+    /** A program with no weeks has nowhere for Today to be, so none of these is running. */
+    @Test
+    fun `with no program running the list is the file's order`() {
+        val last = Program("last", "Last block", emptyList())
+        show(Files(peak, last, Program("third", "Third block", emptyList())))
+
+        assertEquals(listOf("Peak week", "Last block", "Third block"), rowNames())
+    }
+
     @Test
     fun `a row opens its program's detail`() {
         show()
@@ -201,16 +217,17 @@ class ProgramsScreenTest {
     fun `a tap on the Library tab while Programs shows scrolls back to the top`() {
         val many = (1..30).map { Program("p$it", "Program $it", emptyList()) }
         show(Files(*many.toTypedArray()))
+        val first = compose.onNode(hasText("Program 1") and isButton)
         compose.onNode(hasScrollToIndexAction()).performScrollToIndex(many.size)
-        compose.onNode(hasSetTextAction()).assertDoesNotExist()
+        first.assertIsNotDisplayed()
 
         reselects.tryEmit(Tab.Progress)
         compose.waitForIdle()
-        compose.onNode(hasSetTextAction()).assertDoesNotExist()
+        first.assertIsNotDisplayed()
 
         reselects.tryEmit(Tab.Library)
         compose.waitForIdle()
-        compose.onNode(hasSetTextAction()).assertIsDisplayed()
+        first.assertIsDisplayed()
     }
 
     private val clock =

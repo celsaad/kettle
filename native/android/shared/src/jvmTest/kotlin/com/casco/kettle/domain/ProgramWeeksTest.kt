@@ -55,4 +55,18 @@ class ProgramWeeksTest {
 
         assertEquals(setOf("push-day", "pull-day"), programWorkoutIds(program))
     }
+
+    /** Workouts lists them at its top in this order (#488), so it's the order you train them in. */
+    @Test
+    fun `a program's workouts come in the order it first trains them, by week`() {
+        val program =
+            program(
+                ProgramWeek.Training(2, "Day 1", "legs-day"),
+                ProgramWeek.Training(1, "Day 1", "pull-day"),
+                ProgramWeek.Training(1, "Day 3", "push-day"),
+                ProgramWeek.Training(2, "Day 3", "pull-day"),
+            )
+
+        assertEquals(listOf("pull-day", "push-day", "legs-day"), programWorkoutIds(program).toList())
+    }
 }

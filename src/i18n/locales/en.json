@@ -213,8 +213,6 @@
     "emptyBody": "Programs are multi-week plans that step through your workouts. Create one with the + button, or write one as YAML for finer control (per-week overrides aren't editable in-app yet).",
     "emptyYamlLink": "Writing one as YAML →",
     "newProgram": "New program",
-    "searchPlaceholder_one": "Search {{count}} program",
-    "searchPlaceholder_other": "Search {{count}} programs",
     "active": "Active, week {{n}}",
     "weekCount_one": "{{count}} week",
     "weekCount_other": "{{count}} weeks",

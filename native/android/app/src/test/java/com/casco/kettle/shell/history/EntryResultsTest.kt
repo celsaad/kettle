@@ -10,9 +10,9 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
 /**
- * [entryResultText], each shape in `pt` as RN's `formatEntryResult` renders it, since a History row
- * shows what an entry put up in these words. In `pt` for the screen tests' reason, and because its
- * plurals have the `_zero` step English lacks.
+ * [entryResultText], each shape in `pt` as RN's `formatEntryResult` renders it, and a reps entry's
+ * load, which is native's alone, since a History row shows what an entry put up in these words. In
+ * `pt` for the screen tests' reason, and because its plurals have the `_zero` step English lacks.
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(qualifiers = "pt")
@@ -44,6 +44,29 @@ class EntryResultsTest {
     @Test
     fun `the load is in the reader's unit`() {
         assertEquals("50 lb · 10", text(EntryResult.Reps(listOf(10), listOf(22.6796185)), UnitSystem.IMPERIAL))
+    }
+
+    // The session editor saves a typed "0" as a load; records count it as none, and so does this.
+    @Test
+    fun `a load of zero is no load`() {
+        assertEquals("8 · 8 repetições", text(EntryResult.Reps(listOf(8, 8), listOf(0.0, 0.0))))
+        assertEquals("8 × 20 kg · 6 repetições", text(EntryResult.Reps(listOf(8, 6), listOf(20.0, 0.0))))
+    }
+
+    // 22.7 kg from the runner and "50" lb typed in the editor are one load to an imperial reader.
+    @Test
+    fun `loads that read the same are one load`() {
+        assertEquals(
+            "50 lb · 8, 6",
+            text(EntryResult.Reps(listOf(8, 6), listOf(22.7, 22.6796185)), UnitSystem.IMPERIAL),
+        )
+    }
+
+    // Each language's own separator: a hardcoded ", " would put a Latin comma in Japanese.
+    @Test
+    @Config(qualifiers = "ja")
+    fun `separates the reps as the reader's language does`() {
+        assertEquals("60 kg · 8、8、6", text(EntryResult.Reps(listOf(8, 8, 6), listOf(60.0, 60.0, 60.0))))
     }
 
     // One load in front would claim a weight some sets didn't carry.

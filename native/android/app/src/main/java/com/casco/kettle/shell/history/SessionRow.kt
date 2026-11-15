@@ -37,10 +37,10 @@ import com.casco.kettle.shell.i18n.pluralText
 import com.casco.kettle.shell.list.ListRowMinHeight
 import com.casco.kettle.shell.list.ListRowVerticalPadding
 import com.casco.kettle.shell.list.TextAction
+import com.casco.kettle.shell.theme.Chevron
 import com.casco.kettle.shell.theme.KettleTheme
 import com.casco.kettle.shell.theme.KettleType
 import com.casco.kettle.shell.theme.Spacing
-import com.casco.kettle.shell.theme.TypeIcon
 
 /**
  * One session: a row, not a card, that expands in place. It can't be a `ListRow`, since the detail
@@ -102,7 +102,9 @@ internal fun SessionRow(
                 Text(details(row), style = KettleType.small, color = colors.textSecondary)
                 topEntry(row, recordIndex, state.units)?.let { Text(it, style = KettleType.small, color = colors.text) }
             }
-            OpenChevron(expanded)
+            // Down while shut and up while open, as #414 drew it: the row opens in place rather than going
+            // anywhere, which a › would promise. So the ⌄ is drawn either way and turned over while open.
+            Chevron(Modifier.rotate(if (expanded) HALF_TURN else 0f), expanded = true)
         }
         if (expanded) Detail(row, state.failure, state.units, actions)
     }
@@ -137,19 +139,6 @@ private fun DayColumn(row: HistorySessionView) =
             color = KettleTheme.colors.textSecondary,
         )
     }
-
-/**
- * Down while shut and up while open, as #414 drew it: the row opens in place rather than going anywhere,
- * which a › would promise.
- */
-@Composable
-private fun OpenChevron(expanded: Boolean) =
-    TypeIcon(
-        R.drawable.icon_expand,
-        KettleType.default,
-        KettleTheme.colors.textSecondary,
-        Modifier.rotate(if (expanded) HALF_TURN else 0f),
-    )
 
 /** The record's entry, else the first, as "Squat · 3 × 5 · 60 kg". The name is the user's, verbatim. */
 @Composable

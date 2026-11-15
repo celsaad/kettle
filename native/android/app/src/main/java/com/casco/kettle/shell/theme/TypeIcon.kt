@@ -33,9 +33,12 @@ fun TypeIcon(
 
 /** A row's trailing chevron: › for one that opens something, ⌄ for one that is open. */
 @Composable
-fun Chevron(expanded: Boolean = false) =
-    TypeIcon(
-        if (expanded) R.drawable.icon_expand else R.drawable.icon_chevron,
-        KettleType.default,
-        KettleTheme.colors.textSecondary,
-    )
+fun Chevron(
+    modifier: Modifier = Modifier,
+    expanded: Boolean = false,
+) = TypeIcon(
+    if (expanded) R.drawable.icon_expand else R.drawable.icon_chevron,
+    KettleType.default,
+    KettleTheme.colors.textSecondary,
+    modifier,
+)

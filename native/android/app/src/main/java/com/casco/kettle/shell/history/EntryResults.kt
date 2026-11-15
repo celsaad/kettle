@@ -4,14 +4,16 @@ import android.content.res.Resources
 import com.casco.kettle.domain.EntryResult
 import com.casco.kettle.domain.UnitSystem
 import com.casco.kettle.domain.jsNumber
+import com.casco.kettle.domain.toDisplayWeight
 import com.casco.kettle.shell.R
 import com.casco.kettle.shell.i18n.pluralText
 import com.casco.kettle.shell.runner.weightText
 
 /**
- * What one logged entry put up, in the reader's words: `formatEntryResult` in `src/domain/format.ts`,
- * which RN's exercise editor reads until the library flip. Numbers print as JS prints them, so a 52.5s hold reads the
- * same on both sides and a whole one has no ".0". A load is in [units], as every weight the reader sees is.
+ * What one logged entry put up, in the reader's words, after `formatEntryResult` in `src/domain/format.ts`.
+ * Numbers print as JS prints them, so a 52.5s hold reads the same on both sides and a whole one has no ".0".
+ * A reps entry's load is native's alone: the TS formatter renders the reps only, since no screen reads it
+ * after #309. A load is in [units], as every weight the reader sees is.
  */
 fun Resources.entryResultText(
     result: EntryResult,
@@ -58,24 +60,30 @@ fun Resources.entryResultText(
  * Unloaded sets as RN's "12 · 12 · 10 reps"; one load across every set as the board's "48.5 lb · 12, 12, 10".
  * Loads that differ, or a set without one among loaded sets, go set by set, "8 × 60 kg · 6 reps", since a
  * single load in front would claim a weight some sets didn't carry.
+ *
+ * A load of 0 is no load, as records count it (`Records.kt`): the session editor saves a typed "0" as one.
+ * Loads are compared as the reader sees them, so 22.7 kg from the runner and "50" lb typed in the editor
+ * both read "50 lb" and share one load in front rather than going set by set.
  */
 private fun Resources.repsText(
     result: EntryResult.Reps,
     units: UnitSystem,
 ): String {
-    val loads = result.weightsKg.distinct()
-    val load = loads.singleOrNull()
+    val loads = result.weightsKg.map { kg -> kg?.takeIf { it > 0 } }
+    val shown = loads.map { kg -> kg?.let { toDisplayWeight(it, units) } }.distinct()
+    val load = loads.first().takeIf { shown.singleOrNull() != null }
     return when {
-        loads.all { it == null } -> {
+        shown.all { it == null } -> {
             getString(R.string.format_repsList, result.reps.joinToString(" · "))
         }
 
         load != null -> {
-            getString(R.string.format_loadedReps, result.reps.joinToString(", "), weightText(load, units))
+            val list = result.reps.joinToString(getString(R.string.format_listSeparator))
+            getString(R.string.format_loadedReps, list, weightText(load, units))
         }
 
         else -> {
-            result.reps.zip(result.weightsKg).joinToString(" · ") { (count, kg) ->
+            result.reps.zip(loads).joinToString(" · ") { (count, kg) ->
                 kg?.let { getString(R.string.format_loadedSet, "$count", weightText(it, units)) } ?: reps(count)
             }
         }

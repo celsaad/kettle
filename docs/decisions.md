@@ -67,7 +67,7 @@ decision assembled across several commits. Open work belongs in the sections at 
   **One exception, and it isn't a sort (#488).** The program Today runs leads Programs, and the
   workouts it trains lead Workouts, in the order it first trains them; everything else stays in file
   order, and a search's ranking still beats the lead. That's one privileged object surfacing, with no
-  control and nothing persisted. The canvas's A–Z Exercises was turned down on this entry's grounds.
+  control and nothing persisted. An A–Z Exercises was turned down on this entry's grounds.
 
   **One hazard outlives the feature.** `listSort` was a real persisted preference, so every
   `preferences.json` in the field still carries it — it was removed from the app, not from anyone's

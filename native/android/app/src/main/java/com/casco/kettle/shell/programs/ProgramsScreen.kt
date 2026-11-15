@@ -80,10 +80,13 @@ fun ProgramsScreen(
     ScrollsToTopOnReselect(Tab.Library, reselected, listState)
 
     val all = library?.programs.orEmpty()
+    // The program Today steps through, the one "Active, week 3" names: with nothing logged that's the
+    // file's first, and a program whose next slot names a deleted workout has no position, so it
+    // neither leads nor reads Active (#488).
     val active = position?.program?.id
     val ordered = remember(all, active) { leadingFirst(all, listOfNotNull(active)) { it.id } }
-    // No search (#488): five programs with every pack imported fit on one screen, and a field shown only
-    // past some count would change the tab's shape as the library grew. With nothing between the tabs
+    // No search (#488): the seed's programs and every pack's together fit on one screen, and a field
+    // shown only past some count would change the tab's shape as the library grew. With nothing between the tabs
     // and the rows, the tabs' own line heads the list, so it takes no header rule of its own either.
     val openGuide = { open(Route(Destination.ProgramGuide)) }
 

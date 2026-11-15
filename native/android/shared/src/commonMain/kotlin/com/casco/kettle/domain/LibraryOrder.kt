@@ -12,8 +12,9 @@ fun <T> leadingFirst(
     idOf: (T) -> String,
 ): List<T> {
     if (leading.isEmpty()) return items
-    val byId = items.associateBy(idOf)
-    val first = leading.mapNotNull { byId[it] }
-    val ids = first.mapTo(mutableSetOf(), idOf)
-    return first + items.filterNot { idOf(it) in ids }
+    val rank = leading.withIndex().associate { (index, id) -> id to index }
+    // A partition rather than a lookup, so every row survives: two rows the file gives one id both
+    // stay, in the file's order, where a map by id would keep one and drop the other.
+    val (first, rest) = items.partition { idOf(it) in rank }
+    return first.sortedBy { rank.getValue(idOf(it)) } + rest
 }

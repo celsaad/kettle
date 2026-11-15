@@ -69,8 +69,8 @@ class ProgramsScreenTest {
 
     private fun row(name: String) = compose.onNode(hasText(name, substring = true) and isButton)
 
-    /** The names of the rows, top to bottom: each row's first text is its program's name. */
-    private fun rowNames() =
+    /** Which of [names] are on screen as rows, top to bottom: a row's first text is its program's name. */
+    private fun rowNames(vararg names: String) =
         compose
             .onAllNodes(isButton)
             .fetchSemanticsNodes()
@@ -80,7 +80,7 @@ class ProgramsScreenTest {
                     .getOrElseNullable(SemanticsProperties.Text) { null }
                     ?.firstOrNull()
                     ?.text
-            }.filter { it != "Como escrever um programa à mão" }
+            }.filter { it in names }
 
     @Test
     fun `lists every program`() {
@@ -114,7 +114,7 @@ class ProgramsScreenTest {
         compose.onNode(hasText("Como escrever um programa à mão") and isButton).assertExists()
     }
 
-    /** No search (#488): five programs with every pack imported fit on one screen. */
+    /** No search (#488): the seed's programs and every pack's fit on one screen. */
     @Test
     fun `has no search field`() {
         show()
@@ -169,16 +169,25 @@ class ProgramsScreenTest {
             )
         show(Files(base, peak, last, sessions = listOf(session("last", week = 1, day = "Day 1"))))
 
-        assertEquals(listOf("Last block", "Base building", "Peak week"), rowNames())
+        assertEquals(
+            listOf("Last block", "Base building", "Peak week"),
+            rowNames("Base building", "Peak week", "Last block"),
+        )
     }
 
-    /** A program with no weeks has nowhere for Today to be, so none of these is running. */
+    /**
+     * With nothing logged Today runs the file's first program, and Peak week, with no weeks, has nowhere
+     * to be: nothing is running, so Base building, which has weeks, stays second.
+     */
     @Test
     fun `with no program running the list is the file's order`() {
         val last = Program("last", "Last block", emptyList())
-        show(Files(peak, last, Program("third", "Third block", emptyList())))
+        show(Files(peak, base, last))
 
-        assertEquals(listOf("Peak week", "Last block", "Third block"), rowNames())
+        assertEquals(
+            listOf("Peak week", "Base building", "Last block"),
+            rowNames("Base building", "Peak week", "Last block"),
+        )
     }
 
     @Test

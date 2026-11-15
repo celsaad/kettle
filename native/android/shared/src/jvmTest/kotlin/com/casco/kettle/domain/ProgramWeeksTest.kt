@@ -53,7 +53,7 @@ class ProgramWeeksTest {
                 ProgramWeek.Training(2, "Day 3", "pull-day"),
             )
 
-        assertEquals(setOf("push-day", "pull-day"), programWorkoutIds(program))
+        assertEquals(listOf("push-day", "pull-day"), programWorkoutIds(program))
     }
 
     /** Workouts lists them at its top in this order (#488), so it's the order you train them in. */
@@ -67,6 +67,6 @@ class ProgramWeeksTest {
                 ProgramWeek.Training(2, "Day 3", "pull-day"),
             )
 
-        assertEquals(listOf("pull-day", "push-day", "legs-day"), programWorkoutIds(program).toList())
+        assertEquals(listOf("pull-day", "push-day", "legs-day"), programWorkoutIds(program))
     }
 }

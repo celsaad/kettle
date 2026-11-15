@@ -25,6 +25,14 @@ class LibraryOrderTest {
         assertEquals(listOf("c", "a", "b", "d"), order(listOf("gone", "c")))
     }
 
+    /** Nothing in the schema stops two rows sharing an id; leading one mustn't drop the other. */
+    @Test
+    fun `rows sharing a leading id both stay`() {
+        val rows = listOf("a" to 1, "b" to 2, "a" to 3)
+
+        assertEquals(listOf("a" to 1, "a" to 3, "b" to 2), leadingFirst(rows, listOf("a")) { it.first })
+    }
+
     /**
      * A search ranks the ordered list: "Day one" leads "Bench day" on an equal match, though the file
      * has it later, and "Bench day" still beats "Holiday", a leading row that only matches inside a word.

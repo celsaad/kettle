@@ -38,14 +38,12 @@ fun programSessionsPerWeek(program: Program): Int? =
         ?.takeIf { it > 0 }
 
 /**
- * The workouts the program trains, for Library's "In your program" (#413), in the order it first
- * trains them: by week number, and a week's days as the file writes them, which is the order Workouts
- * lists them in at its top (#488).
+ * The workouts the program trains, for Library's "In your program" (#413), once each in the order it
+ * first trains them: its [rotation], the order Today steps through, which is the order Workouts lists
+ * them in at its top (#488). A list rather than a set, so the order is part of the type.
  */
-fun programWorkoutIds(program: Program): Set<String> =
-    program.weeks
-        .sortedBy { it.week }
-        .mapNotNullTo(linkedSetOf()) { (it as? ProgramWeek.Training)?.workoutId }
+fun programWorkoutIds(program: Program): List<String> =
+    rotation(program).mapNotNull { (it as? ProgramWeek.Training)?.workoutId }.distinct()
 
 /**
  * A week's workout and the library's whole exercise list, each with that week's overrides applied, and

@@ -20,6 +20,9 @@ import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -76,7 +79,7 @@ internal fun RepsScreen(
             // next load to try right under it; the reps are counted below.
             Column(Modifier.padding(top = Spacing.two), verticalArrangement = Arrangement.spacedBy(Spacing.one)) {
                 // A circuit's bodyweight member has no load to set (#478); a weighted one keeps it.
-                if (!(inCircuit && bodyweight(step, context))) LoadControl(context)
+                if (!inCircuit || loadShown(step, context)) LoadControl(context)
                 LastTimeRow(step, context)
             }
         },
@@ -328,8 +331,18 @@ private val STEPPER_GAP = 22.dp
 private val REPS_LABEL_GAP = 6.dp
 private val LOAD_UNIT = 18.sp
 
-/** No load on the step's plan and none set on this set: nothing to show a load control for. */
-private fun bodyweight(
+/**
+ * Whether a circuit member shows its load: once it has a load, planned or set on this set, it keeps the
+ * control for the rest of the visit. Read live, − down to 0 took the row away under the finger and slid
+ * last time's adopt into its place, where the next tap brought it back.
+ */
+@Composable
+private fun loadShown(
     step: RunnerStep.Reps,
     context: StepContext,
-): Boolean = (step.targetWeightKg ?: 0.0) <= 0 && context.snapshot.inputs.weightKg <= 0
+): Boolean {
+    val shown = remember(context.snapshot.visit) { mutableStateOf(false) }
+    val loaded = (step.targetWeightKg ?: 0.0) > 0 || context.snapshot.inputs.weightKg > 0
+    if (loaded && !shown.value) SideEffect { shown.value = true }
+    return loaded || shown.value
+}

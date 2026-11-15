@@ -190,11 +190,18 @@ fun RunnerState.openingLoadKg(step: RunnerStep.Reps): Double? =
     (memberEntry(step.memberKey) as? SessionEntry.Reps)?.sets?.lastOrNull()?.weightKg ?: step.targetWeightKg
 
 /**
- * The reps the member logged last round, for a circuit's step from its second round on (#478): its last
- * logged set, which in a circuit is the round before. Null outside a circuit, in its first round, or
- * with nothing logged.
+ * The reps the member logged last round, for a circuit's step from its second round on (#478). Null
+ * outside a circuit, in its first round, and whenever the member's sets don't line up one per round
+ * before this one: a round skipped at 0 reps writes no set, and a second Back moves without undoing, so
+ * the last set can be an older round's. The log has no round number to read instead, so it shows
+ * nothing rather than credit one round's count to another.
  */
 fun RunnerState.lastRoundReps(step: RunnerStep.Reps): Long? =
-    step.circuit
-        ?.takeIf { it.round > 1 }
-        ?.let { (memberEntry(step.memberKey) as? SessionEntry.Reps)?.sets?.lastOrNull()?.reps }
+    // One set per round before this one, so round 1, with none, has nothing to show either.
+    step.circuit?.let { circuit ->
+        (memberEntry(step.memberKey) as? SessionEntry.Reps)
+            ?.sets
+            ?.takeIf { it.size.toLong() == circuit.round - 1 }
+            ?.lastOrNull()
+            ?.reps
+    }

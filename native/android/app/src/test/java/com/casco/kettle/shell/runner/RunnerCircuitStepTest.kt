@@ -39,6 +39,16 @@ class RunnerCircuitStepTest : RunnerScreenHarness() {
         compose.onNodeWithText("Esforço", substring = true).assertDoesNotExist()
     }
 
+    /** Set to 0 again, the row stays for the visit rather than leave under the finger. */
+    @Test
+    fun `a bodyweight member given a load shows it, and keeps it at 0`() {
+        val loaded = started(circuit).advanced().after(RunnerCommand.SetWeight(10.0))
+        show(running(circuit, loaded))
+        compose.onNodeWithText("Carga", substring = true).assertExists()
+        show(running(circuit, loaded.after(RunnerCommand.SetWeight(0.0))))
+        compose.onNodeWithText("Carga", substring = true).assertExists()
+    }
+
     @Test
     fun `from round 2 a circuit's step says what was done last round`() {
         show(running(circuit, started(circuit).advanced().advanced().advanced()))

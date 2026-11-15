@@ -40,7 +40,7 @@ internal fun EndSheet(
     val title = stringResource(R.string.session_end_title)
     // The backdrop still closes it, but unnamed: Keep going below is the same way out, and a reader
     // would otherwise meet two controls of one name.
-    OverlaySheet(null, onKeepGoing, title, SheetLayout.Scrolling) {
+    OverlaySheet(null, onKeepGoing, title, scrolls = true) {
         Column {
             Text(title, Modifier.semantics { heading() }, style = KettleType.heading, color = runnerColors.text)
             Text(

@@ -290,8 +290,8 @@ private fun Stepper(
         ) {
             // Centred like the value under it, should the name wrap at large text.
             Text(name, style = KettleType.small, color = runnerColors.textSecondary, textAlign = TextAlign.Center)
-            // A Numeral, so its size stops at 1.3× the text size: the runner doesn't scroll, and at 200% the
-            // full-size value pushed the bottom row's labels off a short screen.
+            // A Numeral, so its size stops at 1.3× the text size: at 200% the full-size value made the middle
+            // scroll on a short screen, the clock out of sight.
             Numeral("$value", STEPPER_VALUE, color = runnerColors.text)
         }
         SymbolButton(R.drawable.icon_add, stringResource(R.string.common_increase, name), {

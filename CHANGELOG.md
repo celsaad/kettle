@@ -214,7 +214,8 @@ here, next to what it describes.
 - **Matching counters**: an EMOM's and an AMRAP's rep counters look like the weight one, with square
   buttons at the edges, and an exercise's notes are no longer in italics. While you rest out an EMOM
   minute the notes step aside, a rest no longer repeats its length under the countdown, and times in
-  seconds have a space, "60 s rest" (#477).
+  seconds have a space, "60 s rest". At the largest text sizes a session's buttons now stay on
+  screen, the clock scrolling instead (#477).
 
 ---
 

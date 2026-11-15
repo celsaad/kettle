@@ -213,7 +213,7 @@ class WorkoutPreviewScreenTest {
         val lib = library(pullUpsDay, listOf(ProgramWeek.Training(1, workoutId = "day", overrides = listOf(override))))
         show(planned(SessionParams.ProgramSlot("p", 1, null)), lib)
 
-        compose.onNodeWithText("Alterado neste dia").assert(isHeading())
+        compose.onNodeWithText("Alterações para este dia").assert(isHeading())
         compose.onNodeWithText("Pull-ups: sets → 5").assertExists()
         compose.onNodeWithText("Definido pelo programa. Editar altera o próprio treino.").assertExists()
     }
@@ -223,7 +223,7 @@ class WorkoutPreviewScreenTest {
         val lib = library(pullUpsDay, listOf(ProgramWeek.Training(1, workoutId = "day")))
         show(planned(SessionParams.ProgramSlot("p", 1, null)), lib)
 
-        compose.onNodeWithText("Alterado neste dia").assertDoesNotExist()
+        compose.onNodeWithText("Alterações para este dia").assertDoesNotExist()
     }
 
     @Test
@@ -252,7 +252,7 @@ class WorkoutPreviewScreenTest {
 
         compose.onNodeWithText("\"Empty day\" não tem blocos", substring = true).assertExists()
         compose.onNodeWithText("Semana leve.").assertExists()
-        compose.onNodeWithText("Alterado neste dia").assertExists()
+        compose.onNodeWithText("Alterações para este dia").assertExists()
     }
 
     @Test

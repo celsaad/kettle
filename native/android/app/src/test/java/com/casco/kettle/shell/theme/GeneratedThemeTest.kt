@@ -204,6 +204,25 @@ class GeneratedThemeTest {
     }
 
     /**
+     * The YAML view's keys and numbers on the page (#444), and the session editor's Undo bar, which turns
+     * the page over: its words in `background` on a `text` pill (#442). Recorded on #456.
+     */
+    @Test
+    fun `the page colours theme ts records for the YAML view and the Undo bar hold`() {
+        val onPage =
+            mapOf(
+                LightColors to Triple(5.18, 5.69, 14.41),
+                DarkColors to Triple(8.32, 7.79, 15.15),
+            )
+        for ((colors, ratios) in onPage) {
+            val page = colors.background.surface()
+            assertContrast(ratios.first, colors.accentText, page)
+            assertContrast(ratios.second, colors.accentCalmText, page)
+            assertContrast(ratios.third, colors.background, colors.text.surface())
+        }
+    }
+
+    /**
      * A runner field's recorded ratios: [edge] is its outline's, [progress] a bar's fill against its
      * track, [label] the main button's.
      */

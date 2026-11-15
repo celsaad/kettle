@@ -16,7 +16,8 @@
     "deleteFailed": "Não foi possível excluir: {{detail}}",
     "deleteConfirmBody": "\"{{name}}\" será removido permanentemente.",
     "decrease": "Diminuir {{label}}",
-    "increase": "Aumentar {{label}}"
+    "increase": "Aumentar {{label}}",
+    "copied": "Copiado"
   },
   "search": {
     "noMatchTitle": "Nada encontrado",
@@ -81,7 +82,7 @@
   "workoutPreview": {
     "notFound": "Este treino não está mais na sua biblioteca.",
     "edit": "Editar treino",
-    "changesTitle": "Alterado neste dia",
+    "changesTitle": "Alterações para este dia",
     "changesHint": "Definido pelo programa. Editar altera o próprio treino."
   },
   "build": {
@@ -671,7 +672,6 @@
       "schemaHeading": "## JSON Schema do exercises.yaml"
     },
     "copyError": "Copiar erro",
-    "copied": "Copiado",
     "copiedAnnouncement": "Erro copiado para a área de transferência",
     "copyFailed": "Não foi possível acessar a área de transferência.",
     "shareFailed": "Não foi possível abrir o menu de compartilhamento.",
@@ -689,7 +689,7 @@
       "unset": "não definido",
       "sameValues": "nenhum campo alterado — substituído por uma definição idêntica",
       "cleared": "removido",
-      "rowAccessibility": "{{label}}: era {{was}}, agora {{now}}",
+      "rowAccessibility": "{{label}}: era {{was}}, agora: {{now}}",
       "blocksEdited": "Blocos editados",
       "weeksAdded": "Semanas adicionadas",
       "weeksRemoved": "Semanas removidas",
@@ -819,7 +819,9 @@
     "noValue": "nenhum",
     "removeSetOf": "Remover série {{n}} de {{name}}",
     "removeEntryOf": "Remover {{name}}",
-    "addSetTo": "Adicionar uma série a {{name}}"
+    "addSetTo": "Adicionar uma série a {{name}}",
+    "problemInSet": "{{name}}, série {{n}}: {{problem}}",
+    "problemIn": "{{name}}: {{problem}}"
   },
   "exerciseArt": {
     "pushups": "Flexão: mãos sob os ombros, corpo em linha reta do calcanhar à cabeça.",
@@ -915,7 +917,8 @@
     "addCircuit": "+ Adicionar circuito",
     "restHint": "Para uma pausa entre exercícios, toque em + Adicionar exercício e escolha Descanso.",
     "inUseReason": "Não dá para excluir enquanto for usado por {{programs}}.",
-    "targetHold": "{{sets}} × {{hold}}",
+    "targetHold": "{{sets}} × isometria {{hold}}",
+    "targetHoldOpen": "{{sets}} × isometria máxima",
     "memberHold": "isometria {{hold}}",
     "memberHoldOpen": "isometria máxima",
     "removeCircuit": "Remover circuito",
@@ -1150,7 +1153,6 @@
     "unitsMetric": "Os pesos aqui estão em quilogramas, como o arquivo os guarda.",
     "fresh": "Escrito do zero, então os comentários do seu arquivo original não estão aqui.",
     "copy": "Copiar",
-    "copied": "Copiado",
     "copyFailed": "Não foi possível copiar.",
     "share": "Compartilhar",
     "sendNote": "Copiar e Compartilhar enviam isto como um arquivo completo que se importa sozinho. Aqui é só leitura: para alterar, use Editar.",

@@ -49,8 +49,8 @@ class ImportReviewTest : ImportHarness() {
     fun `marks a cleared field as cleared, with what it was`() {
         reviewsAClearingUpdate()
 
-        compose.onNodeWithContentDescription("Peso: era 20 kg, agora removido").assertExists()
-        compose.onNodeWithContentDescription("Notas: era Dead hang first., agora removido").assertExists()
+        compose.onNodeWithContentDescription("Peso: era 20 kg, agora: removido").assertExists()
+        compose.onNodeWithContentDescription("Notas: era Dead hang first., agora: removido").assertExists()
     }
 
     // A lost list keeps its dash on screen; the warning mark is all that says cleared, and TalkBack can't hear it.
@@ -61,7 +61,7 @@ class ImportReviewTest : ImportHarness() {
         picks(Library(1, emptyList(), listOf(pushDay), emptyList()))
         chooseFile(Files(Library(1, listOf(pullUps, dips), listOf(both), emptyList())))
 
-        compose.onNodeWithContentDescription("Exercícios: era dips, agora removido").assertExists()
+        compose.onNodeWithContentDescription("Exercícios: era dips, agora: removido").assertExists()
     }
 
     @Test
@@ -119,7 +119,7 @@ class ImportReviewTest : ImportHarness() {
 
         button("Pull-ups", substring = true).performClick()
 
-        compose.onNodeWithContentDescription("Peso: era 20 kg, agora removido").assertDoesNotExist()
+        compose.onNodeWithContentDescription("Peso: era 20 kg, agora: removido").assertDoesNotExist()
         shown("2 removidos")
     }
 }

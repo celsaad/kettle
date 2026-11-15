@@ -16,7 +16,8 @@
     "deleteFailed": "削除できませんでした: {{detail}}",
     "deleteConfirmBody": "「{{name}}」を完全に削除します。",
     "decrease": "{{label}}を減らす",
-    "increase": "{{label}}を増やす"
+    "increase": "{{label}}を増やす",
+    "copied": "コピーしました"
   },
   "search": {
     "noMatchTitle": "一致するものがありません",
@@ -583,7 +584,6 @@
       "schemaHeading": "## exercises.yaml の JSON スキーマ"
     },
     "copyError": "エラーをコピー",
-    "copied": "コピーしました",
     "copiedAnnouncement": "エラーをクリップボードにコピーしました",
     "copyFailed": "クリップボードにアクセスできませんでした。",
     "shareFailed": "共有メニューを開けませんでした。",
@@ -719,7 +719,9 @@
     "noValue": "なし",
     "removeSetOf": "{{name}}のセット{{n}}を削除",
     "removeEntryOf": "{{name}}を削除",
-    "addSetTo": "{{name}}にセットを追加"
+    "addSetTo": "{{name}}にセットを追加",
+    "problemInSet": "{{name}}のセット{{n}}：{{problem}}",
+    "problemIn": "{{name}}：{{problem}}"
   },
   "exerciseArt": {
     "pushups": "腕立て伏せ：手は肩の真下、かかとから頭まで一直線の姿勢。",
@@ -815,7 +817,8 @@
     "addCircuit": "+ サーキットを追加",
     "restHint": "種目の間に休憩を入れるには、+ 種目を追加 から休憩を選んでください。",
     "inUseReason": "{{programs}}が使用中のため削除できません。",
-    "targetHold": "{{sets}} × {{hold}}",
+    "targetHold": "{{sets}} × ホールド {{hold}}",
+    "targetHoldOpen": "{{sets}} × 最大ホールド",
     "memberHold": "ホールド {{hold}}",
     "memberHoldOpen": "最大ホールド",
     "removeCircuit": "サーキットを削除",
@@ -1022,7 +1025,6 @@
     "unitsMetric": "ここでの重量はファイルの保存どおりキログラムです。",
     "fresh": "新しく書き出しているため、元のファイルのコメントは含まれません。",
     "copy": "コピー",
-    "copied": "コピーしました",
     "copyFailed": "コピーできませんでした。",
     "share": "共有",
     "sendNote": "コピーと共有では、単体でインポートできる完全なファイルとして送ります。ここは読み取り専用です。変更するには「編集」を使ってください。",

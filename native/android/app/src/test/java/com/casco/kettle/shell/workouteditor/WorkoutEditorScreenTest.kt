@@ -166,6 +166,28 @@ class WorkoutEditorScreenTest {
         press("Adicionar circuito (${names.size})")
     }
 
+    // A hold row said "3 × 0:30" and nothing else: a time of what? A circuit's member line says "hold".
+    @Test
+    fun `says hold on a hold's row, and max hold for one with no target`() {
+        val fixed = Exercise("plank", "Plank", ExerciseConfig.TimedHold(sets = 3, holdSecMin = 30.0, restSec = 60.0))
+        val open = Exercise("hang", "Hang", ExerciseConfig.TimedHold(sets = 2, restSec = 0.0))
+        val files =
+            Files(
+                listOf(
+                    Workout(
+                        "holds",
+                        "Holds",
+                        listOf(WorkoutBlock.ExerciseBlock("plank"), WorkoutBlock.ExerciseBlock("hang")),
+                    ),
+                ),
+            )
+        files.rewrite { it.copy(exercises = it.exercises + fixed + open) }
+        show("holds", files)
+
+        named("3 × isometria 0:30 · descanso 1:00").assertExists()
+        named("2 × isometria máxima").assertExists()
+    }
+
     // saving
 
     @Test

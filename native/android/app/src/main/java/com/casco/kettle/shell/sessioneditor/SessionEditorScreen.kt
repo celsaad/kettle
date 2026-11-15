@@ -17,6 +17,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -30,8 +31,8 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.casco.kettle.domain.EntryField
-import com.casco.kettle.domain.EntryProblem
 import com.casco.kettle.domain.Library
+import com.casco.kettle.domain.LocatedProblem
 import com.casco.kettle.domain.RemovedSet
 import com.casco.kettle.domain.Session
 import com.casco.kettle.domain.SessionEditing
@@ -125,20 +126,23 @@ fun SessionEditorScreen(
             EditorTitleBar(
                 stringResource(R.string.sessionEditor_title),
                 editor?.let { it::save },
-                editor?.let { refusalText(it) },
+                editor?.let { refusalText(it, library) },
             )
         }
         Box(
             Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()),
             contentAlignment = Alignment.TopCenter,
         ) {
-            Sheet(Modifier.padding(bottom = Spacing.four).navigationBarsPadding()) {
+            // The Undo bar clears the nav bar itself while it's up; padding here too left a bar-high gap.
+            val navBar = if (editor?.lastRemoved == null) Modifier.navigationBarsPadding() else Modifier
+            Sheet(Modifier.padding(bottom = Spacing.four).then(navBar)) {
                 shown?.let { Subtitle(it, library, zone) }
                 editing?.let { Body(it, editor, library, units) }
             }
         }
-        // Keyed on the removal, so each is a node of its own and announced, the same words twice included.
-        editor?.lastRemoved?.let { removed -> key(removed) { Sheet { UndoBar(removed, editor, library) } } }
+        // Keyed on a count of removals, so each is a node of its own and announced: keyed on the removal,
+        // two identical ones in a row were equal and the second said nothing (#456).
+        editor?.lastRemoved?.let { removed -> key(editor.removals) { Sheet { UndoBar(removed, editor, library) } } }
     }
 }
 
@@ -200,10 +204,14 @@ internal class Editor(
     var lastRemoved by mutableStateOf<RemovedSet?>(null)
         private set
 
+    /** Every removal so far, which the Undo bar is keyed on. */
+    var removals by mutableIntStateOf(0)
+        private set
+
     /** The one cell being edited, if any: one at a time, as the board has it. */
     var editingCell by mutableStateOf<CellKey?>(null)
         private set
-    var problem by mutableStateOf<EntryProblem?>(null)
+    var problem by mutableStateOf<LocatedProblem?>(null)
         private set
     var failure by mutableStateOf<String?>(null)
         private set
@@ -253,6 +261,7 @@ internal class Editor(
         problem = null
         drafts = rest
         lastRemoved = removed
+        removals++
     }
 
     /**
@@ -374,10 +383,6 @@ private fun ReadOnlyEntry(
     Text(result, style = KettleType.smallMedium, color = KettleTheme.colors.text)
     Secondary(stringResource(R.string.sessionEditor_readOnlyNote))
 }
-
-@Composable
-private fun refusalText(editor: Editor): String? =
-    editor.problem?.let { problemText(it) } ?: editor.failure?.let { stringResource(R.string.common_saveFailed, it) }
 
 /** Which cell is being edited: an entry's draft, a row of it, and a field of the row. */
 internal data class CellKey(

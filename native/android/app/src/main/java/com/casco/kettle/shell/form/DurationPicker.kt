@@ -135,7 +135,7 @@ private fun PartStepper(
 ) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         Text(label, Modifier.weight(1f), style = KettleType.default, color = KettleTheme.colors.text)
-        StepButton(R.drawable.icon_remove, stringResource(R.string.common_decrease, label)) { step(-1) }
+        StepButton(R.drawable.icon_remove, stringResource(R.string.common_decrease, label), value = value) { step(-1) }
         Text(
             value,
             Modifier.widthIn(min = 48.dp),
@@ -143,7 +143,7 @@ private fun PartStepper(
             color = KettleTheme.colors.text,
             textAlign = TextAlign.Center,
         )
-        StepButton(R.drawable.icon_add, stringResource(R.string.common_increase, label), canAdd) { step(+1) }
+        StepButton(R.drawable.icon_add, stringResource(R.string.common_increase, label), canAdd, value) { step(+1) }
     }
 }
 

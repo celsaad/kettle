@@ -16,7 +16,8 @@
     "deleteFailed": "Couldn't delete that: {{detail}}",
     "deleteConfirmBody": "\"{{name}}\" will be permanently removed.",
     "decrease": "Decrease {{label}}",
-    "increase": "Increase {{label}}"
+    "increase": "Increase {{label}}",
+    "copied": "Copied"
   },
   "search": {
     "noMatchTitle": "Nothing matched",
@@ -78,7 +79,7 @@
   "workoutPreview": {
     "notFound": "This workout isn't in your library any more.",
     "edit": "Edit workout",
-    "changesTitle": "Changed for this day",
+    "changesTitle": "Changes for this day",
     "changesHint": "Set by the program. Edit changes the workout itself."
   },
   "build": {
@@ -627,7 +628,6 @@
       "schemaHeading": "## JSON Schema for exercises.yaml"
     },
     "copyError": "Copy error",
-    "copied": "Copied",
     "copiedAnnouncement": "Error copied to the clipboard",
     "copyFailed": "Couldn't reach the clipboard.",
     "shareFailed": "Couldn’t open the share sheet.",
@@ -769,7 +769,9 @@
     "noValue": "none",
     "removeSetOf": "Remove set {{n}} of {{name}}",
     "removeEntryOf": "Remove {{name}}",
-    "addSetTo": "Add a set to {{name}}"
+    "addSetTo": "Add a set to {{name}}",
+    "problemInSet": "{{name}}, set {{n}}: {{problem}}",
+    "problemIn": "{{name}}: {{problem}}"
   },
   "exerciseArt": {
     "pushups": "Push-up: hands under the shoulders, body in a straight line from heel to head.",
@@ -865,7 +867,8 @@
     "addCircuit": "+ Add circuit",
     "restHint": "For a pause between exercises, tap + Add exercise and pick Rest.",
     "inUseReason": "Can't delete while it's used by {{programs}}.",
-    "targetHold": "{{sets}} × {{hold}}",
+    "targetHold": "{{sets}} × hold {{hold}}",
+    "targetHoldOpen": "{{sets}} × max hold",
     "memberHold": "hold {{hold}}",
     "memberHoldOpen": "max hold",
     "removeCircuit": "Remove circuit",
@@ -1086,7 +1089,6 @@
     "unitsMetric": "Weights here are in kilograms, as the file stores them.",
     "fresh": "Written out fresh, so comments from your original file aren't here.",
     "copy": "Copy",
-    "copied": "Copied",
     "copyFailed": "Couldn't copy it.",
     "share": "Share",
     "sendNote": "Copy and Share send this as a complete file that imports on its own. Read-only here: to change it, use Edit.",

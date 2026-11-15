@@ -130,6 +130,16 @@ class ExerciseEditorScreenTest {
         assertEquals(0, closed)
     }
 
+    // Focusing + said "Aumentar Séries" and no number: the live region only speaks once the value moves.
+    @Test
+    fun `gives each stepper button the value it moves`() {
+        show(null, Files())
+
+        compose
+            .onNodeWithContentDescription("Aumentar Séries")
+            .assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "3"))
+    }
+
     @Test
     fun `stores the config as numbers, not the strings the form holds`() {
         val files = Files()

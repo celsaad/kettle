@@ -145,17 +145,30 @@ private fun Stepper(
 ) {
     val draft = context.draft
     Row(verticalAlignment = Alignment.CenterVertically) {
-        StepButton(R.drawable.icon_remove, stringResource(R.string.common_decrease, label), draft.canStep(field, -1)) {
+        val shown = "${draft.shownCount(field)}"
+        StepButton(
+            R.drawable.icon_remove,
+            stringResource(R.string.common_decrease, label),
+            draft.canStep(field, -1),
+            shown,
+        ) {
             context.onChange(draft.stepping(field, -1))
         }
         Text(
-            "${draft.shownCount(field)}",
+            shown,
+            // A live region still: TalkBack doesn't speak a focused button's state change (checked on the
+            // AVD for #456), so this is what says "4" after a press; the buttons' state says it on focus.
             Modifier.widthIn(min = VALUE_WIDTH).semantics { liveRegion = LiveRegionMode.Polite },
             style = KettleType.heading,
             color = KettleTheme.colors.text,
             textAlign = TextAlign.Center,
         )
-        StepButton(R.drawable.icon_add, stringResource(R.string.common_increase, label), draft.canStep(field, +1)) {
+        StepButton(
+            R.drawable.icon_add,
+            stringResource(R.string.common_increase, label),
+            draft.canStep(field, +1),
+            shown,
+        ) {
             context.onChange(draft.stepping(field, +1))
         }
     }

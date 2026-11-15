@@ -61,9 +61,25 @@ fun sessionEditing(
     }
 }
 
-/** The first problem in any of [drafts], checked before anything is written, so a save is all or nothing. */
-fun firstProblem(drafts: List<EntryDraft>): EntryProblem? =
-    drafts.firstNotNullOfOrNull { validateEntryForm(it.entry, it.forms) }
+/** A refusal and where it is: [draft], a position in the drafts, and for an entry that logs sets, [row]. */
+data class LocatedProblem(
+    val draft: Int,
+    val row: Int?,
+    val problem: EntryProblem,
+)
+
+/**
+ * The first problem in any of [drafts], checked before anything is written, so a save is all or nothing.
+ * Located, since "Fill in Reps" alone left a reader with several tables hunting for the cell (#456, on
+ * the AVD). Row by row, as `validateEntryForm` checks every rule within a row; no row for an entry
+ * that logs one result rather than sets.
+ */
+fun firstProblem(drafts: List<EntryDraft>): LocatedProblem? =
+    drafts.withIndex().firstNotNullOfOrNull { (i, draft) ->
+        draft.forms.withIndex().firstNotNullOfOrNull { (row, form) ->
+            validateEntryForm(draft.entry, listOf(form))?.let { LocatedProblem(i, row.takeIf { draft.logsSets }, it) }
+        }
+    }
 
 /**
  * [session] with each draft's entry rebuilt in its place, and dropped where nothing of it is left. One

@@ -214,7 +214,7 @@ private fun Kicker(
     text: String,
     colors: TimelineColors,
 ) {
-    // The board's kicker (#493): sentence case in the body face, not mono caps.
+    // The board's kicker (#493): sentence case in the body face, not caps in the code style.
     Text(text, Modifier.semantics { heading() }, style = KettleType.smallMedium, color = colors.kicker)
 }
 

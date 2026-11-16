@@ -190,8 +190,8 @@ private fun PrBadge() {
 }
 
 /**
- * The date the delete's confirm names a session by, "Jul 29" or "29 de jul.", in the locale's own form, as every other
- * date in the app (#493). Blank where `started_at` isn't an instant.
+ * The date the delete's confirm names a session by, "Jul 29" or "29 de jul.", in the locale's own form,
+ * as every other date in the app (#493). Blank where `started_at` isn't an instant.
  */
 @Composable
 internal fun sessionDate(row: HistorySessionView): String {

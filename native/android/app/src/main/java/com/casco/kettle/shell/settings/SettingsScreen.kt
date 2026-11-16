@@ -19,7 +19,6 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.style.TextAlign
 import com.casco.kettle.domain.Preferences
 import com.casco.kettle.domain.Session
 import com.casco.kettle.domain.UnitSystem
@@ -164,21 +163,20 @@ private fun PreferenceSections(
 
 /**
  * The foot: the version where there is one, and the one promise Settings makes about the data, as the
- * board closes on it, always.
+ * board closes on it, always. One paragraph on the column (#492), not a centred block of its own.
  */
 @Composable
 private fun Footer(version: String?) =
-    Column(Modifier.fillMaxWidth().padding(top = Spacing.four), horizontalAlignment = Alignment.CenterHorizontally) {
-        val style = KettleType.small
-        val color = KettleTheme.colors.textSecondary
-        version?.let { Text(stringResource(R.string.settings_version, it), style = style, color = color) }
-        Text(
-            stringResource(R.string.settings_sessionsStayNote),
-            style = style,
-            color = color,
-            textAlign = TextAlign.Center,
-        )
-    }
+    Text(
+        if (version == null) {
+            stringResource(R.string.settings_sessionsStayNote)
+        } else {
+            stringResource(R.string.settings_footer, version)
+        },
+        Modifier.fillMaxWidth().padding(top = Spacing.four),
+        style = KettleType.small,
+        color = KettleTheme.colors.textSecondary,
+    )
 
 /** What a change made, and whether it reached the disk. */
 internal data class Written(

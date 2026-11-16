@@ -116,7 +116,7 @@ class ExerciseDetailScreenTest {
         text("Progresso").assert(isHeading())
         // What the number is, by its kind (#491): a top set would misname a hold or a bodyweight rep.
         text("Maior carga · 8 semanas").assertExists()
-        text("Últimas 8 semanas").assertDoesNotExist()
+        text("8 semanas").assertDoesNotExist()
         text("62.5 kg").assertExists()
         // Getting stronger's form (#414): the arrow drawn, the signed change said.
         text("▲ 2.5 kg").assert(hasContentDescription("+2.5 kg"))
@@ -129,7 +129,7 @@ class ExerciseDetailScreenTest {
 
         text("Não treinado nas últimas 8 semanas.").assertExists()
         // No reading, so no kind to name: only the window.
-        text("Últimas 8 semanas").assertExists()
+        text("8 semanas").assertExists()
     }
 
     /** Getting stronger needs two sessions; one is still training, and the page doesn't call it none. */

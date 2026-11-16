@@ -234,6 +234,11 @@ here, next to what it describes.
   as "Heaviest set · 8 weeks" or "Longest hold · 8 weeks". The change since the first session reads
   "▲ 2.5 kg" in the same colour as the text, as Getting stronger shows it, rather than in orange.
   The exercise's drawing now sits on a card (#491).
+- **Shorter Settings**: each setting's note now says what it does in a line or two. The email and
+  issue rows say what they're for, and the version and the privacy note share one line at the
+  bottom. Settings also mentions that the workout screen keeps its own colors whatever you pick.
+  Getting stronger drops its explanation line, keeping only the note about fixed holds being left
+  out (#492).
 
 ---
 

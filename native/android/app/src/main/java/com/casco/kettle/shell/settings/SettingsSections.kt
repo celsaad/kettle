@@ -137,7 +137,7 @@ private fun Contact(
     }
     // Subject only: no body, no device, no logs, or a mail handoff becomes data collection.
     val subject = Uri.encode(stringResource(R.string.settings_contactSubject, version.orEmpty()))
-    ActionRow(stringResource(R.string.settings_contactEmail), FEEDBACK_EMAIL) {
+    ActionRow(stringResource(R.string.settings_contactEmail), stringResource(R.string.settings_contactEmailDetail)) {
         openOrCopy("mailto:$FEEDBACK_EMAIL?subject=$subject", FEEDBACK_EMAIL)
     }
     ActionRow(stringResource(R.string.settings_contactIssues), stringResource(R.string.settings_contactIssuesDetail)) {

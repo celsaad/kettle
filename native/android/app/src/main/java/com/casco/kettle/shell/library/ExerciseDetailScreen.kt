@@ -180,7 +180,7 @@ private fun Identity(
         style = KettleType.default,
         color = colors.textSecondary,
     )
-    // On a card when there is a drawing, and no empty card when there isn't: most exercises are the user's.
+    // On a card when there is a drawing, and no empty card when there isn't: a user's own exercise has none.
     if (hasArt(exercise.id)) {
         Box(
             Modifier

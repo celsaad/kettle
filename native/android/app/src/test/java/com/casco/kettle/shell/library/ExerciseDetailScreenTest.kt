@@ -319,7 +319,7 @@ class ExerciseDetailScreenTest {
         text("▲ 4.4 lb").assert(hasContentDescription("+4.4 lb"))
     }
 
-    /** Bodyweight reps read as most reps, and a dip points down without turning red. */
+    /** Bodyweight reps read as most reps, and a dip points down; its colour is checked on a device. */
     @Test
     fun `names a bodyweight exercise's reading as most reps, and points a dip down`() {
         show(
@@ -329,6 +329,23 @@ class ExerciseDetailScreenTest {
 
         text("Mais repetições · 8 semanas").assertExists()
         text("▼ 2 repetições").assert(hasContentDescription("−2 repetições"))
+    }
+
+    /** A hold with a range is charted, and reads as the longest hold. */
+    @Test
+    fun `names a ranged hold's reading as the longest hold`() {
+        show(
+            "side-plank",
+            Files(
+                sessions =
+                    listOf(
+                        held("2026-07-10T10:00:00Z", "side-plank", 30.0),
+                        held("2026-07-24T10:00:00Z", "side-plank", 40.0),
+                    ),
+            ),
+        )
+
+        text("Isometria mais longa · 8 semanas").assertExists()
     }
 
     /** Pushed (#489): a Back of its own, in place of the sheet's ×. */
@@ -377,10 +394,12 @@ private val plank =
     Exercise("plank", "Plank", ExerciseConfig.TimedHold(1, holdSecMin = 45.0, restSec = 30.0))
 private val run = Exercise("run", "Run", ExerciseConfig.Cardio(durationSec = 1500.0))
 private val pushups = Exercise("pushups", "Push-ups", ExerciseConfig.Reps(3, 10, restSec = 60.0))
+private val sidePlank =
+    Exercise("side-plank", "Side plank", ExerciseConfig.TimedHold(1, 20.0, holdSecMax = 60.0, restSec = 30.0))
 private val fixture =
     Library(
         1,
-        listOf(squat, lunge, plank, run, pushups),
+        listOf(squat, lunge, plank, run, pushups, sidePlank),
         listOf(
             Workout("leg-day", "Leg day", listOf(WorkoutBlock.ExerciseBlock("squat"))),
             Workout("push-day", "Push day", listOf(WorkoutBlock.ExerciseBlock("pushups"))),

@@ -131,8 +131,8 @@ private fun windowLabel(trend: ExerciseTrend): Int =
     }
 
 /**
- * The chart in words, session by session, newest first: Stats' sheet has its list under the chart for
- * a screen reader to step through, and this page has none.
+ * The chart in words, session by session, newest first: no list under the chart says it row by row
+ * for a screen reader, and Recent sessions stops at a few.
  */
 @Composable
 private fun chartDescription(

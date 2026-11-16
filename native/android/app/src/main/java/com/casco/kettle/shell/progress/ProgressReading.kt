@@ -49,6 +49,8 @@ internal fun Headline(
     Text(readings.reading(row.latest), Modifier.alignByBaseline(), style = KettleType.heading, color = colors.text)
     // Getting stronger's row's form, for its reason: no hue at all, since a dip is information and
     // achievement takes none either (#414). The arrow is drawn, so the signed change is what's said.
+    // Flat goes secondary here, though Stats' row inks it: Stats folds its flat rows away, and a
+    // headline's "no change" in ink would read as news (#491).
     val spoken = readings.delta(row.delta)
     Text(
         readings.change(row.delta),

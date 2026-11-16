@@ -112,3 +112,33 @@ describe('Portuguese zero', () => {
     expect(t('format.session', { count: 2 })).toBe('2 sessões');
   });
 });
+
+/**
+ * Sentence case, as every board draws a label (#493). The sweep that removed the letter-spaced caps
+ * was listed by hand and missed every key with a placeholder, the circuit kickers among them, so the
+ * rule is held here instead: a run of three or more capitals is an acronym on this list or a bug.
+ * Two letters pass on purpose (PR, OK).
+ * A placeholder becomes a space, so a name like `{{URL}}` isn't read as copy, and nothing it sat
+ * between runs together. The word's edges are cased letters only: Japanese glues Latin to kana
+ * (`ほかのHIIT種目`), and an edge of any letter would let a shouted word hide inside it.
+ */
+const ACRONYMS = new Set(['AMRAP', 'EMOM', 'HIIT', 'JSON', 'YAML']);
+
+function values(bundle: Bundle, prefix = ''): [string, string][] {
+  return Object.entries(bundle).flatMap(([key, value]) =>
+    value !== null && typeof value === 'object'
+      ? values(value as Bundle, `${prefix}${key}.`)
+      : [[`${prefix}${key}`, String(value)] as [string, string]],
+  );
+}
+
+describe.each(languages)("the %s bundle's casing", (language) => {
+  it('writes no word in capitals but an acronym', () => {
+    const shouted = values(resources[language].translation).filter(([, value]) =>
+      [
+        ...value.replace(/\{\{[^}]*\}\}/g, ' ').matchAll(/(?<![\p{Lu}\p{Ll}\p{Lt}])\p{Lu}{3,}(?![\p{Lu}\p{Ll}\p{Lt}])/gu),
+      ].some(([word]) => !ACRONYMS.has(word)),
+    );
+    expect(shouted).toEqual([]);
+  });
+});

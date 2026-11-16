@@ -224,6 +224,11 @@ are house rules here rather than a backlog — cheap as you go, tedious to retro
   missing or stray key fails there instead of rendering quietly in English through `fallbackLng`; the
   words themselves are still checked by hand. (No count is quoted
   here on purpose: the one that used to be went stale, and the bundles are the only honest answer.)
+- **A string's arguments go in sorted order of their placeholder names** (code-point order, so
+  lower camelCase reads alphabetically), a plural's `count` first, whatever their order in the
+  sentence: `:strings` numbers them by name, not position, so rewording a sentence can't renumber its
+  arguments under every call site (`AndroidStrings.kt`). `"Kettle {{version}} · {{note}}"` is called
+  with `(note, version)`; the other order compiles and renders the two swapped.
 
 Shipping a whole new language is a procedure of its own:
 [`docs/adding-a-language.md`](docs/adding-a-language.md). Its iOS step arrives with M8: an

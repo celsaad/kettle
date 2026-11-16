@@ -238,7 +238,7 @@ here, next to what it describes.
   issue rows say what they're for, and the version and the privacy note share one line at the
   bottom. Settings also mentions that the workout screen keeps its own colors whatever you pick.
   Getting stronger drops its explanation line, keeping only the note about fixed holds being left
-  out (#492).
+  out, and its heading says "8 weeks" rather than "Last 8 weeks", as an exercise's page does (#492).
 
 ---
 

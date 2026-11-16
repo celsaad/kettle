@@ -236,7 +236,7 @@ class SettingsScreenTest {
     fun `prints the version at the foot, with what leaves the phone`() {
         show()
 
-        text("Kettle 9.9.9 · Sem conta, sem análises. Nada sai deste celular a menos que você compartilhe.")
+        text("Kettle 9.9.9 · Sem conta, sem rastreamento. Nada sai deste celular a menos que você compartilhe.")
     }
 
     /** The promise doesn't depend on there being a version to print beside it. */
@@ -244,8 +244,10 @@ class SettingsScreenTest {
     fun `keeps the privacy note at the foot with no version to print`() {
         show(version = null)
 
-        missing("Kettle 9.9.9")
-        text("Sem conta, sem análises. Nada sai deste celular a menos que você compartilhe.")
+        // Exact, not the substring text() matches: a "Kettle  · " with an empty version would contain it.
+        compose
+            .onNodeWithText("Sem conta, sem rastreamento. Nada sai deste celular a menos que você compartilhe.")
+            .performScrollTo()
     }
 
     // getting in touch

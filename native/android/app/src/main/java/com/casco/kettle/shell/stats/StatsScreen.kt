@@ -380,7 +380,7 @@ private fun ProgressRow(
     }
 }
 
-/** A section's heading, and what it covers on the right where that needs saying ("Last 8 weeks"). */
+/** A section's heading, and what it covers on the right where that needs saying ("8 weeks"). */
 @Composable
 private fun SectionHeading(
     text: String,

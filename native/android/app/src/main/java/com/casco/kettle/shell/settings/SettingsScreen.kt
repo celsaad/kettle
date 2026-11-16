@@ -168,10 +168,9 @@ private fun PreferenceSections(
 @Composable
 private fun Footer(version: String?) =
     Text(
-        if (version == null) {
-            stringResource(R.string.settings_sessionsStayNote)
-        } else {
-            stringResource(R.string.settings_footer, version)
+        // The promise is one key, so the line can't say it two ways with and without a version.
+        stringResource(R.string.settings_sessionsStayNote).let { note ->
+            if (version == null) note else stringResource(R.string.settings_footer, note, version)
         },
         Modifier.fillMaxWidth().padding(top = Spacing.four),
         style = KettleType.small,

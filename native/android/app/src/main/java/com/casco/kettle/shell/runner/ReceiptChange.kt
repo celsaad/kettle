@@ -37,11 +37,8 @@ internal fun changeTexts(
     }
 }
 
-/** "▲ 2.5 kg" drawn, "+2.5 kg" said. */
+/** "▲ 2.5 kg" drawn, "+2.5 kg" said, as Getting stronger and Exercise detail write them. */
 private fun signed(
     change: Double,
     readings: Readings,
-): Pair<String, String> {
-    val arrow = if (change > 0) "▲" else "▼"
-    return "$arrow ${readings.reading(abs(change))}" to readings.delta(change)
-}
+): Pair<String, String> = readings.change(change) to readings.delta(change)

@@ -4,12 +4,13 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalResources
@@ -22,6 +23,7 @@ import com.casco.kettle.domain.Exercise
 import com.casco.kettle.domain.ExerciseProgress
 import com.casco.kettle.domain.ExerciseTrend
 import com.casco.kettle.domain.Library
+import com.casco.kettle.domain.RecordKind
 import com.casco.kettle.domain.TREND_WEEKS
 import com.casco.kettle.domain.exerciseHistory
 import com.casco.kettle.domain.exerciseTrend
@@ -68,15 +70,22 @@ internal fun ProgressSection(
             exerciseTrend(log.logged, exercises, exerciseId, now, zone)
         }
     val colors = KettleTheme.colors
-    Row(Modifier.padding(top = Spacing.four), verticalAlignment = Alignment.Bottom) {
+    // Flowing, not weighted: naming the kind makes the label long enough, in pt at large text, to
+    // squeeze the heading into a break mid-word. It drops under the heading instead (#491).
+    FlowRow(
+        Modifier.fillMaxWidth().padding(top = Spacing.four),
+        horizontalArrangement = Arrangement.spacedBy(Spacing.two),
+    ) {
         Text(
             stringResource(R.string.exerciseDetail_progress),
-            Modifier.weight(1f).semantics { heading() },
+            Modifier.alignByBaseline().semantics { heading() },
             style = KettleType.heading,
             color = colors.text,
         )
+        Spacer(Modifier.weight(1f))
         Text(
-            stringResource(R.string.exerciseDetail_window, TREND_WEEKS),
+            stringResource(windowLabel(trend), TREND_WEEKS),
+            Modifier.alignByBaseline(),
             style = KettleType.small,
             color = colors.textSecondary,
         )
@@ -109,8 +118,21 @@ internal fun ProgressSection(
 }
 
 /**
- * The chart in words, session by session, newest first: Stats' sheet has its list under the chart for
- * a screen reader to step through, and this page has none.
+ * What the headline measures, over the window: the kind it's read as, since "Top set" would misname a
+ * hold or a bodyweight exercise. Uncharted, there's no kind to name, only the window.
+ */
+private fun windowLabel(trend: ExerciseTrend): Int =
+    when ((trend as? ExerciseTrend.Charted)?.progress?.kind) {
+        RecordKind.HeaviestSet -> R.string.exerciseDetail_windowHeaviest
+        RecordKind.MostReps -> R.string.exerciseDetail_windowMostReps
+        RecordKind.LongestHold -> R.string.exerciseDetail_windowLongestHold
+        RecordKind.MostRounds -> R.string.exerciseDetail_windowMostRounds
+        null -> R.string.exerciseDetail_window
+    }
+
+/**
+ * The chart in words, session by session, newest first: no list under the chart says it row by row
+ * for a screen reader, and Recent sessions stops at a few.
  */
 @Composable
 private fun chartDescription(

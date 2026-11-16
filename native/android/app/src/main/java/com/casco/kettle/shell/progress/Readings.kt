@@ -57,6 +57,17 @@ class Readings(
         }
 
     /**
+     * The change as the eye reads it (#414): its magnitude after a drawn ▲ or ▼, in ink wherever it's
+     * shown. The arrow isn't said, so whatever draws this speaks [delta] instead.
+     */
+    fun change(delta: Double): String =
+        when (delta.sign) {
+            0.0 -> delta(0.0)
+            1.0 -> "▲ ${reading(delta)}"
+            else -> "▼ ${reading(-delta)}"
+        }
+
+    /**
      * The change, signed. The magnitude is read and the sign added, so "−1 rep" pluralises on 1; and a
      * flat window has its own words rather than a "+0" that reads as a rounding artefact.
      */

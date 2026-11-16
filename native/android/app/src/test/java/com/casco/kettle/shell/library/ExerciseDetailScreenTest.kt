@@ -114,8 +114,12 @@ class ExerciseDetailScreenTest {
         )
 
         text("Progresso").assert(isHeading())
-        text("Últimas 8 semanas").assertExists()
+        // What the number is, by its kind (#491): a top set would misname a hold or a bodyweight rep.
+        text("Maior carga · 8 semanas").assertExists()
+        text("Últimas 8 semanas").assertDoesNotExist()
         text("62.5 kg").assertExists()
+        // Getting stronger's form (#414): the arrow drawn, the signed change said.
+        text("▲ 2.5 kg").assert(hasContentDescription("+2.5 kg"))
         text("Não treinado nas últimas 8 semanas.").assertDoesNotExist()
     }
 
@@ -124,6 +128,8 @@ class ExerciseDetailScreenTest {
         show()
 
         text("Não treinado nas últimas 8 semanas.").assertExists()
+        // No reading, so no kind to name: only the window.
+        text("Últimas 8 semanas").assertExists()
     }
 
     /** Getting stronger needs two sessions; one is still training, and the page doesn't call it none. */
@@ -310,7 +316,36 @@ class ExerciseDetailScreenTest {
         )
 
         text("136.7 lb").assertExists()
-        text("+4.4 lb").assertExists()
+        text("▲ 4.4 lb").assert(hasContentDescription("+4.4 lb"))
+    }
+
+    /** Bodyweight reps read as most reps, and a dip points down; its colour is checked on a device. */
+    @Test
+    fun `names a bodyweight exercise's reading as most reps, and points a dip down`() {
+        show(
+            "pushups",
+            Files(sessions = listOf(pushed("2026-07-10T10:00:00Z", 12), pushed("2026-07-24T10:00:00Z", 10))),
+        )
+
+        text("Mais repetições · 8 semanas").assertExists()
+        text("▼ 2 repetições").assert(hasContentDescription("−2 repetições"))
+    }
+
+    /** A hold with a range is charted, and reads as the longest hold. */
+    @Test
+    fun `names a ranged hold's reading as the longest hold`() {
+        show(
+            "side-plank",
+            Files(
+                sessions =
+                    listOf(
+                        held("2026-07-10T10:00:00Z", "side-plank", 30.0),
+                        held("2026-07-24T10:00:00Z", "side-plank", 40.0),
+                    ),
+            ),
+        )
+
+        text("Isometria mais longa · 8 semanas").assertExists()
     }
 
     /** Pushed (#489): a Back of its own, in place of the sheet's ×. */
@@ -359,10 +394,12 @@ private val plank =
     Exercise("plank", "Plank", ExerciseConfig.TimedHold(1, holdSecMin = 45.0, restSec = 30.0))
 private val run = Exercise("run", "Run", ExerciseConfig.Cardio(durationSec = 1500.0))
 private val pushups = Exercise("pushups", "Push-ups", ExerciseConfig.Reps(3, 10, restSec = 60.0))
+private val sidePlank =
+    Exercise("side-plank", "Side plank", ExerciseConfig.TimedHold(1, 20.0, holdSecMax = 60.0, restSec = 30.0))
 private val fixture =
     Library(
         1,
-        listOf(squat, lunge, plank, run, pushups),
+        listOf(squat, lunge, plank, run, pushups, sidePlank),
         listOf(
             Workout("leg-day", "Leg day", listOf(WorkoutBlock.ExerciseBlock("squat"))),
             Workout("push-day", "Push day", listOf(WorkoutBlock.ExerciseBlock("pushups"))),
@@ -386,6 +423,22 @@ private fun session(
     at,
     if (ended) at else null,
     listOf(SessionEntry.Reps("squat", List(3) { RepsSetLog(5, weightKg = kg, restTakenSec = 120.0) })),
+)
+
+/** A finished session of one set of [reps] push-ups, unweighted, started at [at]. */
+private fun pushed(
+    at: String,
+    reps: Long,
+) = Session(
+    1,
+    at,
+    "push-day",
+    null,
+    null,
+    null,
+    at,
+    at,
+    listOf(SessionEntry.Reps("pushups", listOf(RepsSetLog(reps, restTakenSec = 60.0)))),
 )
 
 /** A finished session of one [sec]-second hold of [exercise], started at [at]. */

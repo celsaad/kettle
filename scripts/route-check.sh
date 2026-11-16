@@ -9,8 +9,9 @@
 # .dev history (#306). It never touches com.casco.kettle.
 #
 # A start opens the native runner, in every build since the flip release (#308), and is waited on
-# past its count-in: its End only shows once the session runs. Every route is the same in debug
-# and release, and routing is native's in both since #309.
+# past its count-in, by its Swap: End is in the header from the count-in on, and a back sent during
+# the count-in leaves without asking, so waiting on End raced the count-in (#367). Every route is
+# the same in debug and release, and routing is native's in both since #309.
 #
 # Usage: scripts/route-check.sh [--device <adb serial>] [--package com.casco.kettle.bench2]
 set -euo pipefail
@@ -66,7 +67,7 @@ steps=(
   'tap:Library|tab:Programs' 'tap:Foundations · 4 Weeks · No Equipment|Weeks'
   # Over that native sheet, the native editor and the native runner each come back to it (#155, #233).
   # Back over a running session asks first, End early's sheet (#417), and completion's Done leaves (#297, #306).
-  'tap:Edit program|Edit program' 'back|Weeks' 'tap:Start Week 1 · Day 1|End'
+  'tap:Edit program|Edit program' 'back|Weeks' 'tap:Start Week 1 · Day 1|Swap'
   'back|End the session early?' 'tap:Save and end|Edit log' 'tap:Done|Weeks'
   'back|tab:Programs'
   # Library's Exercises: a row opens its detail, and Edit the form over that; the header's + opens the
@@ -93,7 +94,7 @@ steps=(
   # Sent while in the background, it lands, and shows once the app is in front again.
   '/progress|' 'front|tab:Progress'
   # Over the runner, a message is dropped with no question asked, and Done pops its slot (#302, #309).
-  '/session?workoutId=foundations-push|End' '/library|End' 'back|End the session early?'
+  '/session?workoutId=foundations-push|Swap' '/library|Swap' 'back|End the session early?'
   'tap:Keep going|End' 'back|End the session early?' 'tap:Save and end|Edit log'
   'tap:Done|tab:Progress' 'back|tab:Today' 'back|'
 )

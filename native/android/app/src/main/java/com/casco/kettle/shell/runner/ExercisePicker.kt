@@ -58,7 +58,7 @@ internal fun ExercisePicker(
     val shown = remember(candidates, query) { rankByName(candidates, query) { it.name } }
     val title = stringResource(R.string.session_adhoc_pickerTitle)
     OverlaySheet(stringResource(R.string.common_cancel), onCancel, title) {
-        Caps(title, Modifier.align(Alignment.CenterHorizontally))
+        Kicker(title, Modifier.align(Alignment.CenterHorizontally))
         Text(
             stringResource(R.string.session_adhoc_pickerBody),
             Modifier.fillMaxWidth(),

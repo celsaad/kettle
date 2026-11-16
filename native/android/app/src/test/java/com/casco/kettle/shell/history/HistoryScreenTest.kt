@@ -223,7 +223,8 @@ class HistoryScreenTest {
         row("Leg day").performClick()
         action("Excluir").assertHeightIsAtLeast(48.dp).performClick()
         compose.onNodeWithText("Excluir sessão?").assertExists()
-        compose.onNodeWithText("\"Leg day\" em 27 ", substring = true).assertExists()
+        // The locale's own date, not an uppercased "27 JUL." (#493).
+        compose.onNodeWithText("\"Leg day\" em 27 de jul. será removida permanentemente.").assertExists()
         compose.pressDialogButton("Excluir")
 
         assertEquals(listOf("legs-1"), files.deleted)

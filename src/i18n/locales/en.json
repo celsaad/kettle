@@ -38,13 +38,13 @@
     }
   },
   "today": {
-    "nextUp": "NEXT UP",
+    "nextUp": "Next up",
     "restDayTitle": "Rest day",
     "restDaySkip": "Train anyway",
     "startSession": "Start session",
     "previewAction": "See the exercises",
     "firstRun": {
-      "title": "NEW HERE?",
+      "title": "New here?",
       "step1Title": "Start the workout below",
       "step1Body": "Timers and audio cues run it, hands-free.",
       "step2Title": "Make it yours",
@@ -102,7 +102,7 @@
     "showExercises": "Show exercises",
     "hideExercises": "Hide exercises",
     "deleteConfirmTitle": "Delete session?",
-    "deleteConfirmBody": "\"{{name}}\" on {{day}} {{month}} will be permanently removed.",
+    "deleteConfirmBody": "\"{{name}}\" on {{date}} will be permanently removed.",
     "problemsTitle_one": "{{count}} session file couldn't be read or written",
     "problemsTitle_other": "{{count}} session files couldn't be read or written",
     "thisWeek": "This week",
@@ -246,8 +246,8 @@
       "title": "Nothing queued",
       "body": "Add an exercise from your library and log against it. Finish whenever you are done.",
       "addExercise": "Add exercise",
-      "addShort": "ADD",
-      "pickerTitle": "ADD EXERCISE",
+      "addShort": "Add",
+      "pickerTitle": "Add exercise",
       "pickerBody": "Pick one from your library",
       "search": "Search exercises",
       "noMatches": "No exercise matches \"{{query}}\""
@@ -269,12 +269,12 @@
       "otherMeta": "{{type}} · {{summary}}"
     },
     "circuit": {
-      "crumb": "CIRCUIT · ROUND {{index}} OF {{total}}",
+      "crumb": "Circuit · round {{index}} of {{total}}",
       "accessibility": "Circuit, round {{index}} of {{total}}, exercise {{member}} of {{memberTotal}}"
     },
     "upcoming": {
       "hint": "Shows what's left in this workout",
-      "end": "END OF WORKOUT",
+      "end": "End of workout",
       "rest": "Rest",
       "detail": "{{amount}} · {{target}}",
       "targetReps": "target {{target}}",
@@ -296,12 +296,12 @@
       "intervals_other": "{{count}} intervals",
       "moreIntervals_one": "{{count}} more interval",
       "moreIntervals_other": "{{count}} more intervals",
-      "circuitRounds_one": "CIRCUIT · {{count}} ROUND",
-      "circuitRounds_other": "CIRCUIT · {{count}} ROUNDS",
-      "circuitLeft_one": "CIRCUIT · {{count}} LEFT",
-      "circuitLeft_other": "CIRCUIT · {{count}} LEFT",
-      "roundsAfter_one": "{{count}} MORE ROUND",
-      "roundsAfter_other": "{{count}} MORE ROUNDS",
+      "circuitRounds_one": "Circuit · {{count}} round",
+      "circuitRounds_other": "Circuit · {{count}} rounds",
+      "circuitLeft_one": "Circuit · {{count}} left",
+      "circuitLeft_other": "Circuit · {{count}} left",
+      "roundsAfter_one": "{{count}} more round",
+      "roundsAfter_other": "{{count}} more rounds",
       "restBetween": "rest {{time}}"
     },
     "countingUp": "counting up",
@@ -752,7 +752,7 @@
   },
   "sessionEditor": {
     "title": "Edit session",
-    "subtitle": "{{name}} · {{day}} {{month}}",
+    "subtitle": "{{name}} · {{date}}",
     "notFoundTitle": "Session not found",
     "notFoundBody": "It may have been deleted from another screen. Nothing was changed.",
     "runningTitle": "This session is still running",

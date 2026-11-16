@@ -472,10 +472,10 @@ private fun DeleteDialog(
     onDismiss: () -> Unit,
     onConfirm: () -> Unit,
 ) {
-    val (day, month) = dateBadge(row)
+    val date = sessionDate(row)
     KettleAlertDialog(
         title = stringResource(R.string.history_deleteConfirmTitle),
-        body = stringResource(R.string.history_deleteConfirmBody, day, month, name),
+        body = stringResource(R.string.history_deleteConfirmBody, date, name),
         onDismissRequest = onDismiss,
         confirm = DialogAction(stringResource(R.string.common_delete), onConfirm),
         dismiss = DialogAction(stringResource(R.string.common_cancel), onDismiss),

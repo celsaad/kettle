@@ -139,11 +139,6 @@
       "fontSize": 16,
       "lineHeight": 22
     },
-    "label": {
-      "font": "display",
-      "fontSize": 11,
-      "letterSpacing": 1.4
-    },
     "title": {
       "font": "display",
       "fontSize": 40,

@@ -97,7 +97,7 @@
     "showExercises": "エクササイズを表示",
     "hideExercises": "エクササイズを隠す",
     "deleteConfirmTitle": "セッションを削除しますか？",
-    "deleteConfirmBody": "「{{name}}」（{{month}}{{day}}日）を完全に削除します。",
+    "deleteConfirmBody": "「{{name}}」（{{date}}）を完全に削除します。",
     "problemsTitle_other": "{{count}}件のセッションファイルを読み書きできませんでした",
     "thisWeek": "今週",
     "undated": "日付なし",
@@ -701,7 +701,7 @@
   },
   "sessionEditor": {
     "title": "セッションを編集",
-    "subtitle": "{{name}} · {{month}}{{day}}日",
+    "subtitle": "{{name}} · {{date}}",
     "notFoundTitle": "セッションが見つかりません",
     "notFoundBody": "別の画面で削除された可能性があります。何も変更されていません。",
     "runningTitle": "このセッションはまだ実行中です",

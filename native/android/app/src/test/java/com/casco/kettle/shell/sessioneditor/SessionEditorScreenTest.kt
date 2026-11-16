@@ -481,7 +481,7 @@ class SessionEditorScreenTest {
 
         compose.onNode(hasText("Editar sessão") and isHeading()).assertExists()
         // User data is never translated: the workout's and the exercise's names are the YAML's.
-        compose.onNodeWithText("Leg day · 29 JUL.").assertExists()
+        compose.onNodeWithText("Leg day · 29 de jul.").assertExists()
         compose.onNodeWithText("Back Squat").assertExists()
     }
 

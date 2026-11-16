@@ -220,6 +220,8 @@ class RunnerScreenTest : RunnerScreenHarness() {
     fun `the pad replaces the value, and Set sends it and closes`() {
         show(running(plan(block(squat))))
         button("Reps concluídas: 5. Toque para inserir um valor exato.").performClick()
+        // The pad's kicker in sentence case, as the boards draw one, not uppercased at draw time (#493).
+        compose.onNodeWithText("Reps feitas").assertExists()
         button("1").performClick()
         button("2").performClick()
         compose.onNodeWithText("12").assertExists()
@@ -340,7 +342,7 @@ class RunnerScreenTest : RunnerScreenHarness() {
         assertEquals(RunnerCommand.Finish(parked.snapshot.visit), sent.last())
         compose.onNode(isDialog()).assertDoesNotExist()
         button("Adicionar exercício").performClick()
-        compose.onNodeWithText("ADICIONAR EXERCÍCIO").assertExists()
+        compose.onNodeWithText("Adicionar exercício").assertExists()
         compose.onNode(hasContentDescription("Buscar exercícios")).performTextInput("Remo")
         button("Remo").performClick()
         assertEquals(RunnerCommand.AddExercise(row), sent.last())
@@ -633,10 +635,10 @@ class RunnerScreenTest : RunnerScreenHarness() {
     fun `back closes the add picker before asking to finish`() {
         val adhoc = RunnerPlan.Runnable(null, exercises, emptyList())
         show(running(adhoc, started(adhoc).after(RunnerCommand.AddExercise(squat))))
-        button("ADICIONAR").performClick()
-        compose.onNodeWithText("ADICIONAR EXERCÍCIO").assertExists()
+        button("Adicionar").performClick()
+        compose.onNodeWithText("Adicionar exercício").assertExists()
         back()
-        compose.onNodeWithText("ADICIONAR EXERCÍCIO").assertDoesNotExist()
+        compose.onNodeWithText("Adicionar exercício").assertDoesNotExist()
         compose.onNode(isDialog()).assertDoesNotExist()
         back()
         compose.onNodeWithText("Encerrar o treino agora?").assertExists()

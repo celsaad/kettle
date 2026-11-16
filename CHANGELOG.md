@@ -239,6 +239,10 @@ here, next to what it describes.
   bottom. Settings also mentions that the workout screen keeps its own colors whatever you pick.
   Getting stronger drops its explanation line, keeping only the note about fixed holds being left
   out, and its heading says "8 weeks" rather than "Last 8 weeks", as an exercise's page does (#492).
+- **No more spaced-out capitals**: the last small labels in capitals, such as "NEXT UP", "NEW
+  HERE?" and "ADD EXERCISE", now read in sentence case like the rest of the app. A session's date
+  in the delete confirm and in the session editor is written the way your language writes dates,
+  rather than with the month in capitals (#493).
 
 ---
 

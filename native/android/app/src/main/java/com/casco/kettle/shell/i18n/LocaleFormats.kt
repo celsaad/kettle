@@ -55,15 +55,6 @@ fun formatMonthDay(
 ): String = formatMonthDay(date.atStartOfDayIn(TimeZone.UTC), locale, TimeZone.UTC)
 
 /**
- * The short month in a session's delete confirm and the session editor's subtitle, "JUL" or "JUL.",
- * uppercased with the locale's rules rather than the default's, which are wrong for Turkish.
- */
-fun formatMonthBadge(
-    date: LocalDate,
-    locale: Locale,
-): String = format(date.atStartOfDayIn(TimeZone.UTC), locale, TimeZone.UTC, "MMM").uppercase(locale)
-
-/**
  * `formatWeekday(date, 'narrow')` in `src/i18n/format.ts`: "M", "T", or "S" for both Saturday and
  * Sunday. ICU's formatter, not `SimpleDateFormat`: the locale's pattern for it is the standalone
  * `ccccc`, which `java.text` refuses, and on a JVM `java.text` reads `EEEEE` as the full name.

@@ -222,7 +222,7 @@ class HomeScreenTest {
     fun `first-run guidance is shown to someone who has never logged a session`() {
         show(seededFiles())
 
-        text("PRIMEIRA VEZ?").assertExists()
+        text("Primeira vez?").assertExists()
         text("Comece o treino abaixo").assertExists()
         text("Deixe do seu jeito").assertExists()
         text("Sua biblioteca é um arquivo").assertExists()
@@ -232,7 +232,7 @@ class HomeScreenTest {
     fun `first-run guidance is gone once a session has been logged`() {
         show(seededFiles(sessions = listOf(session())))
 
-        text("PRIMEIRA VEZ?").assertDoesNotExist()
+        text("Primeira vez?").assertDoesNotExist()
         // The card going away, not the tab.
         text("Iniciar treino").assertExists()
     }
@@ -258,7 +258,7 @@ class HomeScreenTest {
     fun `first-run guidance stays out of the empty state, which is its own single instruction`() {
         show(Files(library(workouts = emptyList())))
 
-        text("PRIMEIRA VEZ?").assertDoesNotExist()
+        text("Primeira vez?").assertDoesNotExist()
         text("Nenhum treino ainda").assertExists()
     }
 
@@ -269,7 +269,7 @@ class HomeScreenTest {
 
         text("Dia de descanso").assertExists()
         text("Iniciar treino").assertDoesNotExist()
-        text("PRIMEIRA VEZ?").assertDoesNotExist()
+        text("Primeira vez?").assertDoesNotExist()
         text("Comece o treino abaixo").assertDoesNotExist()
     }
 
@@ -297,7 +297,7 @@ class HomeScreenTest {
         show(restDayFiles())
 
         text("Dia de descanso").assertExists()
-        text("PRIMEIRA VEZ?").assertDoesNotExist()
+        text("Primeira vez?").assertDoesNotExist()
         text("Adicionar um programa inicial").assertExists()
     }
 

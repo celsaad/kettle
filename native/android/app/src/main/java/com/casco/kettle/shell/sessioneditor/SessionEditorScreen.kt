@@ -57,7 +57,7 @@ import com.casco.kettle.shell.files.writeOrRefusal
 import com.casco.kettle.shell.form.EditorTitleBar
 import com.casco.kettle.shell.history.entryResultText
 import com.casco.kettle.shell.i18n.deviceUnitSystem
-import com.casco.kettle.shell.i18n.formatMonthBadge
+import com.casco.kettle.shell.i18n.formatMonthDay
 import com.casco.kettle.shell.library.ExerciseBadge
 import com.casco.kettle.shell.nav.LocalNavigator
 import com.casco.kettle.shell.runner.formatClock
@@ -181,7 +181,7 @@ private fun Subtitle(
     // The workout's own name, interpolated rather than translated.
     val name = workoutNameFor(session, library) ?: stringResource(R.string.format_adHocSession)
     Secondary(
-        stringResource(R.string.sessionEditor_subtitle, day.day, formatMonthBadge(day, locale), name),
+        stringResource(R.string.sessionEditor_subtitle, formatMonthDay(day, locale), name),
         Modifier.padding(top = 2.dp),
     )
 }

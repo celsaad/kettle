@@ -190,7 +190,7 @@ internal fun NumberPad(
 ) {
     var entry by remember(request) { mutableStateOf(PadEntry(request.seed, request.allowDecimal)) }
     OverlaySheet(stringResource(R.string.session_numberPad_dismiss), onDismiss, request.label) {
-        Caps(request.label.uppercase(), Modifier.align(Alignment.CenterHorizontally))
+        Kicker(request.label, Modifier.align(Alignment.CenterHorizontally))
         Row(Modifier.align(Alignment.CenterHorizontally)) {
             Numeral(entry.display, PAD_NUMERAL, Modifier.alignByBaseline(), leading = PAD_LEADING)
             if (request.unit != null) {

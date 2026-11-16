@@ -41,7 +41,7 @@ internal fun StarterPacks(
     val locale = LocalConfiguration.current.locales[0]
     val packs =
         remember(content, locale) { content.packs().map { it.id to content.pack(it.id, locale.toLanguageTag()) } }
-    // A label rather than a heading: at heading size it was a peer of the rows under it, not their title.
+    // A kicker rather than a heading's size: at heading size it was a peer of the rows under it, not their title.
     Column(Modifier.padding(top = Spacing.three)) {
         Text(
             stringResource(R.string.import_packs_title),

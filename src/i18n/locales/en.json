@@ -269,7 +269,7 @@
       "otherMeta": "{{type}} · {{summary}}"
     },
     "circuit": {
-      "crumb": "CIRCUIT · ROUND {{index}} OF {{total}}",
+      "crumb": "Circuit · round {{index}} of {{total}}",
       "accessibility": "Circuit, round {{index}} of {{total}}, exercise {{member}} of {{memberTotal}}"
     },
     "upcoming": {
@@ -296,12 +296,12 @@
       "intervals_other": "{{count}} intervals",
       "moreIntervals_one": "{{count}} more interval",
       "moreIntervals_other": "{{count}} more intervals",
-      "circuitRounds_one": "CIRCUIT · {{count}} ROUND",
-      "circuitRounds_other": "CIRCUIT · {{count}} ROUNDS",
-      "circuitLeft_one": "CIRCUIT · {{count}} LEFT",
-      "circuitLeft_other": "CIRCUIT · {{count}} LEFT",
-      "roundsAfter_one": "{{count}} MORE ROUND",
-      "roundsAfter_other": "{{count}} MORE ROUNDS",
+      "circuitRounds_one": "Circuit · {{count}} round",
+      "circuitRounds_other": "Circuit · {{count}} rounds",
+      "circuitLeft_one": "Circuit · {{count}} left",
+      "circuitLeft_other": "Circuit · {{count}} left",
+      "roundsAfter_one": "{{count}} more round",
+      "roundsAfter_other": "{{count}} more rounds",
       "restBetween": "rest {{time}}"
     },
     "countingUp": "counting up",

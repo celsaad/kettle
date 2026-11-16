@@ -182,11 +182,7 @@ private fun Header(
     // A program day says whose day it is, "Dumbbell Strength · Week 3 · Day 1", not "Next up": Program
     // detail opens any day here, earlier ones too. The program's name is user data, verbatim.
     val context = slot?.let { listOfNotNull(it.program?.name, weekLabel(it.week, it.day)).joinToString(" · ") }
-    if (context != null) {
-        Text(context, style = KettleType.smallMedium, color = colors.textSecondary)
-    } else {
-        Text(stringResource(R.string.today_nextUp), style = KettleType.smallMedium, color = colors.textSecondary)
-    }
+    Text(context ?: stringResource(R.string.today_nextUp), style = KettleType.smallMedium, color = colors.textSecondary)
     Row(Modifier.padding(top = Spacing.one), verticalAlignment = Alignment.CenterVertically) {
         // User data, verbatim. No line cap: this is the one screen whose job is to show all of it.
         Text(

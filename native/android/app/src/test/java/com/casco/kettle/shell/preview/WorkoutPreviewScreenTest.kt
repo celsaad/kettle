@@ -101,7 +101,7 @@ class WorkoutPreviewScreenTest {
         val circuit = Workout("day", "Day", listOf(WorkoutBlock.Circuit(null, 3, members = members)))
         show(planned(SessionParams.Workout("day")), library(circuit))
 
-        compose.onNodeWithText("CIRCUITO · 3 RODADAS").assertExists()
+        compose.onNodeWithText("Circuito · 3 rodadas").assertExists()
         compose.onNodeWithText("Pull-ups").assertExists()
         compose.onNodeWithText("Dips").assertExists()
     }

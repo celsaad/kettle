@@ -282,7 +282,7 @@
       "otherMeta": "{{type}} · {{summary}}"
     },
     "circuit": {
-      "crumb": "CIRCUITO · RODADA {{index}} DE {{total}}",
+      "crumb": "Circuito · rodada {{index}} de {{total}}",
       "accessibility": "Circuito, rodada {{index}} de {{total}}, exercício {{member}} de {{memberTotal}}"
     },
     "upcoming": {
@@ -317,15 +317,15 @@
       "moreIntervals_zero": "mais {{count}} intervalos",
       "moreIntervals_one": "mais {{count}} intervalo",
       "moreIntervals_other": "mais {{count}} intervalos",
-      "circuitRounds_zero": "CIRCUITO · {{count}} RODADAS",
-      "circuitRounds_one": "CIRCUITO · {{count}} RODADA",
-      "circuitRounds_other": "CIRCUITO · {{count}} RODADAS",
-      "circuitLeft_zero": "CIRCUITO · FALTAM {{count}}",
-      "circuitLeft_one": "CIRCUITO · FALTA {{count}}",
-      "circuitLeft_other": "CIRCUITO · FALTAM {{count}}",
-      "roundsAfter_zero": "MAIS {{count}} RODADAS",
-      "roundsAfter_one": "MAIS {{count}} RODADA",
-      "roundsAfter_other": "MAIS {{count}} RODADAS",
+      "circuitRounds_zero": "Circuito · {{count}} rodadas",
+      "circuitRounds_one": "Circuito · {{count}} rodada",
+      "circuitRounds_other": "Circuito · {{count}} rodadas",
+      "circuitLeft_zero": "Circuito · faltam {{count}}",
+      "circuitLeft_one": "Circuito · falta {{count}}",
+      "circuitLeft_other": "Circuito · faltam {{count}}",
+      "roundsAfter_zero": "Mais {{count}} rodadas",
+      "roundsAfter_one": "Mais {{count}} rodada",
+      "roundsAfter_other": "Mais {{count}} rodadas",
       "restBetween": "descanso {{time}}"
     },
     "countingUp": "contando para cima",

@@ -242,7 +242,7 @@ here, next to what it describes.
 - **No more spaced-out capitals**: the last small labels in capitals, such as "NEXT UP", "NEW
   HERE?" and "ADD EXERCISE", now read in sentence case like the rest of the app. A session's date
   in the delete confirm and in the session editor is written the way your language writes dates,
-  such as "29 Jul", not "29 JUL" (#493).
+  rather than with the month in capitals (#493).
 
 ---
 

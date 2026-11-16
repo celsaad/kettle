@@ -230,7 +230,6 @@ internal const val SHARE_FAILED = "Não foi possível abrir o menu de compartilh
 internal const val PASTE_FROM_CLIPBOARD = "Colar da área de transferência"
 internal const val CLIPBOARD_EMPTY = "Nada para colar — a área de transferência está vazia ou o acesso foi negado."
 
-/** RN's `label` type uppercases at draw time. */
 internal const val PACKS_TITLE = "Pacotes iniciais"
 
 /** Holds the file work until it's run, for a test that needs a write caught mid-way. */

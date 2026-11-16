@@ -185,7 +185,7 @@ private fun Header(
     if (context != null) {
         Text(context, style = KettleType.smallMedium, color = colors.textSecondary)
     } else {
-        Text(stringResource(R.string.today_nextUp), style = KettleType.label, color = colors.accentText)
+        Text(stringResource(R.string.today_nextUp), style = KettleType.smallMedium, color = colors.textSecondary)
     }
     Row(Modifier.padding(top = Spacing.one), verticalAlignment = Alignment.CenterVertically) {
         // User data, verbatim. No line cap: this is the one screen whose job is to show all of it.

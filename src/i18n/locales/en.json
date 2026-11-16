@@ -38,13 +38,13 @@
     }
   },
   "today": {
-    "nextUp": "NEXT UP",
+    "nextUp": "Next up",
     "restDayTitle": "Rest day",
     "restDaySkip": "Train anyway",
     "startSession": "Start session",
     "previewAction": "See the exercises",
     "firstRun": {
-      "title": "NEW HERE?",
+      "title": "New here?",
       "step1Title": "Start the workout below",
       "step1Body": "Timers and audio cues run it, hands-free.",
       "step2Title": "Make it yours",
@@ -102,7 +102,7 @@
     "showExercises": "Show exercises",
     "hideExercises": "Hide exercises",
     "deleteConfirmTitle": "Delete session?",
-    "deleteConfirmBody": "\"{{name}}\" on {{day}} {{month}} will be permanently removed.",
+    "deleteConfirmBody": "\"{{name}}\" on {{date}} will be permanently removed.",
     "problemsTitle_one": "{{count}} session file couldn't be read or written",
     "problemsTitle_other": "{{count}} session files couldn't be read or written",
     "thisWeek": "This week",
@@ -246,8 +246,8 @@
       "title": "Nothing queued",
       "body": "Add an exercise from your library and log against it. Finish whenever you are done.",
       "addExercise": "Add exercise",
-      "addShort": "ADD",
-      "pickerTitle": "ADD EXERCISE",
+      "addShort": "Add",
+      "pickerTitle": "Add exercise",
       "pickerBody": "Pick one from your library",
       "search": "Search exercises",
       "noMatches": "No exercise matches \"{{query}}\""
@@ -274,7 +274,7 @@
     },
     "upcoming": {
       "hint": "Shows what's left in this workout",
-      "end": "END OF WORKOUT",
+      "end": "End of workout",
       "rest": "Rest",
       "detail": "{{amount}} · {{target}}",
       "targetReps": "target {{target}}",
@@ -752,7 +752,7 @@
   },
   "sessionEditor": {
     "title": "Edit session",
-    "subtitle": "{{name}} · {{day}} {{month}}",
+    "subtitle": "{{name}} · {{date}}",
     "notFoundTitle": "Session not found",
     "notFoundBody": "It may have been deleted from another screen. Nothing was changed.",
     "runningTitle": "This session is still running",

@@ -316,7 +316,12 @@ fun FirstRunCard() {
             .padding(Spacing.three),
         verticalArrangement = Arrangement.spacedBy(Spacing.two),
     ) {
-        Text(stringResource(R.string.today_firstRun_title), style = KettleType.label, color = colors.accentText)
+        // The board's kicker, in sentence case: no letter-spaced caps anywhere since #493.
+        Text(
+            stringResource(R.string.today_firstRun_title),
+            style = KettleType.smallMedium,
+            color = colors.textSecondary,
+        )
         steps.forEachIndexed { index, (title, body) ->
             Row(horizontalArrangement = Arrangement.spacedBy(Spacing.two)) {
                 // A minimum rather than a size: it holds a numeral, which has to grow with the text.

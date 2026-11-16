@@ -30,7 +30,7 @@ import androidx.compose.ui.unit.dp
 import com.casco.kettle.domain.HistorySessionView
 import com.casco.kettle.domain.UnitSystem
 import com.casco.kettle.shell.R
-import com.casco.kettle.shell.i18n.formatMonthBadge
+import com.casco.kettle.shell.i18n.formatMonthDay
 import com.casco.kettle.shell.i18n.formatShortWeekday
 import com.casco.kettle.shell.i18n.pluralText
 import com.casco.kettle.shell.list.ListRowMinHeight
@@ -190,16 +190,13 @@ private fun PrBadge() {
 }
 
 /**
- * The day of the month and the short month the delete's confirm names a session by, "29 JUL". Blank
- * where `started_at` isn't an instant.
+ * The date the delete's confirm names a session by, "29 Jul" in the locale's own form, as every other
+ * date in the app (#493). Blank where `started_at` isn't an instant.
  */
 @Composable
-internal fun dateBadge(row: HistorySessionView): Pair<String, String> {
+internal fun sessionDate(row: HistorySessionView): String {
     val locale = LocalConfiguration.current.locales[0]
-    return row.day
-        ?.day
-        ?.toString()
-        .orEmpty() to row.day?.let { formatMonthBadge(it, locale) }.orEmpty()
+    return row.day?.let { formatMonthDay(it, locale) }.orEmpty()
 }
 
 @Composable

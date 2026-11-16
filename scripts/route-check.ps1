@@ -70,7 +70,7 @@ $steps = @(
   @('/exercise-editor?id=pushups', 'Edit exercise'), @('back', 'tab:Progress'),
   @('/workout-editor', 'New workout'), @('back', 'tab:Progress'),
   @('/workout-editor?id=foundations-push', 'Edit workout'), @('back', 'tab:Progress'),
-  @('/workout-preview?workoutId=foundations-push', 'NEXT UP'), @('back', 'tab:Progress'),
+  @('/workout-preview?workoutId=foundations-push', 'Next up'), @('back', 'tab:Progress'),
   @('/workout-preview?programId=foundations&week=1&day=Day%201', 'Foundations · 4 Weeks · No Equipment · Week 1 · Day 1'),
   @('back', 'tab:Progress'), @('/program-detail?programId=foundations', 'Weeks'),
   @('back', 'tab:Progress'), @('/program-editor', 'New program'), @('back', 'tab:Progress'),

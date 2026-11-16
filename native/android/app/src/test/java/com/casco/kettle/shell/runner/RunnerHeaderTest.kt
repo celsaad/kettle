@@ -65,7 +65,7 @@ class RunnerHeaderTest : RunnerScreenHarness() {
         show(running(plan(block(squat)), started(plan(block(squat))).advanced()))
         compose.onNodeWithText("Descanso").assertExists()
         compose.onNodeWithText("A seguir: Agachamento").assertExists()
-        compose.onNodeWithText("PRÓXIMO").assertDoesNotExist()
+        compose.onNodeWithText("Próximo").assertDoesNotExist()
     }
 
     @Test

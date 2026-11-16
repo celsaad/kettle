@@ -85,13 +85,13 @@ internal fun Numeral(
     }
 }
 
-/** A kicker in the code face; [label] is in caps already, as the bundles spell it. */
+/** A sheet's kicker, as the boards draw one: sentence case, no letter-spacing (#493). */
 @Composable
-internal fun Caps(
+internal fun Kicker(
     label: String,
     modifier: Modifier = Modifier,
 ) {
-    Text(label, modifier, style = QuietStyle.copy(letterSpacing = CapsTracking))
+    Text(label, modifier, style = KettleType.smallMedium, color = runnerColors.textSecondary)
 }
 
 /**

@@ -70,8 +70,7 @@ internal data class ButtonLook(
 
 private val CompactMinWidth = 160.dp
 
-/** RN's caps labels are tracked out; most at 1.4, the quieter controls (Finish, SWAP) at 1. */
-internal val CapsTracking = 1.4.sp
+/** The quieter controls' words are tracked out a little in the code face. */
 private val QuietTracking = 1.sp
 
 /** A quiet control's words: the code face in the field's secondary colour. */

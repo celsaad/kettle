@@ -93,7 +93,7 @@ class WorkoutPreviewScreenTest {
 
         compose.onNodeWithText("Pull-ups").assertExists()
         compose.onNodeWithText("3 séries · alvo 8 · descanso 1:30").assertExists()
-        compose.onNodeWithText("FIM DO TREINO").assertExists()
+        compose.onNodeWithText("Fim do treino").assertExists()
     }
 
     @Test
@@ -188,14 +188,14 @@ class WorkoutPreviewScreenTest {
         show(planned(SessionParams.ProgramSlot("p", 2, "Segunda")), lib)
 
         compose.onNodeWithText("P · Semana 2 · Segunda").assertExists()
-        compose.onNodeWithText("PRÓXIMO", substring = true).assertDoesNotExist()
+        compose.onNodeWithText("Próximo", substring = true).assertDoesNotExist()
     }
 
     @Test
     fun `a bare workout is still Next up`() {
         show(planned(SessionParams.Workout("day")), library(pullUpsDay))
 
-        compose.onNodeWithText("PRÓXIMO").assertExists()
+        compose.onNodeWithText("Próximo").assertExists()
     }
 
     @Test

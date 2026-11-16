@@ -42,12 +42,11 @@ internal fun StarterPacks(
     val packs =
         remember(content, locale) { content.packs().map { it.id to content.pack(it.id, locale.toLanguageTag()) } }
     // A label rather than a heading: at heading size it was a peer of the rows under it, not their title.
-    // RN's `label` type uppercases at draw time; the bundle's string is in sentence case.
     Column(Modifier.padding(top = Spacing.three)) {
         Text(
-            stringResource(R.string.import_packs_title).uppercase(locale),
+            stringResource(R.string.import_packs_title),
             Modifier.semantics { heading() },
-            style = KettleType.label,
+            style = KettleType.smallMedium,
             color = colors.textSecondary,
         )
         Spacer(Modifier.height(Spacing.two))

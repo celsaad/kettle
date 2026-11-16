@@ -54,8 +54,7 @@ steps=(
   'back|tab:Progress' '/workout-editor?id=foundations-push|Edit workout' 'back|tab:Progress'
   '/workout-preview?workoutId=foundations-push|NEXT UP' 'back|tab:Progress'
   '/workout-preview?programId=foundations&week=1&day=Day%201|Foundations · 4 Weeks · No Equipment · Week 1 · Day 1'
-  'back|tab:Progress' '/exercise-progress?exerciseId=pushups|Push-ups' 'back|tab:Progress'
-  '/program-detail?programId=foundations|Weeks' 'back|tab:Progress'
+  'back|tab:Progress' '/program-detail?programId=foundations|Weeks' 'back|tab:Progress'
   '/program-editor|New program' 'back|tab:Progress' '/program-editor?id=foundations|Edit program'
   'back|tab:Progress' '/program-guide|Writing a program by hand' 'back|tab:Progress'
   '/session-editor|Edit session' 'back|tab:Progress'
@@ -81,9 +80,11 @@ steps=(
   'tap:Open as YAML|Weights are in kilograms, as the file stores them.'
   'back|Have an assistant write your training' 'tap:Paste YAML|Import library'
   'back|Have an assistant write your training' 'back|tab:Exercises'
-  # Today's gear opens native Settings over it, and back returns (#235). All workouts opens Library's
-  # Workouts (#412), whose New workout opens the native editor over it (#238).
-  'tap:Today|tab:Today' 'tap:Settings|Settings' 'back|tab:Today' 'tap:All workouts|tab:Workouts'
+  # Today's gear pushes native Settings over it, and back returns (#235); a sheet over Settings closes
+  # back onto it (#489). All workouts opens Library's Workouts (#412), whose New workout opens the
+  # native editor over it (#238).
+  'tap:Today|tab:Today' 'tap:Settings|Settings' 'tap:exercises.yaml|Have an assistant write your training'
+  'back|Settings' 'back|tab:Today' 'tap:All workouts|tab:Workouts'
   'tap:New workout|New workout' 'back|tab:Workouts'
   # From a modal: to a tab, and to another modal. Either way back reaches Today and then leaves.
   '/library|tab:Library' '/settings|Settings' '/progress|tab:Progress' 'back|tab:Today'

@@ -1,6 +1,7 @@
 {
   "common": {
     "settings": "設定",
+    "back": "戻る",
     "cancel": "キャンセル",
     "delete": "削除",
     "save": "保存",
@@ -132,9 +133,7 @@
   "exerciseProgress": {
     "since": "{{date}}から",
     "newBest": "自己ベスト更新",
-    "newBestTag": "· 自己ベスト更新",
-    "sessionsTitle": "セッション · 直近{{count}}週",
-    "notFound": "直近{{count}}週に、この種目でグラフにできる記録はありません。"
+    "newBestTag": "· 自己ベスト更新"
   },
   "library": {
     "title": "ライブラリ",

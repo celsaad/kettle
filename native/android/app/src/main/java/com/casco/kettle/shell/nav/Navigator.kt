@@ -7,8 +7,8 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import com.casco.kettle.domain.RunnerStart
 
 /**
- * The shell's back stack (#309): which tab shows, the sheets stacked over it, and the runner's slot over
- * everything. Compose state, so the bar, the tabs, the sheet and the runner each follow it.
+ * The shell's back stack (#309): which tab shows, the sheets and pushed screens stacked over it, and the
+ * runner's slot over everything. Compose state, so the bar, the tabs, the sheet and the runner each follow it.
  *
  * While the runner's slot is filled, every navigation but [closeRunner] is dropped, back included: the
  * runner owns its exits and the questions they ask (#297), which is what RN's stub enforced with
@@ -38,7 +38,7 @@ class Navigator(
 
     private var sheets by mutableStateOf(emptyList<Route>())
 
-    /** The sheet showing, the top of the stack; null on a tab. */
+    /** The top of the stack, a sheet or a pushed screen; null on a tab. */
     val sheet: Route? get() = sheets.lastOrNull()
 
     /** The runner, over everything while it shows; null when it doesn't. */
@@ -64,15 +64,15 @@ class Navigator(
         go(MoveKind.Navigate, tab = tab)
     }
 
-    /** Opens [route] over what shows: a sheet stacks, and a tab's route goes to that tab. */
+    /** Opens [route] over what shows: a sheet or a pushed screen stacks, and a tab's route goes to that tab. */
     fun push(route: Route) {
-        if (!route.sheet) return navigate(route)
+        if (!route.stacked) return navigate(route)
         go(MoveKind.Push, sheets = sheets + route)
     }
 
     /** Opens [route] in the top sheet's place, so back skips the sheet it replaced. */
     fun replace(route: Route) {
-        if (!route.sheet) return navigate(route)
+        if (!route.stacked) return navigate(route)
         go(MoveKind.Replace, sheets = sheets.dropLast(1) + route)
     }
 
@@ -86,7 +86,7 @@ class Navigator(
         go(
             MoveKind.Navigate,
             tab = to ?: tab,
-            sheets = if (route.sheet) listOf(route) else emptyList(),
+            sheets = if (route.stacked) listOf(route) else emptyList(),
             tabRoutes = if (to != null) tabRoutes + (to to route) else tabRoutes,
         )
     }
@@ -137,7 +137,7 @@ class Navigator(
         go(
             MoveKind.Navigate,
             tab = to,
-            sheets = saved.drop(1).mapNotNull(Route::parse).filter { it.sheet },
+            sheets = saved.drop(1).mapNotNull(Route::parse).filter { it.stacked },
             tabRoutes = if (tabRoute != null) tabRoutes + (to to tabRoute) else tabRoutes,
         )
     }
@@ -176,16 +176,22 @@ private val LEGACY_TABS =
         "Programs" to "/programs",
     )
 
-/** Where a back stack of [sheets] under the runner's [runner] slot is: the runner covers everything. */
+/**
+ * Where a back stack of [sheets] under the runner's [runner] slot is: the runner covers everything, and
+ * otherwise the top of the stack says whether a sheet or a pushed screen shows.
+ */
 private fun placeOf(
     sheets: List<Route>,
     runner: RunnerSlot?,
-): Place =
-    when {
+): Place {
+    val top = sheets.lastOrNull()
+    return when {
         runner != null -> Place.Runner
-        sheets.isNotEmpty() -> Place.Sheet
-        else -> Place.Tab
+        top == null -> Place.Tab
+        top.pushed -> Place.Pushed
+        else -> Place.Sheet
     }
+}
 
 /** What the runner's slot holds: the start it was opened with, null for none. */
 data class RunnerSlot(
@@ -194,7 +200,7 @@ data class RunnerSlot(
 
 /** How a move was asked for, which decides how the sheet animates it (`transitionBetween`). */
 enum class MoveKind {
-    /** Something opened over what showed: a sheet, or the runner. */
+    /** Something opened over what showed: a sheet, a pushed screen, or the runner. */
     Push,
 
     /** Back, or the runner's slot popping. */

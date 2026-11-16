@@ -28,6 +28,7 @@ import com.casco.kettle.shell.R
 import com.casco.kettle.shell.files.LatestFiles
 import com.casco.kettle.shell.files.writeOrRefusal
 import com.casco.kettle.shell.i18n.deviceUnitSystem
+import com.casco.kettle.shell.nav.BackRow
 import com.casco.kettle.shell.nav.Destination
 import com.casco.kettle.shell.nav.Route
 import com.casco.kettle.shell.support.SupporterFile
@@ -124,12 +125,15 @@ fun SettingsScreen(
                 .padding(bottom = Spacing.four)
                 .navigationBarsPadding(),
         ) {
-            Text(
-                stringResource(R.string.settings_title),
-                Modifier.semantics { heading() },
-                style = KettleType.subtitle,
-                color = KettleTheme.colors.text,
-            )
+            // Pushed (#489): Back and the title on one row, as the board draws them.
+            BackRow {
+                Text(
+                    stringResource(R.string.settings_title),
+                    Modifier.weight(1f).semantics { heading() },
+                    style = KettleType.subtitle,
+                    color = KettleTheme.colors.text,
+                )
+            }
             PreferenceSections(preferences, save, actions.reminder)
             YourFile { actions.open(Route(Destination.YourFile)) }
             KettleSection(supporter, version, actions.contact) { actions.open(Route(Destination.Support)) }

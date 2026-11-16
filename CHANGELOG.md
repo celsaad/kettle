@@ -225,6 +225,11 @@ here, next to what it describes.
 - **Your program at the top of Library**: the program you're running now leads Programs, and its
   workouts lead Workouts, in the order you train them. Everything else stays in your file's order.
   Programs no longer has a search box, since the list is short (#488).
+- **Settings and detail pages open full screen**: Settings, an exercise and a program now slide
+  in as full pages with a Back button at the top left, rather than opening as sheets. Editors,
+  previews and Import still open as sheets. Tapping an exercise under Getting stronger opens that
+  exercise, with its progress chart and recent sessions, even if you've since deleted it from your
+  library (#489).
 
 ---
 

@@ -1,6 +1,7 @@
 {
   "common": {
     "settings": "Configurações",
+    "back": "Voltar",
     "cancel": "Cancelar",
     "delete": "Excluir",
     "save": "Salvar",
@@ -148,9 +149,7 @@
   "exerciseProgress": {
     "since": "desde {{date}}",
     "newBest": "Nova melhor marca",
-    "newBestTag": "· nova melhor marca",
-    "sessionsTitle": "Sessões · últimas {{count}} semanas",
-    "notFound": "Nada para mostrar deste exercício nas últimas {{count}} semanas."
+    "newBestTag": "· nova melhor marca"
   },
   "library": {
     "title": "Biblioteca",

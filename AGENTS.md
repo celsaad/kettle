@@ -179,6 +179,11 @@ are house rules here rather than a backlog — cheap as you go, tedious to retro
   `RouteContent` (`ShellRoutes.kt`), which the `when` won't compile without. The shell presents it as
   its sheet, with the grabber and × drawn over the top by `SheetChrome`; the screen's content starts
   below that strip and adds no top padding of its own.
+- **A place you go to is pushed; a task or a peek is a sheet** (#489). Settings, Exercise detail and
+  Program detail are `Presentation.Pushed`: full screen over the bar, in the same back stack, with
+  no chrome. Such a screen draws its own `BackRow` (`shell/nav/BackRow.kt`) first, which is the
+  system's back and says only "Back", never the screen beneath. A new screen is a sheet unless it is
+  somewhere rather than something to do.
 - Theming is strict: `KettleTheme.colors`, `KettleType`, `Spacing.*`, `MaxContentWidth`. The
   session runner ignores the scheme: its field (`theme.json`'s `RunnerColors`) follows the step's clock. Colors, spacing and the type
   scale are edited in `constants/theme.json`, which native's `:theme` generates its Compose theme from; `theme.ts`

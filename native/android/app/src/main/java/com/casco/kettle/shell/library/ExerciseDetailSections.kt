@@ -56,7 +56,7 @@ import kotlin.time.Instant
  */
 @Composable
 internal fun ProgressSection(
-    exercise: Exercise,
+    exerciseId: String,
     files: LatestFiles,
     now: Instant,
     zone: TimeZone,
@@ -64,8 +64,8 @@ internal fun ProgressSection(
     val log = files.sessionLog ?: return
     val exercises = files.library?.exercises.orEmpty()
     val trend =
-        remember(log, exercises, exercise.id, now, zone) {
-            exerciseTrend(log.logged, exercises, exercise.id, now, zone)
+        remember(log, exercises, exerciseId, now, zone) {
+            exerciseTrend(log.logged, exercises, exerciseId, now, zone)
         }
     val colors = KettleTheme.colors
     Row(Modifier.padding(top = Spacing.four), verticalAlignment = Alignment.Bottom) {
@@ -130,13 +130,13 @@ private fun chartDescription(
 /** The last few times it was logged, newest first, as the editor's Recent listed them. None, no heading. */
 @Composable
 internal fun RecentSessions(
-    exercise: Exercise,
+    exerciseId: String,
     files: LatestFiles,
     zone: TimeZone,
 ) {
     val log = files.sessionLog ?: return
     val units = files.unitsOrDevice()
-    val history = remember(log, exercise.id, units) { exerciseHistory(log.logged, exercise.id, units) }
+    val history = remember(log, exerciseId, units) { exerciseHistory(log.logged, exerciseId, units) }
     if (history.isEmpty()) return
     val colors = KettleTheme.colors
     val resources = LocalResources.current

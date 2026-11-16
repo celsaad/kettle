@@ -1,7 +1,16 @@
 package com.casco.kettle.shell.nav
 
-/** The three kinds of place the shell can be, as far as the sheet goes: a tab, a sheet, the runner. */
-enum class Place { Tab, Sheet, Runner }
+/** The kinds of place the shell can be, as far as the sheet goes: a tab, a sheet, a pushed screen, the runner. */
+enum class Place {
+    Tab,
+    Sheet,
+    Pushed,
+    Runner,
+    ;
+
+    /** Over the tabs in the navigator's stack, a sheet or a pushed screen: back is the sheet's to take. */
+    val stacked: Boolean get() = this == Sheet || this == Pushed
+}
 
 /** How the sheet gets from one place to the next (#155's transitions table). */
 enum class Transition {
@@ -35,15 +44,31 @@ enum class Transition {
     /** [Grow], reversed, as the runner goes. */
     Shrink,
 
-    /** The runner leaves for a tab: whatever sheet it grew from goes with it, with no animation. */
+    /** The runner leaves for a tab or a pushed screen: whatever sheet it grew from goes with it, with no animation. */
     Release,
+
+    /** A pushed screen slides in from the side, over the picture of what it covers (#489). */
+    PushIn,
+
+    /** The pushed screen's last picture slides back out to the side, over the live screen it covered. */
+    PushOut,
+
+    /** Fade through, in place: a pushed screen appears over what it covers. */
+    PushFadeIn,
+
+    /** Fade through, in place: the pushed screen's picture goes, leaving the live screen under it. */
+    PushFadeOut,
 }
 
 /**
  * The transition from [from] to [to], told apart by [kind]. The app opens a sheet only by pushing it and
  * leaves only by going back, so everything else is a replace or a navigate from the tabs, and fades
  * through in place.
+ *
+ * Over detekt's complexity by one branch per pair of places: the table is the point, and splitting it
+ * would hide a missing pair.
  */
+@Suppress("CyclomaticComplexMethod")
 fun transitionBetween(
     from: Place,
     to: Place,
@@ -58,6 +83,32 @@ fun transitionBetween(
 
         Place.Sheet to Place.Tab -> {
             if (back) Transition.Close else Transition.FadeOut
+        }
+
+        // A sheet opened from a pushed screen covers it as it covers a tab, and closes back onto it.
+        Place.Pushed to Place.Sheet -> {
+            if (push) Transition.Open else Transition.FadeIn
+        }
+
+        // Nothing opens a pushed screen from a sheet today: a fade, rather than a motion of its own.
+        Place.Sheet to Place.Pushed -> {
+            if (back) Transition.Close else Transition.FadeOut
+        }
+
+        Place.Tab to Place.Pushed -> {
+            if (push) Transition.PushIn else Transition.PushFadeIn
+        }
+
+        Place.Pushed to Place.Tab -> {
+            if (back) Transition.PushOut else Transition.PushFadeOut
+        }
+
+        Place.Pushed to Place.Pushed -> {
+            when {
+                push -> Transition.PushIn
+                back -> Transition.PushOut
+                else -> Transition.PushFadeOut
+            }
         }
 
         Place.Sheet to Place.Sheet -> {
@@ -76,7 +127,7 @@ fun transitionBetween(
             Transition.Shrink
         }
 
-        Place.Runner to Place.Tab -> {
+        Place.Runner to Place.Tab, Place.Runner to Place.Pushed -> {
             Transition.Release
         }
 

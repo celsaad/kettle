@@ -16,13 +16,16 @@ import androidx.compose.ui.unit.dp
 import com.casco.kettle.domain.Exercise
 import com.casco.kettle.domain.ExerciseConfig
 import com.casco.kettle.domain.Library
+import com.casco.kettle.domain.Preferences
 import com.casco.kettle.domain.Program
 import com.casco.kettle.domain.ProgramWeek
 import com.casco.kettle.domain.RepsSetLog
 import com.casco.kettle.domain.Session
 import com.casco.kettle.domain.SessionEntry
 import com.casco.kettle.domain.SessionLog
+import com.casco.kettle.domain.ThemePreference
 import com.casco.kettle.domain.TimedHoldSetLog
+import com.casco.kettle.domain.UnitSystem
 import com.casco.kettle.domain.Workout
 import com.casco.kettle.domain.WorkoutBlock
 import com.casco.kettle.shell.files.FakeStoredFiles
@@ -260,6 +263,62 @@ class ExerciseDetailScreenTest {
         button("Editar").assertDoesNotExist()
     }
 
+    /**
+     * Getting stronger still lists an exercise deleted from the library (#489), and its row opens here:
+     * the log's id stands in for the name, and how it went stays, with nothing to edit.
+     */
+    @Test
+    fun `still shows how a deleted exercise went, by the id the log keeps`() {
+        val withoutSquat = fixture.copy(exercises = fixture.exercises - squat)
+        show(
+            files =
+                Files(
+                    sessions =
+                        listOf(
+                            session("b", "2026-07-24T10:00:00Z", 62.5),
+                            session("a", "2026-07-10T10:00:00Z", 60.0),
+                        ),
+                    library = withoutSquat,
+                ),
+        )
+
+        text("squat").assert(isHeading())
+        text("Este exercício não está mais na sua biblioteca.").assertExists()
+        text("Progresso").assert(isHeading())
+        text("62.5 kg").assertExists()
+        text("Sessões recentes").performScrollTo().assertExists()
+        button("Editar").assertDoesNotExist()
+        button("YAML").assertDoesNotExist()
+        compose.onNode(hasContentDescription("Voltar") and isButton).assertExists()
+    }
+
+    /** Kilograms are stored; the reader's units are shown, in the reading and its rise alike. */
+    @Test
+    fun `prints its progress in the reader's units`() {
+        show(
+            files =
+                Files(
+                    sessions =
+                        listOf(
+                            session("b", "2026-07-24T10:00:00Z", 62.0),
+                            session("a", "2026-07-10T10:00:00Z", 60.0),
+                        ),
+                    preferences = Preferences(UnitSystem.IMPERIAL, ThemePreference.SYSTEM, false, false, null),
+                ),
+        )
+
+        text("136.7 lb").assertExists()
+        text("+4.4 lb").assertExists()
+    }
+
+    /** Pushed (#489): Back first, at the top, before YAML and Edit. */
+    @Test
+    fun `has a Back above everything`() {
+        show()
+
+        compose.onNode(hasContentDescription("Voltar") and isButton).assertHeightIsAtLeast(48.dp)
+    }
+
     @Test
     fun `shows nothing before the library is read`() {
         show(files = Files(library = null))
@@ -273,10 +332,13 @@ class ExerciseDetailScreenTest {
     class Files(
         private val sessions: List<Session> = emptyList(),
         private val library: Library? = fixture,
+        private val preferences: Preferences? = null,
     ) : FakeStoredFiles() {
         override fun sessionLog() = SessionLog(sessions, emptyList())
 
         override fun library() = library
+
+        override fun preferences() = preferences
     }
 }
 

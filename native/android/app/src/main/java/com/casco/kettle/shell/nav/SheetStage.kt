@@ -115,11 +115,18 @@ class SheetStage(
         reset(live, sheetBack, chrome)
     }
 
-    /** [picture] where the sheet is, over the live view, unscaled. */
-    fun showLeaving(picture: Bitmap) {
+    /**
+     * [picture] where the sheet is, over the live view, unscaled; or over the whole frame when [full], as
+     * a pushed screen's picture is (#489), with square corners.
+     */
+    fun showLeaving(
+        picture: Bitmap,
+        full: Boolean = false,
+    ) {
         leaving.setImageBitmap(picture)
-        leaving.layoutParams = sheetParams(picture.width, MATCH_PARENT)
-        leaving.clipToOutline = true
+        leaving.layoutParams =
+            if (full) FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT) else sheetParams(picture.width, MATCH_PARENT)
+        leaving.clipToOutline = !full
         reset(leaving)
         show(leaving)
     }
@@ -158,7 +165,17 @@ class SheetStage(
         }
     }
 
-    fun translate(dy: Float) = sheetViews.forEach { it.translationY = dy }
+    /** The sheet [dy] px down, or a pushed screen [dx] px towards the side it leaves by (#489). */
+    fun translate(
+        dy: Float,
+        dx: Float = 0f,
+    ) = sheetViews.forEach {
+        it.translationY = dy
+        it.translationX = dx
+    }
+
+    /** The frame's width: off its side from a pushed screen's place. */
+    val frameWidth: Float get() = content.width.toFloat()
 
     private fun sheetParams(
         width: Int,

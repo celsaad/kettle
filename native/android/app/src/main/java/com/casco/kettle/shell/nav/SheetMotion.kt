@@ -20,7 +20,11 @@ enum class Across(
 /**
  * The sheet's transitions (#155's table), each started at the first frame that draws the route it goes
  * to (#197). One runs at a time: starting the next ends the last.
+ *
+ * Over detekt's function count by the pushed screen's motions (#489): one function per transition in
+ * the table, which is the point, with one owner of the views they move.
  */
+@Suppress("TooManyFunctions")
 class SheetMotion(
     private val stage: SheetStage,
 ) {
@@ -126,6 +130,79 @@ class SheetMotion(
     }
 
     /**
+     * A pushed screen in (#489): full frame, no chrome and no scrim, sliding in from the side over [under],
+     * the picture of what it covers, or fading through in place when [fade]. [under] stays behind it, for
+     * what a predictive back uncovers.
+     */
+    fun pushIn(
+        under: Bitmap?,
+        colors: KettleColors,
+        fade: Boolean,
+    ) = with(stage) {
+        cancel()
+        paint(colors)
+        layOutFull()
+        hide(scrim, chrome)
+        backdrop.setImageBitmap(under)
+        show(backdrop, sheetBack)
+        val offscreen = frameWidth
+        val frame = { p: Float ->
+            if (fade) {
+                shapedViews.forEach { it.alpha = fadeIn(p) }
+                scale(lerp(FADE_SCALE, 1f, p))
+            } else {
+                translate(0f, (1 - p) * offscreen)
+            }
+        }
+        // Held a frame over the picture, as an open is: the live view's first frame would show uncovered.
+        frame(0f)
+        val token = Any()
+        waiting = token
+        live.doOnPreDraw {
+            if (waiting ===
+                token
+            ) {
+                animate(if (fade) FADE_MS else PUSH_MS, if (fade) STANDARD else DECELERATE, frame = frame)
+            }
+        }
+    }
+
+    /**
+     * The pushed screen's last picture out to the side over the live screen it covered, or fading out in
+     * place when [fade], from wherever a predictive back left it. [under] goes behind a pushed screen that
+     * is live now, for its own predictive back; null when a tab is.
+     */
+    fun pushOut(
+        picture: Bitmap?,
+        under: Bitmap?,
+        fade: Boolean,
+    ) = with(stage) {
+        cancel()
+        val from = live.translationX
+        layOutFull()
+        hide(scrim, chrome)
+        backdrop.setImageBitmap(under)
+        if (under == null) hide(backdrop, sheetBack) else show(backdrop, sheetBack)
+        if (picture == null) return@with
+        showLeaving(picture, full = true)
+        leaving.translationX = from
+        val offscreen = frameWidth
+        animate(if (fade) FADE_MS else POP_MS, if (fade) STANDARD else ACCELERATE, onEnd = ::clearLeaving) { p ->
+            if (fade) leaving.alpha = fadeOut(p) else leaving.translationX = lerp(from, offscreen, p)
+        }
+    }
+
+    /**
+     * [under] behind a pushed screen arrived at by a close or the runner's release, which lay it out full
+     * frame themselves: the scrim is left to the close's own fade.
+     */
+    fun rest(under: Bitmap?) =
+        with(stage) {
+            backdrop.setImageBitmap(under)
+            show(backdrop)
+        }
+
+    /**
      * Into the runner, which shows over everything: the sheet grows to full height and its corners
      * flatten over the same length. One layout change up front, then translation alone; the bottom is
      * clipped by the frame until it arrives.
@@ -185,9 +262,10 @@ class SheetMotion(
     /** Back where it belongs, from wherever a drag or a predictive back left it. */
     fun settle() {
         val from = stage.sheetBack.translationY
+        val fromX = stage.live.translationX
         val scale = stage.sheetBack.scaleX
         animate(SETTLE_MS, DECELERATE) { p ->
-            stage.translate(lerp(from, 0f, p))
+            stage.translate(lerp(from, 0f, p), lerp(fromX, 0f, p))
             stage.scale(lerp(scale, 1f, p))
         }
     }
@@ -224,6 +302,10 @@ class SheetMotion(
         const val SHARED_AXIS_MS = 300L
         const val FADE_MS = 300L
         const val SETTLE_MS = 250L
+
+        // Material 3's durations for a full-screen push and its pop: emphasized, longer in than out.
+        const val PUSH_MS = 400L
+        const val POP_MS = 250L
 
         /**
          * Ends with the runner's own entrance, which is the platform's open animation, not a slide: on

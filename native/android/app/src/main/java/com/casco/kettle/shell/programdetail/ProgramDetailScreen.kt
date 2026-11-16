@@ -3,7 +3,7 @@ package com.casco.kettle.shell.programdetail
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
@@ -36,6 +36,7 @@ import com.casco.kettle.shell.form.EditIconButton
 import com.casco.kettle.shell.i18n.pluralText
 import com.casco.kettle.shell.library.rememberProgramPosition
 import com.casco.kettle.shell.list.ListRowSeparator
+import com.casco.kettle.shell.nav.BackRow
 import com.casco.kettle.shell.nav.Destination
 import com.casco.kettle.shell.nav.LocalNavigator
 import com.casco.kettle.shell.nav.Route
@@ -95,6 +96,16 @@ fun ProgramDetailScreen(
                 .navigationBarsPadding(),
             verticalArrangement = Arrangement.spacedBy(Spacing.three),
         ) {
+            // Pushed (#489): Back first, and Edit beside it once there is a program to edit, as the board
+            // draws it. The board's YAML is left out: the YAML view shows an exercise's entry only.
+            BackRow {
+                if (program != null) {
+                    Spacer(Modifier.weight(1f))
+                    EditIconButton(stringResource(R.string.programDetail_edit)) {
+                        open(Route(Destination.ProgramEditor, mapOf("id" to program.id)))
+                    }
+                }
+            }
             // Nothing before the library is read, so a program that is there is never called gone.
             when {
                 library == null -> {}
@@ -113,9 +124,7 @@ fun ProgramDetailScreen(
                     val today = rememberProgramPosition(files, clock)?.takeIf { it.program.id == program.id }
                     val own = remember(program, sessions) { programPosition(program, sessions) }
                     val position = today ?: own
-                    Header(program, today) {
-                        open(Route(Destination.ProgramEditor, mapOf("id" to program.id)))
-                    }
+                    Header(program, today)
                     val slot = SlotActions(program.id, library, open, startRunner)
                     position?.let { NextCard(it, slot) }
                     position?.let { ProgramWeeks(it, slot) }
@@ -147,26 +156,21 @@ internal class SlotActions(
         library.workouts.firstOrNull { it.id == slot.workoutId }?.name ?: slot.workoutId
 }
 
-/** The name with Edit, then "Active, week 3 · 10 weeks · 6 sessions a week", the first part only when Today runs it. */
+/** The name, then "Active, week 3 · 10 weeks · 6 sessions a week", the first part only when Today runs it. */
 @Composable
 private fun Header(
     program: Program,
     active: ProgramPosition?,
-    onEdit: () -> Unit,
 ) {
     val colors = KettleTheme.colors
-    val edit = stringResource(R.string.programDetail_edit)
     Column(verticalArrangement = Arrangement.spacedBy(Spacing.one)) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            // User data, verbatim.
-            Text(
-                program.name,
-                Modifier.weight(1f).semantics { heading() },
-                style = KettleType.subtitle,
-                color = colors.text,
-            )
-            EditIconButton(edit, onEdit)
-        }
+        // User data, verbatim.
+        Text(
+            program.name,
+            Modifier.semantics { heading() },
+            style = KettleType.subtitle,
+            color = colors.text,
+        )
         // Counted as the programs list counts them, so weeks 1, 2 and 4 are three weeks on both.
         val weeks = programWeekNumbers(program).size
         val parts =

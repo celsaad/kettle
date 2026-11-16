@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material3.Icon
@@ -86,7 +87,7 @@ internal fun Destinations(
 }
 
 /**
- * What the sheet shows (#197): the route on top of the [navigator]'s sheets, below the strip
+ * What the sheet shows (#197): the route on top of the [navigator]'s stack. A sheet's starts below the strip
  * [SheetChrome] draws over, which it leaves clear as RN's `ModalHeader` did. [onComposed] hears the route
  * composed, or null for nothing, after each composition, so the sheet can hold its arrival until the
  * screen it slides in is there.
@@ -107,7 +108,8 @@ internal fun NativeSheet(
             Modifier
                 .fillMaxSize()
                 .background(KettleTheme.colors.background)
-                .padding(top = SheetStripHeight),
+                // A pushed screen has no strip: it starts under the status bar, its Back row first (#489).
+                .then(if (route.pushed) Modifier.statusBarsPadding() else Modifier.padding(top = SheetStripHeight)),
         ) { content(route) }
     }
 }

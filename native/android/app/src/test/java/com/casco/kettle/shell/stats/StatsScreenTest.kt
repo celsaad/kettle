@@ -204,9 +204,10 @@ class StatsScreenTest {
         compose.onNode(hasText("0") and hasText("Sessões nesta semana")).assertExists()
     }
 
-    // The row is the way into the exercise's own progress screen, and it has to say which exercise.
+    // The row is the way into the exercise itself (#489), whose Progress is this row's, and it has to say
+    // which exercise.
     @Test
-    fun `opens an exercise's progress screen from its row`() {
+    fun `opens the exercise's detail from its row`() {
         withSessions(listOf(10.0, 12.0))
 
         compose
@@ -216,7 +217,7 @@ class StatsScreenTest {
             .performScrollTo()
             .performClick()
 
-        assertEquals(listOf(Route(Destination.ExerciseProgress, mapOf("exerciseId" to "rdl"))), opened)
+        assertEquals(listOf(Route(Destination.ExerciseDetail, mapOf("id" to "rdl"))), opened)
     }
 
     /** Before the log is read there's nothing to say, rather than a "train something twice" that flashes. */

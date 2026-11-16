@@ -8,6 +8,7 @@ import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsOn
+import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isHeading
 import androidx.compose.ui.test.junit4.v2.createComposeRule
@@ -315,6 +316,8 @@ class SettingsScreenTest {
     fun `is translated, except for the address itself`() {
         show()
 
+        // Pushed (#489): Back beside the title.
+        compose.onNode(hasContentDescription("Voltar")).assertExists()
         compose.onNode(hasText("Kettle") and isHeading()).performScrollTo()
         text("Escrever para o desenvolvedor")
         text(FEEDBACK_EMAIL)

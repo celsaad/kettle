@@ -9,8 +9,12 @@ import java.io.ByteArrayOutputStream
 import java.nio.ByteBuffer
 import java.nio.charset.CharacterCodingException
 
-/** How a destination is presented: as a tab under the bar, in the sheet over the tabs, or as the runner. */
-enum class Presentation { Tab, Sheet, Runner }
+/**
+ * How a destination is presented: as a tab under the bar, in the sheet over the tabs, pushed over them
+ * full screen, or as the runner. A place you go to, an exercise's or a program's own page or Settings, is
+ * pushed; a task or a peek is a sheet (#489).
+ */
+enum class Presentation { Tab, Sheet, Pushed, Runner }
 
 /**
  * Every screen the shell can show, by the path a link or `NavigateReceiver` names it with. The complete
@@ -23,11 +27,10 @@ enum class Destination(
     Today("/", Presentation.Tab),
     Library("/library", Presentation.Tab),
     Progress("/progress", Presentation.Tab),
-    Settings("/settings", Presentation.Sheet),
+    Settings("/settings", Presentation.Pushed),
     Support("/support", Presentation.Sheet),
     ProgramGuide("/program-guide", Presentation.Sheet),
-    ExerciseProgress("/exercise-progress", Presentation.Sheet),
-    ProgramDetail("/program-detail", Presentation.Sheet),
+    ProgramDetail("/program-detail", Presentation.Pushed),
     SessionEditor("/session-editor", Presentation.Sheet),
     ExerciseEditor("/exercise-editor", Presentation.Sheet),
     WorkoutEditor("/workout-editor", Presentation.Sheet),
@@ -36,7 +39,7 @@ enum class Destination(
     Import("/import", Presentation.Sheet),
     YourFile("/your-file", Presentation.Sheet),
     LibraryYaml("/library-yaml", Presentation.Sheet),
-    ExerciseDetail("/exercise", Presentation.Sheet),
+    ExerciseDetail("/exercise", Presentation.Pushed),
     Session("/session", Presentation.Runner),
 }
 
@@ -62,8 +65,12 @@ data class Route(
     val destination: Destination,
     val params: Map<String, String> = emptyMap(),
 ) {
-    /** Whether this route shows in the sheet. */
-    val sheet: Boolean get() = destination.presentation == Presentation.Sheet
+    /** Whether this route stacks over the tabs, as a sheet or pushed: what the navigator's stack holds. */
+    val stacked: Boolean
+        get() = destination.presentation == Presentation.Sheet || destination.presentation == Presentation.Pushed
+
+    /** Whether this route is pushed over the tabs, full screen with a Back of its own. */
+    val pushed: Boolean get() = destination.presentation == Presentation.Pushed
 
     /**
      * The start a [Destination.Session] route names, or null for none, which the runner's resolver reads

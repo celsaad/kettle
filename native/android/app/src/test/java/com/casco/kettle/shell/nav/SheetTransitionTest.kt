@@ -41,7 +41,7 @@ class SheetTransitionTest {
         assertEquals(Transition.Close, transitionBetween(Place.Sheet, Place.Tab, MoveKind.Back))
     }
 
-    /** Settings → Import or Support, Stats → Exercise progress, Program detail → Program editor. */
+    /** Your file → Import, Import → Program guide, Workout preview → Workout editor. */
     @Test
     fun `a push inside the sheet moves along the shared axis, and back reverses it`() {
         assertEquals(Transition.Forward, transitionBetween(Place.Sheet, Place.Sheet, MoveKind.Push))
@@ -57,7 +57,7 @@ class SheetTransitionTest {
         assertEquals(Transition.FadeOut, transitionBetween(Place.Sheet, Place.Tab, MoveKind.Navigate))
     }
 
-    /** Program detail → session, the one way into the runner from a sheet. */
+    /** Workout preview → session, the way into the runner from a sheet. */
     @Test
     fun `the sheet grows into the runner, and shrinks back out of it`() {
         assertEquals(Transition.Grow, transitionBetween(Place.Sheet, Place.Runner, MoveKind.Push))
@@ -70,10 +70,80 @@ class SheetTransitionTest {
         assertEquals(Transition.None, transitionBetween(Place.Tab, Place.Runner, MoveKind.Push))
     }
 
-    /** The runner opened over a tab closes onto it, and nothing of a sheet is left to move. */
+    /** The runner opened over a tab or a pushed screen closes onto it, and nothing of a sheet is left to move. */
     @Test
-    fun `leaving the runner for a tab releases the sheet`() {
+    fun `leaving the runner for a tab or a pushed screen releases the sheet`() {
         assertEquals(Transition.Release, transitionBetween(Place.Runner, Place.Tab, MoveKind.Back))
+        assertEquals(Transition.Release, transitionBetween(Place.Runner, Place.Pushed, MoveKind.Back))
+        // Program detail's Start: the runner opens over it as over a tab.
+        assertEquals(Transition.None, transitionBetween(Place.Pushed, Place.Runner, MoveKind.Push))
+    }
+
+    /** #489: Today → Settings, Library → Exercise detail → Program detail, and back. */
+    @Test
+    fun `a pushed screen slides in from the side over a tab or another, and back slides it out`() {
+        assertEquals(Transition.PushIn, transitionBetween(Place.Tab, Place.Pushed, MoveKind.Push))
+        assertEquals(Transition.PushOut, transitionBetween(Place.Pushed, Place.Tab, MoveKind.Back))
+        assertEquals(Transition.PushIn, transitionBetween(Place.Pushed, Place.Pushed, MoveKind.Push))
+        assertEquals(Transition.PushOut, transitionBetween(Place.Pushed, Place.Pushed, MoveKind.Back))
+    }
+
+    /** A link, a restore or a delete reaches or leaves a pushed screen in place, as it does a sheet. */
+    @Test
+    fun `a navigate to or from a pushed screen fades in place`() {
+        assertEquals(Transition.PushFadeIn, transitionBetween(Place.Tab, Place.Pushed, MoveKind.Navigate))
+        assertEquals(Transition.PushFadeOut, transitionBetween(Place.Pushed, Place.Tab, MoveKind.Navigate))
+        assertEquals(Transition.PushFadeOut, transitionBetween(Place.Pushed, Place.Pushed, MoveKind.Replace))
+    }
+
+    /** Settings → Support or Your file: a sheet covers a pushed screen as it covers a tab. */
+    @Test
+    fun `a sheet opens over a pushed screen as over a tab, and closes back onto it`() {
+        assertEquals(Transition.Open, transitionBetween(Place.Pushed, Place.Sheet, MoveKind.Push))
+        assertEquals(Transition.Close, transitionBetween(Place.Sheet, Place.Pushed, MoveKind.Back))
+    }
+
+    /** Full frame, square, with no chrome or scrim, sliding in from the side over the picture it covers. */
+    @Test
+    fun `a pushed screen comes in full frame from the side, over what it covers`() {
+        stage.layOutAsSheet()
+
+        motion.pushIn(picture, LightColors, fade = false)
+
+        assertEquals(0, (native.layoutParams as FrameLayout.LayoutParams).topMargin)
+        assertEquals(false, native.clipToOutline)
+        assertEquals(View.GONE, stage.chrome.visibility)
+        assertEquals(View.GONE, stage.scrim.visibility)
+        assertEquals(View.VISIBLE, stage.backdrop.visibility)
+        assertEquals(WIDTH_PX.toFloat(), native.translationX)
+
+        native.viewTreeObserver.dispatchOnPreDraw()
+        finishMotion()
+
+        assertEquals(0f, native.translationX)
+        // Still behind it, for what a predictive back uncovers.
+        assertEquals(View.VISIBLE, stage.backdrop.visibility)
+    }
+
+    /** A predictive back slid it part way: it leaves from there, as a picture, over the screen it covered. */
+    @Test
+    fun `a pushed screen leaves by its side from where a predictive back left it`() {
+        motion.pushIn(null, LightColors, fade = false)
+        native.viewTreeObserver.dispatchOnPreDraw()
+        finishMotion()
+        stage.translate(0f, DRAGGED_PX)
+
+        motion.pushOut(picture, null, fade = false)
+
+        assertEquals(View.VISIBLE, stage.leaving.visibility)
+        assertEquals(DRAGGED_PX, stage.leaving.translationX)
+        assertEquals(0, (stage.leaving.layoutParams as FrameLayout.LayoutParams).topMargin)
+        // A tab is live under it: nothing of the stage is left behind.
+        assertEquals(View.GONE, stage.backdrop.visibility)
+
+        finishMotion()
+
+        assertEquals(View.GONE, stage.leaving.visibility)
     }
 
     @Test

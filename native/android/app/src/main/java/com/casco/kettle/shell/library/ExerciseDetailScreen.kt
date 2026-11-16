@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -34,6 +35,7 @@ import com.casco.kettle.shell.files.LatestFiles
 import com.casco.kettle.shell.files.LocalLatestFiles
 import com.casco.kettle.shell.files.unitsOrDevice
 import com.casco.kettle.shell.form.SheetColumn
+import com.casco.kettle.shell.nav.BackRow
 import com.casco.kettle.shell.nav.Destination
 import com.casco.kettle.shell.nav.LocalNavigator
 import com.casco.kettle.shell.nav.Route
@@ -47,16 +49,14 @@ import kotlin.time.Instant
 
 /**
  * The param naming the exercise on Exercise detail and on its YAML view: `id`, the word the exercise
- * editor's route already reads, so Edit passes it on unchanged. Not `EXERCISE_ID_PARAM`, Stats'
- * progress sheet's `exerciseId`.
+ * editor's route already reads, so Edit passes it on unchanged. Getting stronger's rows open it by it too.
  */
 const val EXERCISE_PARAM = "id"
 
-/** What the route table draws at `Destination.ExerciseDetail`, opened from Library's Exercises. */
+/** What the route table draws at `Destination.ExerciseDetail`, opened from Library's Exercises and Getting stronger. */
 @Composable
 fun ExerciseDetailRoute(params: Map<String, String>) {
-    // Once per opening, as Stats' progress sheet reads its clock: the window doesn't creep under a
-    // reader who leaves the sheet up.
+    // Once per opening: the window doesn't creep under a reader who leaves the screen up.
     val now = remember { Clock.System.now() }
     ExerciseDetailScreen(
         params[EXERCISE_PARAM],
@@ -83,8 +83,8 @@ fun ExerciseDetailScreen(
     zone: TimeZone,
     open: (Route) -> Unit,
 ) {
-    val library = files.library ?: return
-    val exercise = library.exercises.firstOrNull { it.id == id }
+    val library = files.library
+    val exercise = library?.exercises?.firstOrNull { it.id == id }
     Box(Modifier.fillMaxSize().verticalScroll(rememberScrollState()), contentAlignment = Alignment.TopCenter) {
         Column(
             SheetColumn
@@ -92,12 +92,34 @@ fun ExerciseDetailScreen(
                 .padding(bottom = Spacing.six)
                 .navigationBarsPadding(),
         ) {
+            // Back before anything is read: a screen restored after process death is blank until then,
+            // and has no × of its own to leave by.
+            if (library == null) {
+                BackRow()
+                return@Column
+            }
             if (exercise == null) {
+                BackRow()
+                // Gone from the library but not from the log: Getting stronger still lists it (#489), so
+                // its name, by the id the log keeps, and how it went stay; there is nothing to edit.
+                if (id != null) {
+                    Text(
+                        id,
+                        Modifier.padding(top = Spacing.two).semantics { heading() },
+                        style = KettleType.subtitle,
+                        color = KettleTheme.colors.text,
+                    )
+                }
                 Text(
                     stringResource(R.string.exerciseDetail_missing),
+                    Modifier.padding(top = Spacing.one),
                     style = KettleType.default,
                     color = KettleTheme.colors.textSecondary,
                 )
+                if (id != null) {
+                    ProgressSection(id, files, now, zone)
+                    RecentSessions(id, files, zone)
+                }
                 return@Column
             }
             Actions(
@@ -105,22 +127,20 @@ fun ExerciseDetailScreen(
                 onEdit = { open(Route(Destination.ExerciseEditor, mapOf(EXERCISE_PARAM to exercise.id))) },
             )
             Identity(exercise, files)
-            ProgressSection(exercise, files, now, zone)
-            RecentSessions(exercise, files, zone)
+            ProgressSection(exercise.id, files, now, zone)
+            RecentSessions(exercise.id, files, zone)
             UsedIn(exercise, library, open)
         }
     }
 }
 
-/** YAML and Edit, top right, as the board draws them: the two things to do with what's below. */
+/** Back, then YAML and Edit top right, as the board draws them: the two things to do with what's below. */
 @Composable
 private fun Actions(
     onYaml: () -> Unit,
     onEdit: () -> Unit,
-) = Row(
-    Modifier.fillMaxWidth(),
-    horizontalArrangement = Arrangement.spacedBy(Spacing.two, Alignment.End),
-) {
+) = BackRow {
+    Spacer(Modifier.weight(1f))
     // The file's own name for it, in the file's face, with "</>" (#486), as the board draws it.
     OutlinedPill(stringResource(R.string.exerciseDetail_yaml), onYaml, code = true)
     OutlinedPill(stringResource(R.string.exerciseDetail_edit), onEdit)

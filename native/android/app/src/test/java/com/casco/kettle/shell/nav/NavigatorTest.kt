@@ -53,16 +53,23 @@ class NavigatorTest {
         assertTrue(navigator.barShown)
     }
 
+    /** #489: pushed screens and sheets share one stack; its top says which place shows. */
     @Test
-    fun `sheets stack, and back walks down them one at a time`() {
+    fun `pushed screens and sheets stack together, and back walks down them one at a time`() {
         navigator.push(settings)
+
+        assertEquals(Place.Pushed, navigator.place)
+        assertFalse(navigator.barShown)
+
         navigator.push(support)
 
         assertEquals(support, navigator.sheet)
+        assertEquals(Place.Sheet, navigator.place)
 
         navigator.back()
 
         assertEquals(settings, navigator.sheet)
+        assertEquals(Place.Pushed, navigator.place)
     }
 
     /** The program guide's hand-off to Import: back from Import skips the guide. */
@@ -186,7 +193,7 @@ class NavigatorTest {
                 }
             }
 
-        navigator.push(settings)
+        navigator.push(Route(Destination.Import))
         navigator.replace(support)
         navigator.openRunner(bench)
         navigator.select(Tab.Progress)
@@ -224,6 +231,7 @@ class NavigatorTest {
 
         assertEquals(Tab.Library, restored.tab)
         assertEquals(settings, restored.sheet)
+        assertEquals(Place.Pushed, restored.place)
         restored.back()
         assertEquals(editor("pushups"), restored.sheet)
     }

@@ -61,6 +61,7 @@ import com.casco.kettle.shell.files.LocalLatestFiles
 import com.casco.kettle.shell.i18n.deviceUnitSystem
 import com.casco.kettle.shell.i18n.firstWeekday
 import com.casco.kettle.shell.i18n.pluralText
+import com.casco.kettle.shell.library.EXERCISE_PARAM
 import com.casco.kettle.shell.list.ListRow
 import com.casco.kettle.shell.list.ListRowMinHeight
 import com.casco.kettle.shell.list.ListRowSeparator
@@ -68,7 +69,6 @@ import com.casco.kettle.shell.list.ListRowVerticalPadding
 import com.casco.kettle.shell.nav.Destination
 import com.casco.kettle.shell.nav.LocalNavigator
 import com.casco.kettle.shell.nav.Route
-import com.casco.kettle.shell.progress.EXERCISE_ID_PARAM
 import com.casco.kettle.shell.progress.Readings
 import com.casco.kettle.shell.theme.KettleTheme
 import com.casco.kettle.shell.theme.KettleType
@@ -157,8 +157,9 @@ fun StatsScreen(
                     stringResource(R.string.analytics_progressTitle),
                     stringResource(R.string.exerciseDetail_window, TREND_WEEKS),
                 )
+                // A row opens the exercise itself (#489), whose Progress is this row's reading and chart.
                 ProgressSection(progress, exercises, units) { exerciseId ->
-                    open(Route(Destination.ExerciseProgress, mapOf(EXERCISE_ID_PARAM to exerciseId)))
+                    open(Route(Destination.ExerciseDetail, mapOf(EXERCISE_PARAM to exerciseId)))
                 }
             }
         }

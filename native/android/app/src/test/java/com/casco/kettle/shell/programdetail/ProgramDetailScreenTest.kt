@@ -182,6 +182,8 @@ class ProgramDetailScreenTest {
         compose.onNodeWithText("Dia de descanso").assertExists()
         control("Começar Semana 1 · Day 1").assertExists()
         control("Editar programa").assertExists()
+        // Pushed (#489): Back first, Edit beside it.
+        control("Voltar").assertExists()
         compose.onNodeWithText("Semanas").assert(isHeading())
         compose.onNode(hasText("Iniciar") and isButton).assertExists()
         // Day labels and notes are user data and stay in the language they were written in.

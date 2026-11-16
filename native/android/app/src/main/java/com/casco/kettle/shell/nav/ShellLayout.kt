@@ -94,7 +94,7 @@ class ShellLayout(
      */
     fun show(place: Place) {
         destinations.visibility = if (place == Place.Tab) VISIBLE else INVISIBLE
-        nativeSheet.visibility = if (place == Place.Sheet) VISIBLE else INVISIBLE
+        nativeSheet.visibility = if (place.stacked) VISIBLE else INVISIBLE
         nativeRunner.visibility = if (place == Place.Runner) VISIBLE else INVISIBLE
     }
 

@@ -226,7 +226,10 @@ class ShellTest {
         }
     }
 
-    /** The sheet's back, with its predictive shrink, is on only while a sheet shows; the tabs' is the app's. */
+    /**
+     * The sheet's back, with its predictive motion, is on only while a sheet or a pushed screen shows;
+     * the tabs' is the app's.
+     */
     @Test
     fun `the sheet takes back only while a sheet shows`() {
         show()
@@ -303,9 +306,9 @@ class ShellTest {
     fun `a pushed sheet shows its screen in the sheet's view, given the route's params`() {
         show()
 
-        go { push(Route(Destination.ExerciseProgress, mapOf("exerciseId" to "kb-swing"))) }
+        go { push(Route(Destination.ExerciseEditor, mapOf("id" to "kb-swing"))) }
 
-        compose.onNodeWithText("Screen ExerciseProgress kb-swing").assertIsDisplayed()
+        compose.onNodeWithText("Screen ExerciseEditor kb-swing").assertIsDisplayed()
         compose.runOnIdle { assertEquals(View.VISIBLE, shell.nativeSheet.visibility) }
     }
 
@@ -318,7 +321,7 @@ class ShellTest {
     fun `a sheet arrives within frames, not at the backstop`() {
         show()
 
-        go(settle = false) { push(Route(Destination.ExerciseProgress, mapOf("exerciseId" to "kb-swing"))) }
+        go(settle = false) { push(Route(Destination.ExerciseEditor, mapOf("id" to "kb-swing"))) }
 
         compose.runOnIdle { assertEquals(View.VISIBLE, closeButton().parentView().visibility) }
     }
@@ -333,20 +336,74 @@ class ShellTest {
         compose.onNodeWithText("Screen Support").assertTopPositionInRootIsEqualTo(SheetStripHeight)
     }
 
-    /** Settings → Support, and back: the sheet's view shows each in turn. */
+    /** Import → Your file's sibling, and back: the sheet's view shows each in turn. */
     @Test
     fun `a sheet pushed over a sheet replaces it, and back brings the first back`() {
+        show()
+        go { push(Route(Destination.Import)) }
+
+        go { push(Route(Destination.Support)) }
+
+        compose.onNodeWithText("Screen Support").assertIsDisplayed()
+        compose.onNodeWithText("Screen Import").assertDoesNotExist()
+
+        go { back() }
+
+        compose.onNodeWithText("Screen Import").assertIsDisplayed()
+    }
+
+    /**
+     * A pushed screen (#489) fills the frame from the top, with no grabber or × and no bar, and back
+     * pops it to the tab it covered.
+     */
+    @Test
+    fun `a pushed screen fills the frame with no sheet chrome, and back pops it`() {
+        show()
+        tab("Progress").performClick()
+
+        go { push(Route(Destination.Settings)) }
+
+        compose.onNodeWithText("Screen Settings").assertTopPositionInRootIsEqualTo(0.dp)
+        compose.runOnIdle { assertEquals(View.GONE, shell.sheet.stage.chrome.visibility) }
+        tab("Today").assertDoesNotExist()
+
+        go { back() }
+
+        compose.onNodeWithText("Screen Progress").assertIsDisplayed()
+        compose.onNodeWithText("Screen Settings").assertDoesNotExist()
+    }
+
+    /** Settings → Support: the sheet covers the pushed screen as it covers a tab, and closes onto it. */
+    @Test
+    fun `a sheet over a pushed screen is a sheet, and closes back onto it`() {
         show()
         go { push(Route(Destination.Settings)) }
 
         go { push(Route(Destination.Support)) }
 
-        compose.onNodeWithText("Screen Support").assertIsDisplayed()
-        compose.onNodeWithText("Screen Settings").assertDoesNotExist()
+        compose.onNodeWithText("Screen Support").assertTopPositionInRootIsEqualTo(SheetStripHeight)
+        compose.runOnIdle { assertEquals(View.VISIBLE, closeButton().parentView().visibility) }
 
         go { back() }
 
-        compose.onNodeWithText("Screen Settings").assertIsDisplayed()
+        compose.onNodeWithText("Screen Settings").assertTopPositionInRootIsEqualTo(0.dp)
+        compose.runOnIdle { assertEquals(View.GONE, shell.sheet.stage.chrome.visibility) }
+    }
+
+    /** Exercise detail's Used in → Program detail, and back. */
+    @Test
+    fun `a pushed screen over a pushed screen goes back to it`() {
+        show()
+        go { push(Route(Destination.ExerciseDetail, mapOf("id" to "dips"))) }
+
+        go { push(Route(Destination.ProgramDetail, mapOf("programId" to "base"))) }
+
+        compose.onNodeWithText("Screen ProgramDetail base").assertIsDisplayed()
+
+        go { back() }
+
+        compose.onNodeWithText("Screen ExerciseDetail dips").assertTopPositionInRootIsEqualTo(0.dp)
+        compose.runOnIdle { assertEquals(true, shell.sheet.backCallback.isEnabled) }
     }
 
     /** Closing it lands on the tab it opened over, with that tab's layer back. */

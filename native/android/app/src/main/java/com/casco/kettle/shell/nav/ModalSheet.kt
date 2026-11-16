@@ -37,8 +37,21 @@ class ModalSheet(
 
     private var place = Place.Tab
 
-    /** The tab under the sheet, kept while the sheet is up: the runner shrinking back needs it again. */
+    /**
+     * What the sheet covers, a tab or a pushed screen, kept while the sheet is up: the runner shrinking
+     * back needs it again.
+     */
     private var tabPicture: Bitmap? = null
+
+    /**
+     * What each pushed screen covers, bottom to top (#489): a predictive back uncovers it, and the one
+     * under a pushed screen that goes back to another is behind that one. Null where there was nothing
+     * to picture, as after a restore.
+     */
+    private val pushedUnder = mutableListOf<Bitmap?>()
+
+    /** The picture [willMove] took for a pushed screen arriving, which [moved] files under it. */
+    private var arrivingUnder: Bitmap? = null
     private var sheetPicture: Bitmap? = null
 
     /** While an arrival is held: the picture its transition slides out, which is still on screen. */
@@ -53,7 +66,12 @@ class ModalSheet(
             override fun handleOnBackStarted(backEvent: BackEventCompat) = motion.cancel()
 
             override fun handleOnBackProgressed(backEvent: BackEventCompat) {
-                stage.scale(1 - PREDICTIVE_SHRINK * backEvent.progress)
+                // A pushed screen starts to leave the way it will, by its side; a sheet shrinks.
+                if (place == Place.Pushed) {
+                    stage.translate(0f, PREDICTIVE_SLIDE * stage.endward * backEvent.progress)
+                } else {
+                    stage.scale(1 - PREDICTIVE_SHRINK * backEvent.progress)
+                }
             }
 
             override fun handleOnBackCancelled() = motion.settle()
@@ -61,7 +79,7 @@ class ModalSheet(
             override fun handleOnBackPressed() {
                 navigator.back()
                 // A back the navigator drops moves nothing, and the shrink has to come undone.
-                if (place == Place.Sheet && !motion.running) motion.settle()
+                if (place.stacked && !motion.running) motion.settle()
             }
         }
 
@@ -87,6 +105,8 @@ class ModalSheet(
     fun repaint(colors: KettleColors) {
         if (place != Place.Tab && painted != null && colors != painted) {
             tabPicture = null
+            // Settings, pushed, is where the scheme changes: what it covers was pictured in the old one.
+            pushedUnder.replaceAll { null }
             stage.backdrop.setImageDrawable(null)
         }
         painted = colors
@@ -99,14 +119,68 @@ class ModalSheet(
      * covers whatever would be pictured.
      */
     override fun willMove(move: Move) {
+        arrivingUnder = null
         when (move.from) {
-            Place.Tab -> if (move.to != Place.Tab) tabPicture = pictureOf(shell)
+            Place.Tab -> {
+                if (move.to != Place.Tab) {
+                    val tab = pictureOf(shell)
+                    if (move.to == Place.Pushed) arrivingUnder = tab else tabPicture = tab
+                }
+            }
 
             // Held, the screen still shows the sheet before: the one live now hasn't composed.
-            Place.Sheet -> sheetPicture = if (shell.nativeFrames.holding) heldPicture else pictureOf(stage.live)
+            Place.Sheet -> {
+                sheetPicture = livePicture()
+            }
 
-            Place.Runner -> Unit
+            // Full frame, so the live view's picture is the screen's: what a sheet or the next pushed
+            // screen covers, and what slides out when this one goes.
+            Place.Pushed -> {
+                val pushed = livePicture()
+                sheetPicture = pushed
+                // A link to a sheet leaves the stack for the tabs, so the sheet covers no pushed screen.
+                if (move.to == Place.Sheet && move.kind != MoveKind.Navigate) tabPicture = pushed
+                if (move.to == Place.Pushed && move.kind == MoveKind.Push) arrivingUnder = pushed
+            }
+
+            // The runner covers whatever would be pictured.
+            Place.Runner -> {}
         }
+    }
+
+    private fun livePicture() = if (shell.nativeFrames.holding) heldPicture else pictureOf(stage.live)
+
+    /**
+     * Keeps [pushedUnder] one picture per pushed screen in the stack, as [move] changes it. Two moves no
+     * caller makes yet aren't handled: a replace from a pushed screen to a sheet, which would leave its
+     * picture behind, and a back from a pushed screen onto a sheet, which [willMove] would picture as
+     * what that sheet covers. The first caller of either has to file them here.
+     */
+    private fun file(move: Move) {
+        when {
+            move.to == Place.Tab -> {
+                pushedUnder.clear()
+            }
+
+            move.kind == MoveKind.Navigate -> {
+                pushedUnder.clear()
+                if (move.to == Place.Pushed) pushedUnder += arrivingUnder
+            }
+
+            move.to == Place.Pushed && move.kind == MoveKind.Push && move.from != Place.Runner -> {
+                pushedUnder += arrivingUnder
+            }
+
+            move.from == Place.Pushed && move.kind == MoveKind.Back -> {
+                pushedUnder.removeLastOrNull()
+            }
+
+            // A replace, or a sheet opening onto a pushed screen: its place is the one it took.
+            move.to == Place.Pushed && pushedUnder.isEmpty() -> {
+                pushedUnder += null
+            }
+        }
+        arrivingUnder = null
     }
 
     /** Where [move] arrives, shown at once, with its transition held until its route has composed. */
@@ -117,7 +191,8 @@ class ModalSheet(
         val from = place
         val to = move.to
         place = to
-        backCallback.isEnabled = to == Place.Sheet
+        file(move)
+        backCallback.isEnabled = to.stacked
         shell.show(navigator.place)
         if (from == Place.Sheet && to == Place.Sheet) stage.layOutAsSheet()
         // Each picture is used once; the tab's stays until the sheet has gone.
@@ -125,10 +200,10 @@ class ModalSheet(
         val start = {
             heldPicture = null
             play(transition, sheet)
-            if (to == Place.Tab) tabPicture = null
+            if (to == Place.Tab || to == Place.Pushed) tabPicture = null
         }
         val route = navigator.sheet
-        if (to == Place.Sheet && route != null) {
+        if (to.stacked && route != null) {
             heldPicture = sheet
             shell.nativeFrames.awaitComposed(route, start)
         } else {
@@ -136,6 +211,8 @@ class ModalSheet(
         }
     }
 
+    // Over detekt's complexity by one branch per transition: the table's other half, as transitionBetween.
+    @Suppress("CyclomaticComplexMethod")
     private fun play(
         transition: Transition,
         sheet: Bitmap?,
@@ -152,7 +229,13 @@ class ModalSheet(
             Transition.Grow -> motion.grow()
             Transition.Shrink -> motion.shrink(tabPicture, colors())
             Transition.Release -> motion.release()
+            Transition.PushIn -> motion.pushIn(pushedUnder.lastOrNull(), colors(), fade = false)
+            Transition.PushFadeIn -> motion.pushIn(pushedUnder.lastOrNull(), colors(), fade = true)
+            Transition.PushOut -> motion.pushOut(sheet, pushedUnder.lastOrNull(), fade = false)
+            Transition.PushFadeOut -> motion.pushOut(sheet, pushedUnder.lastOrNull(), fade = true)
         }
+        // Back on a pushed screen from a sheet or the runner, which leave it laid out as theirs.
+        if (place == Place.Pushed && transition !in PUSH_MOTIONS) motion.rest(pushedUnder.lastOrNull())
     }
 
     /** Past a quarter of the frame, or flung down, it goes back; anything else snaps back. */
@@ -178,6 +261,12 @@ class ModalSheet(
     private companion object {
         const val TAG = "ModalSheet"
         const val PREDICTIVE_SHRINK = 0.1f
+
+        /** How far across the frame a pushed screen follows a predictive back before it's let go. */
+        const val PREDICTIVE_SLIDE = 0.1f
+
+        private val PUSH_MOTIONS =
+            setOf(Transition.PushIn, Transition.PushFadeIn, Transition.PushOut, Transition.PushFadeOut)
         const val DISMISS_FRACTION = 0.25f
         const val FLING_DP_PER_S = 1000f
     }

@@ -68,8 +68,8 @@ class RouteTest {
         assertEquals(Route(Destination.Progress), Route.fromLink("kettle:///progress"))
         assertEquals(Route(Destination.Today), Route.fromLink("kettle://"))
         assertEquals(
-            Route(Destination.ExerciseProgress, mapOf("exerciseId" to "pushups")),
-            Route.fromLink("kettle://exercise-progress?exerciseId=pushups"),
+            Route(Destination.ExerciseDetail, mapOf("id" to "pushups")),
+            Route.fromLink("kettle://exercise?id=pushups"),
         )
     }
 
@@ -102,10 +102,14 @@ class RouteTest {
     }
 
     @Test
-    fun `only the sheet destinations are sheets`() {
-        assertTrue(Route(Destination.Settings).sheet)
-        assertFalse(Route(Destination.Progress).sheet)
-        assertFalse(Route(Destination.Session).sheet)
+    fun `sheets and pushed screens stack over the tabs, and only the places are pushed`() {
+        assertTrue(Route(Destination.Support).stacked)
+        assertTrue(Route(Destination.Settings).stacked)
+        assertFalse(Route(Destination.Progress).stacked)
+        assertFalse(Route(Destination.Session).stacked)
+        // #489: a place you go to is pushed, a task or a peek is a sheet.
+        val pushed = Destination.entries.filter { Route(it).pushed }
+        assertEquals(listOf(Destination.Settings, Destination.ProgramDetail, Destination.ExerciseDetail), pushed)
     }
 
     /** #411: the four-tab shell's paths land on the tab and section that now hold their screens. */

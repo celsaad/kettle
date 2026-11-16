@@ -12,7 +12,6 @@ import com.casco.kettle.shell.preview.WorkoutPreviewRoute
 import com.casco.kettle.shell.programdetail.ProgramDetailRoute
 import com.casco.kettle.shell.programeditor.ProgramEditorRoute
 import com.casco.kettle.shell.programguide.ProgramGuideRoute
-import com.casco.kettle.shell.progress.ExerciseProgressRoute
 import com.casco.kettle.shell.progress.ProgressTab
 import com.casco.kettle.shell.runner.RunnerRoute
 import com.casco.kettle.shell.sessioneditor.SessionEditorRoute
@@ -47,8 +46,6 @@ internal fun RouteContent(route: Route) {
         Destination.Support -> SupportRoute()
 
         Destination.ProgramGuide -> ProgramGuideRoute()
-
-        Destination.ExerciseProgress -> ExerciseProgressRoute(params)
 
         Destination.ProgramDetail -> ProgramDetailRoute(params)
 

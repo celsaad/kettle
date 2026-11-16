@@ -1,6 +1,7 @@
 {
   "common": {
     "settings": "Settings",
+    "back": "Back",
     "cancel": "Cancel",
     "delete": "Delete",
     "save": "Save",
@@ -140,9 +141,7 @@
   "exerciseProgress": {
     "since": "since {{date}}",
     "newBest": "New best",
-    "newBestTag": "· new best",
-    "sessionsTitle": "Sessions · last {{count}} weeks",
-    "notFound": "Nothing to chart for this exercise in the last {{count}} weeks."
+    "newBestTag": "· new best"
   },
   "library": {
     "title": "Library",

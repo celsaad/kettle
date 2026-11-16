@@ -21,7 +21,7 @@ class NativeFramesTest {
     private val started = mutableListOf<String>()
 
     private val support = Route(Destination.Support)
-    private val progress = Route(Destination.ExerciseProgress, mapOf("exerciseId" to "kb-swing"))
+    private val progress = Route(Destination.ExerciseDetail, mapOf("id" to "kb-swing"))
 
     /** One frame's pre-draw: whether it would have been drawn. */
     private fun frame(): Boolean = view.viewTreeObserver.dispatchOnPreDraw().not()
@@ -47,7 +47,7 @@ class NativeFramesTest {
     fun `a composition of anything else doesn't release it`() {
         frames.awaitComposed(progress) { started += "progress" }
 
-        frames.onComposed(Route(Destination.ExerciseProgress, mapOf("exerciseId" to "goblet-squat")))
+        frames.onComposed(Route(Destination.ExerciseDetail, mapOf("id" to "goblet-squat")))
         frame()
         frames.onComposed(null)
         frame()

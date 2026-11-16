@@ -30,8 +30,7 @@ import kotlin.time.Instant
 
 /*
  * One exercise's reading, as Exercise detail's Progress draws it (#413): Getting stronger's own row, its
- * number and its chart. The sheet that drew it first, opened from a Getting stronger row, went in #489,
- * when the row started opening Exercise detail.
+ * number and its chart, drawn from the row rather than read again, so the two never disagree.
  */
 
 /** Where the exercise is now, how far it moved, and since when. */

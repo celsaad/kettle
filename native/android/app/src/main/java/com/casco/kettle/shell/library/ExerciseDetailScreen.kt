@@ -29,7 +29,6 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import com.casco.kettle.domain.Exercise
-import com.casco.kettle.domain.exerciseName
 import com.casco.kettle.shell.R
 import com.casco.kettle.shell.art.ExerciseArt
 import com.casco.kettle.shell.files.LatestFiles
@@ -84,8 +83,8 @@ fun ExerciseDetailScreen(
     zone: TimeZone,
     open: (Route) -> Unit,
 ) {
-    val library = files.library ?: return
-    val exercise = library.exercises.firstOrNull { it.id == id }
+    val library = files.library
+    val exercise = library?.exercises?.firstOrNull { it.id == id }
     Box(Modifier.fillMaxSize().verticalScroll(rememberScrollState()), contentAlignment = Alignment.TopCenter) {
         Column(
             SheetColumn
@@ -93,13 +92,19 @@ fun ExerciseDetailScreen(
                 .padding(bottom = Spacing.six)
                 .navigationBarsPadding(),
         ) {
+            // Back before anything is read: a screen restored after process death is blank until then,
+            // and has no × of its own to leave by.
+            if (library == null) {
+                BackRow()
+                return@Column
+            }
             if (exercise == null) {
                 BackRow()
                 // Gone from the library but not from the log: Getting stronger still lists it (#489), so
                 // its name, by the id the log keeps, and how it went stay; there is nothing to edit.
                 if (id != null) {
                     Text(
-                        exerciseName(library.exercises, id),
+                        id,
                         Modifier.padding(top = Spacing.two).semantics { heading() },
                         style = KettleType.subtitle,
                         color = KettleTheme.colors.text,

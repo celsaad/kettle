@@ -68,7 +68,7 @@ class ModalSheet(
             override fun handleOnBackProgressed(backEvent: BackEventCompat) {
                 // A pushed screen starts to leave the way it will, by its side; a sheet shrinks.
                 if (place == Place.Pushed) {
-                    stage.translate(0f, PREDICTIVE_SLIDE * stage.frameWidth * backEvent.progress)
+                    stage.translate(0f, PREDICTIVE_SLIDE * stage.endward * backEvent.progress)
                 } else {
                     stage.scale(1 - PREDICTIVE_SHRINK * backEvent.progress)
                 }
@@ -150,7 +150,12 @@ class ModalSheet(
 
     private fun livePicture() = if (shell.nativeFrames.holding) heldPicture else pictureOf(stage.live)
 
-    /** Keeps [pushedUnder] one picture per pushed screen in the stack, as [move] changes it. */
+    /**
+     * Keeps [pushedUnder] one picture per pushed screen in the stack, as [move] changes it. Two moves no
+     * caller makes yet aren't handled: a replace from a pushed screen to a sheet, which would leave its
+     * picture behind, and a back from a pushed screen onto a sheet, which [willMove] would picture as
+     * what that sheet covers. The first caller of either has to file them here.
+     */
     private fun file(move: Move) {
         when {
             move.to == Place.Tab -> {
@@ -260,7 +265,8 @@ class ModalSheet(
         /** How far across the frame a pushed screen follows a predictive back before it's let go. */
         const val PREDICTIVE_SLIDE = 0.1f
 
-        val PUSH_MOTIONS = setOf(Transition.PushIn, Transition.PushFadeIn, Transition.PushOut, Transition.PushFadeOut)
+        private val PUSH_MOTIONS =
+            setOf(Transition.PushIn, Transition.PushFadeIn, Transition.PushOut, Transition.PushFadeOut)
         const val DISMISS_FRACTION = 0.25f
         const val FLING_DP_PER_S = 1000f
     }

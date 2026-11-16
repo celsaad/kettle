@@ -231,6 +231,7 @@ class NavigatorTest {
 
         assertEquals(Tab.Library, restored.tab)
         assertEquals(settings, restored.sheet)
+        assertEquals(Place.Pushed, restored.place)
         restored.back()
         assertEquals(editor("pushups"), restored.sheet)
     }

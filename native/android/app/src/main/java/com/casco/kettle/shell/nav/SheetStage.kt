@@ -174,8 +174,12 @@ class SheetStage(
         it.translationX = dx
     }
 
-    /** The frame's width: off its side from a pushed screen's place. */
-    val frameWidth: Float get() = content.width.toFloat()
+    /**
+     * The frame's width towards its end, where a pushed screen comes from and leaves by: right, or left in
+     * a right-to-left layout, as Back's chevron mirrors.
+     */
+    val endward: Float
+        get() = content.width.toFloat() * if (content.layoutDirection == View.LAYOUT_DIRECTION_RTL) -1 else 1
 
     private fun sheetParams(
         width: Int,

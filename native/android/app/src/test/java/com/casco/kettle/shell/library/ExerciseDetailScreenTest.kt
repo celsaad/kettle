@@ -289,6 +289,8 @@ class ExerciseDetailScreenTest {
         text("Sessões recentes").performScrollTo().assertExists()
         button("Editar").assertDoesNotExist()
         button("YAML").assertDoesNotExist()
+        // Nothing can use an exercise the library doesn't hold.
+        text("Usado em").assertDoesNotExist()
         compose.onNode(hasContentDescription("Voltar") and isButton).assertExists()
     }
 
@@ -311,9 +313,9 @@ class ExerciseDetailScreenTest {
         text("+4.4 lb").assertExists()
     }
 
-    /** Pushed (#489): Back first, at the top, before YAML and Edit. */
+    /** Pushed (#489): a Back of its own, in place of the sheet's ×. */
     @Test
-    fun `has a Back above everything`() {
+    fun `has a 48dp Back`() {
         show()
 
         compose.onNode(hasContentDescription("Voltar") and isButton).assertHeightIsAtLeast(48.dp)
@@ -325,6 +327,8 @@ class ExerciseDetailScreenTest {
 
         text("Este exercício não está mais na sua biblioteca.").assertDoesNotExist()
         text("Squat").assertDoesNotExist()
+        // A restore after process death lands here first, and needs a way out before the read.
+        compose.onNode(hasContentDescription("Voltar") and isButton).assertExists()
     }
 
     private val isButton = SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Button)

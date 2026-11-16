@@ -145,7 +145,7 @@ class SheetMotion(
         hide(scrim, chrome)
         backdrop.setImageBitmap(under)
         show(backdrop, sheetBack)
-        val offscreen = frameWidth
+        val offscreen = endward
         val frame = { p: Float ->
             if (fade) {
                 shapedViews.forEach { it.alpha = fadeIn(p) }
@@ -186,7 +186,7 @@ class SheetMotion(
         if (picture == null) return@with
         showLeaving(picture, full = true)
         leaving.translationX = from
-        val offscreen = frameWidth
+        val offscreen = endward
         animate(if (fade) FADE_MS else POP_MS, if (fade) STANDARD else ACCELERATE, onEnd = ::clearLeaving) { p ->
             if (fade) leaving.alpha = fadeOut(p) else leaving.translationX = lerp(from, offscreen, p)
         }

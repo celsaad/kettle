@@ -10,8 +10,10 @@
 #
 # A start opens the native runner, in every build since the flip release (#308), and is waited on
 # past its count-in, by its Swap: End is in the header from the count-in on, and a back sent during
-# the count-in leaves without asking, so waiting on End raced the count-in (#367). Every route is
-# the same in debug and release, and routing is native's in both since #309.
+# the count-in leaves without asking, so waiting on End raced the count-in (#367). Swap shows on a
+# running set that has something to swap to, which the seed's Foundations Push opens on: a seed edit
+# that took that away would fail here as if navigation had. Every route is the same in debug and
+# release, and routing is native's in both since #309.
 #
 # Usage: scripts/route-check.sh [--device <adb serial>] [--package com.casco.kettle.bench2]
 set -euo pipefail

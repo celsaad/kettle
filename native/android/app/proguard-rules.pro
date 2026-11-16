@@ -17,5 +17,7 @@
 -renamesourcefileattribute SourceFile
 
 # An I/O failure with no message is reported by its class's simple name (WriteRefusal.kt,
-# ImportRoute.kt), which the user sees in a refusal. Renamed, that would read "a".
+# ImportRoute.kt), which the user sees in a refusal. Today every one that reaches there is the
+# platform's, which R8 never renames, and the app's own (LibraryTooLargeException) carries a message.
+# This guards the next one, ours or a bundled library's, which renamed would read "a".
 -keepnames class * extends java.lang.Throwable

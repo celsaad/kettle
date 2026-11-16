@@ -23,7 +23,7 @@ here, next to what it describes.
 ### What changed
 
 - **A much smaller app**: Kettle now leaves out the library code it never uses, so the download is
-  about a quarter of its old size. Nothing you can see changes (#367).
+  much smaller. Nothing you can see changes (#367).
 
 ---
 

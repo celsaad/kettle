@@ -31,6 +31,7 @@ import androidx.compose.ui.unit.dp
 import com.casco.kettle.domain.Exercise
 import com.casco.kettle.shell.R
 import com.casco.kettle.shell.art.ExerciseArt
+import com.casco.kettle.shell.art.hasArt
 import com.casco.kettle.shell.files.LatestFiles
 import com.casco.kettle.shell.files.LocalLatestFiles
 import com.casco.kettle.shell.files.unitsOrDevice
@@ -43,6 +44,7 @@ import com.casco.kettle.shell.theme.KettleTheme
 import com.casco.kettle.shell.theme.KettleType
 import com.casco.kettle.shell.theme.Spacing
 import com.casco.kettle.shell.theme.TypeIcon
+import com.casco.kettle.shell.theme.card
 import kotlinx.datetime.TimeZone
 import kotlin.time.Clock
 import kotlin.time.Instant
@@ -178,8 +180,18 @@ private fun Identity(
         style = KettleType.default,
         color = colors.textSecondary,
     )
-    Box(Modifier.fillMaxWidth().padding(top = Spacing.three), contentAlignment = Alignment.Center) {
-        ExerciseArt(exercise.id)
+    // On a card when there is a drawing, and no empty card when there isn't: most exercises are the user's.
+    if (hasArt(exercise.id)) {
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .padding(top = Spacing.three)
+                .card()
+                .padding(Spacing.three),
+            contentAlignment = Alignment.Center,
+        ) {
+            ExerciseArt(exercise.id)
+        }
     }
     exercise.notes?.takeIf { it.isNotBlank() }?.let {
         Text(it, Modifier.padding(top = Spacing.three), style = KettleType.default, color = colors.text)

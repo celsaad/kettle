@@ -38,15 +38,14 @@ import kotlin.time.Instant
  * that set a new best, which is what the key under the chart names; the latest, when it didn't, gets a
  * hollow ring instead, so a dip at the end can't be read as a record. A y axis of round steps from zero
  * (#413), dashed lines labelled at the right edge, the top one with its unit, replaced labels on the
- * first and last points, which collided with it there. Every value is still in the list below, so
- * there is no tap-for-a-value tooltip.
+ * first and last points, which collided with it there. Every value is readable elsewhere on the page,
+ * so there is no tap-for-a-value tooltip.
  *
- * A Canvas, so it has no semantics of its own. On Stats' sheet TalkBack passes over it, as RN's chart
- * is hidden: the list under it says everything the drawing does, row by row. Exercise detail has no
- * such list, so it passes [description] instead.
+ * A Canvas, so it has no semantics of its own: [description] says it in words for TalkBack, since no
+ * list under it does.
  *
  * [readings] puts a value in the reader's units and writes the axis's labels; [dateLabel] formats the
- * dates. [description], where no list follows the chart, is what TalkBack reads in the drawing's place.
+ * dates. [description] is what TalkBack reads in the drawing's place; without one it passes over it.
  */
 @Composable
 fun ProgressChart(
@@ -59,7 +58,9 @@ fun ProgressChart(
     val colors = KettleTheme.colors
     val measurer = rememberTextMeasurer()
     // In dp and so unscaled by the reader's text size, as RN's SVG text is: the layout's room for the
-    // labels is fixed, and every value is also in the list below, which does scale.
+    // labels is fixed, and every value is readable at the reader's size elsewhere on Exercise detail:
+    // the latest in the headline, the loads in Recent sessions, every point in the chart's
+    // description (#491).
     val labelSize = with(LocalDensity.current) { LABEL_SIZE.dp.toSp() }
     val secondary = TextStyle(fontSize = labelSize, color = colors.textSecondary)
     val from = window.start

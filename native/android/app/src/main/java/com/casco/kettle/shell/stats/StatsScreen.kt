@@ -353,12 +353,7 @@ private fun ProgressRow(
     val openLabel = stringResource(R.string.analytics_openProgress)
     val reading = readings.reading(row.latest)
     // No red or green: a dip is information, not a failure.
-    val change =
-        when {
-            row.delta > 0 -> "▲ ${readings.reading(row.delta)}"
-            row.delta < 0 -> "▼ ${readings.reading(-row.delta)}"
-            else -> readings.delta(0.0)
-        }
+    val change = readings.change(row.delta)
     // On the row, not the line: a description inside a merged button replaces the merged text, so one
     // on the line alone would leave TalkBack reading the numbers without the exercise they belong to.
     val spoken = "$name, $reading · ${readings.delta(row.delta)}" + bestEver?.let { " $it" }.orEmpty()

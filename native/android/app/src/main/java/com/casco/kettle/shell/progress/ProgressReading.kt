@@ -15,6 +15,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.casco.kettle.domain.ExerciseProgress
 import com.casco.kettle.shell.R
@@ -45,12 +47,14 @@ internal fun Headline(
 ) {
     val colors = KettleTheme.colors
     Text(readings.reading(row.latest), Modifier.alignByBaseline(), style = KettleType.heading, color = colors.text)
-    // No red or green, the Stats row's rule for the Stats row's reason: a dip is information.
+    // Getting stronger's row's form, for its reason: no hue at all, since a dip is information and
+    // achievement takes none either (#414). The arrow is drawn, so the signed change is what's said.
+    val spoken = readings.delta(row.delta)
     Text(
-        readings.delta(row.delta),
-        Modifier.alignByBaseline(),
+        readings.change(row.delta),
+        Modifier.alignByBaseline().semantics { contentDescription = spoken },
         style = KettleType.smallMedium,
-        color = if (row.delta == 0.0) colors.textSecondary else colors.accentText,
+        color = if (row.delta == 0.0) colors.textSecondary else colors.text,
     )
     Text(
         stringResource(R.string.exerciseProgress_since, dates.monthDay(row.sessions.first().at)),

@@ -38,6 +38,9 @@ fun ExerciseArt(
     )
 }
 
+/** Whether [id] has a drawing, for a caller that frames one and wants no empty frame without it. */
+fun hasArt(id: String): Boolean = id in artDrawables
+
 /** RN's default size. */
 private val DEFAULT_WIDTH = 152.dp
 

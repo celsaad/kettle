@@ -230,6 +230,10 @@ here, next to what it describes.
   previews and Import still open as sheets. Tapping an exercise under Getting stronger opens that
   exercise, with its progress chart and recent sessions, even if you've since deleted it from your
   library (#489).
+- **An exercise's progress says what it measures**: the heading above the chart now names it, such
+  as "Heaviest set · 8 weeks" or "Longest hold · 8 weeks". The change since the first session reads
+  "▲ 2.5 kg" in the same colour as the text, as Getting stronger shows it, rather than in orange.
+  The exercise's drawing now sits on a card (#491).
 
 ---
 

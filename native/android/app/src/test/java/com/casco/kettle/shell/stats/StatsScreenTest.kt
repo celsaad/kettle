@@ -96,6 +96,9 @@ class StatsScreenTest {
         // The name is user data and renders verbatim. 12 kg beat 10 kg inside the window, so it is marked.
         compose.onNodeWithText("Dumbbell RDL").assertExists()
         compose.onNodeWithText("12 kg · ▲ 2 kg · melhor marca").assertExists()
+        // The header says the window; no helper line restates it, and no hold was left out to explain (#492).
+        compose.onNodeWithText("Mudança nas últimas", substring = true).assertDoesNotExist()
+        compose.onNodeWithText("Isometrias com tempo fixo", substring = true).assertDoesNotExist()
     }
 
     /**
@@ -246,7 +249,7 @@ class StatsScreenTest {
         withSessions(listOf(10.0, 12.0))
 
         compose.onNodeWithText("Ficando mais forte").assert(isHeading())
-        compose.onNodeWithText("Últimas 8 semanas").assertExists()
+        compose.onNodeWithText("8 semanas").assertExists()
         compose.onNodeWithText("Dias de treino").assert(isHeading())
         compose.onNodeWithText("Menos de 30 min").assertExists()
         // #484's words, not "45 min+".

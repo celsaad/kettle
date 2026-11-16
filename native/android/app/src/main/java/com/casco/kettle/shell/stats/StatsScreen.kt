@@ -264,12 +264,8 @@ private fun ProgressSection(
         return
     }
 
-    Note(
-        stringResource(
-            if (fixedHoldsLeftOut > 0) R.string.analytics_progressBodyFixedHolds else R.string.analytics_progressBody,
-            TREND_WEEKS,
-        ),
-    )
+    // The header says the window, so the one line left is the one nothing else explains: a missing plank (#492).
+    if (fixedHoldsLeftOut > 0) Note(stringResource(R.string.analytics_fixedHoldsLeftOut))
     if (movers.isEmpty()) Note(stringResource(R.string.analytics_nothingMoved, TREND_WEEKS), colors.text)
 
     val row: @Composable (ExerciseProgress) -> Unit = {
@@ -384,7 +380,7 @@ private fun ProgressRow(
     }
 }
 
-/** A section's heading, and what it covers on the right where that needs saying ("Last 8 weeks"). */
+/** A section's heading, and what it covers on the right where that needs saying ("8 weeks"). */
 @Composable
 private fun SectionHeading(
     text: String,

@@ -157,14 +157,14 @@ class SettingsScreenTest {
 
         assertEquals(ThemePreference.DARK, latest.preferences?.themePreference)
         assertEquals(ThemePreference.DARK, files.written.single().themePreference)
-        text("Fixado em escuro, ignorando o dispositivo.")
+        text("Fixado em escuro, ignorando o celular. A tela do treino mantém as próprias cores.")
     }
 
     @Test
     fun `says which scheme the device is on while following it`() {
         show()
 
-        text("Seguindo o dispositivo, que está definido como claro.")
+        text("Seguindo o celular, que está definido como claro. A tela do treino mantém as próprias cores.")
     }
 
     @Test
@@ -231,12 +231,12 @@ class SettingsScreenTest {
         text("Obrigado por apoiar o Kettle.")
     }
 
+    /** One paragraph on the column (#492): the version, then the promise. */
     @Test
     fun `prints the version at the foot, with what leaves the phone`() {
         show()
 
-        text("Kettle 9.9.9")
-        text("Nada sai deste dispositivo a menos que você mesmo compartilhe.")
+        text("Kettle 9.9.9 · Sem conta, sem rastreamento. Nada sai deste celular a menos que você compartilhe.")
     }
 
     /** The promise doesn't depend on there being a version to print beside it. */
@@ -244,17 +244,25 @@ class SettingsScreenTest {
     fun `keeps the privacy note at the foot with no version to print`() {
         show(version = null)
 
-        missing("Kettle 9.9.9")
-        text("Nada sai deste dispositivo a menos que você mesmo compartilhe.")
+        // Exact, not the substring text() matches: a "Kettle  · " with an empty version would contain it.
+        compose
+            .onNodeWithText("Sem conta, sem rastreamento. Nada sai deste celular a menos que você compartilhe.")
+            .performScrollTo()
     }
 
     // getting in touch
 
+    /**
+     * The board's words (#492), not the address: the mail app shows it, and so does the copied message
+     * when there's none.
+     */
     @Test
-    fun `shows the address rather than making the user tap to find out what it is`() {
+    fun `says what the email row is for, and the tracker row where it goes`() {
         show()
 
-        text(FEEDBACK_EMAIL)
+        text("Comentários e dúvidas")
+        text("Abre o rastreador no GitHub")
+        missing(FEEDBACK_EMAIL)
     }
 
     /** Subject only, and only the version, which is already printed at the foot of the screen. */
@@ -274,7 +282,7 @@ class SettingsScreenTest {
     fun `opens the issue tracker in the browser`() {
         show()
 
-        press("Relatar um problema no GitHub")
+        press("Relatar um problema")
 
         assertEquals(listOf(ISSUES_URL), actions.opened)
     }
@@ -306,21 +314,21 @@ class SettingsScreenTest {
         actions.opens = false
         show()
 
-        press("Relatar um problema no GitHub")
+        press("Relatar um problema")
 
         assertEquals(listOf(ISSUES_URL), actions.copied)
     }
 
-    // The address and the URL are values, not prose, and are never translated.
+    // The address and the URL are values, not prose, and are never translated; neither is on screen.
     @Test
-    fun `is translated, except for the address itself`() {
+    fun `is translated`() {
         show()
 
         // Pushed (#489): Back beside the title.
         compose.onNode(hasContentDescription("Voltar")).assertExists()
         compose.onNode(hasText("Kettle") and isHeading()).performScrollTo()
         text("Escrever para o desenvolvedor")
-        text(FEEDBACK_EMAIL)
+        text("Comentários e dúvidas")
     }
 
     // a11y

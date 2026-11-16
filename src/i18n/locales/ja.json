@@ -202,7 +202,6 @@
     "emptyBody": "プログラムは、あなたのワークアウトを数週間かけて進めていく計画です。＋ボタンで作成するか、細かく設定したい場合は YAML で書けます（週ごとの上書きはまだアプリ内では編集できません）。",
     "emptyYamlLink": "YAML で書く →",
     "newProgram": "新しいプログラム",
-    "searchPlaceholder_other": "{{count}}件のプログラムを検索",
     "active": "実施中、第{{n}}週",
     "weekCount_other": "{{count}}週間",
     "sessionsPerWeek_other": "週{{count}}回",

@@ -20,6 +20,12 @@ here, next to what it describes.
 
 ## Unreleased
 
+Nothing since 0.17.0.
+
+---
+
+## 0.17.0 — versionCode 23, 16 November 2026
+
 ### What changed
 
 - **Session sounds no longer pause your music**: a tick or cue used to make some music apps stop
@@ -243,6 +249,32 @@ here, next to what it describes.
   HERE?" and "ADD EXERCISE", now read in sentence case like the rest of the app. A session's date
   in the delete confirm and in the session editor is written the way your language writes dates,
   rather than with the month in capitals (#493).
+
+### Play release notes
+
+Counted at 198 (en-US) and 217 (pt-BR), against a limit of 500. Re-count programmatically
+if you edit them rather than trusting these numbers — over-limit copy is a rejected upload, not a
+truncated one.
+
+A short note on the redesign rather than the list above, which is too long for Play. Two blocks, as
+in 0.8.0 onwards: the Play listing does not carry ja-JP.
+
+```
+<en-US>
+What's new
+
+Kettle has a whole new look: three tabs (Today, Library, Progress), a clearer workout screen, and your history and stats together in one place.
+
+Report anything that hangs or loses data.
+</en-US>
+<pt-BR>
+Novidades
+
+O Kettle está com um visual totalmente novo: três abas (Hoje, Biblioteca, Progresso), uma tela de treino mais clara e seu histórico e estatísticas juntos num só lugar.
+
+Relate travamentos ou perda de dados.
+</pt-BR>
+```
 
 ---
 

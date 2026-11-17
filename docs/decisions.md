@@ -1150,8 +1150,8 @@ decision assembled across several commits. Open work belongs in the sections at 
     loses to them. Kotlin took the corpus over unchanged, so nothing TS pinned was lost, and a golden
     diff is a change to what users' files mean, reviewed as one.
   - **`library-schema.json` becomes hand-maintained** (#349, generated from `schema.ts` until then),
-    the format statement the assistant brief carries. A declarative Kotlin schema with a JSON Schema emitter was costed and **deferred**: it
-    means rewriting `SchemaReader` and the `*Schema.kt` readers as data, plus an interpreter for zod
+    the format statement the assistant brief carries. A declarative Kotlin schema with a JSON Schema
+    emitter was costed and **deferred**: it means rewriting `SchemaReader` and the `*Schema.kt` readers as data, plus an interpreter for zod
     4's fatal and non-fatal rules, to generate one file that changes when the format does.
     **Publishing a Kotlin zod-alike library was refused**: Kettle would own a general-purpose
     validation library to serve one schema.

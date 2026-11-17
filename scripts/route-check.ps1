@@ -25,8 +25,11 @@
   the matrix in the same PR, rather than deleting a step that starts failing.
 
   A start opens the native runner, in every build since the flip release (#308), and is waited on
-  past its count-in: its End only shows once the session runs. Every route is the same in debug
-  and release, and routing is native's in both since #309.
+  past its count-in, by its Swap: End is in the header from the count-in on, and a back sent during
+  the count-in leaves without asking, so waiting on End raced the count-in (#367). Swap shows on a
+  running set that has something to swap to, which the seed's Foundations Push opens on: a seed edit
+  that took that away would fail here as if navigation had. Every route is the same in debug and
+  release, and routing is native's in both since #309.
 
 .PARAMETER Device
   The adb serial to use when more than one device is attached.
@@ -86,7 +89,7 @@ $steps = @(
   # Over that native sheet, the native editor and the native runner each come back to it (#155, #233).
   # Back over a running session asks first, End early's sheet (#417), and completion's Done leaves (#297, #306).
   @('tap:Edit program', 'Edit program'), @('back', 'Weeks'),
-  @('tap:Start Week 1 · Day 1', 'End'), @('back', 'End the session early?'),
+  @('tap:Start Week 1 · Day 1', 'Swap'), @('back', 'End the session early?'),
   @('tap:Save and end', 'Edit log'), @('tap:Done', 'Weeks'),
   @('back', 'tab:Programs'),
   # Library's Exercises: a row opens its detail, and Edit the form over that; the header's + opens the
@@ -113,7 +116,7 @@ $steps = @(
   # Sent while in the background, it lands, and shows once the app is in front again.
   @('/progress', $null), @('front', 'tab:Progress'),
   # Over the runner, a message is dropped with no question asked, and Done pops its slot (#302, #309).
-  @('/session?workoutId=foundations-push', 'End'), @('/library', 'End'),
+  @('/session?workoutId=foundations-push', 'Swap'), @('/library', 'Swap'),
   @('back', 'End the session early?'), @('tap:Keep going', 'End'),
   @('back', 'End the session early?'), @('tap:Save and end', 'Edit log'),
   @('tap:Done', 'tab:Progress'), @('back', 'tab:Today'), @('back', $null)

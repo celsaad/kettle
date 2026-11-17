@@ -57,10 +57,20 @@ android {
         }
         release {
             signingConfig = signingConfigs.findByName("upload")
+            // R8 in full mode, AGP 9's default (#367): without it the APK carried every library class
+            // whether anything called it or not, `play-services-location` among them, which arrives
+            // through Play Billing and which nothing here references. What R8 can't see is in
+            // proguard-rules.pro; the mapping that reads Play Vitals' stack traces travels in the
+            // bundle, and android.yml keeps a copy beside it.
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
-        // What `:benchmark` launches: a release build, side by side like debug, signed with the debug
-        // key so it builds anywhere, and profileable (src/benchmark). `.bench2` because `.bench` is
-        // today's app built the same way, which it is timed against (scripts/startup-benchmark.ps1).
+        // What `:benchmark` launches: a release build, minified as Play's is (#367), side by side like
+        // debug, signed with the debug key so it builds anywhere, and profileable (src/benchmark).
+        // `.bench2` because `.bench` is the RN app built release from #168's merge, which it was timed
+        // against (scripts/startup-benchmark.ps1). That one is unminified, so since #367 a comparison
+        // between the two carries R8's gain as well as the migration's.
         create("benchmark") {
             initWith(getByName("release"))
             applicationIdSuffix = ".bench2"

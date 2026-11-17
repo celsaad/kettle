@@ -11,12 +11,12 @@ transmitted.
 [example libraries](https://celsaad.github.io/kettle/examples.html)
 
 <p>
-  <img src="site/assets/img/workouts.jpg" width="240"
-       alt="Kettle home screen showing the next workout queued as Week 2 Day 1 with a Start session button, above the workout list." />
+  <img src="site/assets/img/today.jpg" width="240"
+       alt="Kettle's Today screen: a program in week 3, the week's days marked, and the next day's workout queued with Start session." />
   <img src="site/assets/img/session-hiit.jpg" width="240"
-       alt="Session runner mid-HIIT: round 1 of 4, a large countdown, with Pause and Skip controls." />
+       alt="The session screen mid-HIIT, orange while the clock runs the work: round 1 of 4 with a large countdown, and Back, Pause and Skip." />
   <img src="site/assets/img/import.jpg" width="240"
-       alt="Import library sheet: choose a YAML file or paste YAML, copy the format for an assistant, merge and import." />
+       alt="Importing a starter pack: Review the changes, with what is new, updated and cleared, before Import." />
 </p>
 
 ## What it does

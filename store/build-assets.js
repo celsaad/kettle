@@ -72,7 +72,7 @@ const SHOT_H = 2160;
  * `today` and `workouts` used to be two entries; the tabs merged, so one capture now serves both and
  * `stats` takes the slot that freed — it is what backs "calculated on your device from that log".
  */
-const SHOTS = ['session-reps', 'session-hiit', 'session-complete', 'workouts', 'programs', 'history', 'stats', 'import'];
+const SHOTS = ['today', 'session-reps', 'session-hiit', 'session-complete', 'library', 'programs', 'progress', 'sessions'];
 
 if (SHOTS.length > 8) throw new Error(`Play allows 8 phone screenshots; SHOTS lists ${SHOTS.length}`);
 

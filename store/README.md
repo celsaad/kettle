@@ -35,7 +35,7 @@ would breach a Play limit — see "What the limits actually are" below.
 |---|---|---|
 | App icon | `icon-512.png` | `assets/images/icon.png` |
 | Feature graphic | `feature-graphic-1024x500.png` | `store/feature-graphic.html` + `site/fonts/*.woff2` |
-| Phone screenshots | `screen-01..07-*.png` | `site/assets/img/*.jpg` |
+| Phone screenshots | `screen-01..08-*.png` | `site/assets/img/*.jpg` |
 
 The screenshots are the **same captures the landing page uses**. One set of images, two consumers —
 re-capture once and both update. `site/assets/img` holds more than the listing can show (Play caps a
@@ -50,8 +50,10 @@ Each of these cost a rejected upload or a wrong guess once, so they are asserted
   is 2160, so that is the height ceiling; `build-assets.js` enforces both, the second with an explicit
   throw so a ninth entry in `SHOTS` fails loudly rather than at upload.
 
-  The 2026-08-19 captures come off the device at 1080x2204, which is 2.041:1 — over the ceiling — so
-  the extract in the script does real work again and trims 44px from the bottom. The 2026-08-04 set
+  The 2026-08-19 and 2026-11-17 captures are 1080x2204, which is 2.041:1 — over the ceiling — so
+  the extract in the script does real work again and trims 44px from the bottom. The 2026-11-17 set
+  was taken with the AVD at `wm size 1080x2330`, which leaves exactly 2204px of app between the
+  status bar and the gesture strip, so nothing is cropped out of the screen itself. The 2026-08-04 set
   was cropped to 2160 at capture time and made that extract a no-op; don't read the code as though
   that is still true. Earlier captures were 1080x2242 and got trimmed the same way, the gesture-pill
   band being the only strip with nothing worth keeping. Letterboxing to fit would put visible bars
@@ -370,14 +372,10 @@ do not resolve on a locally installed APK.
 
 - No `og:image` card for the site yet; if one is made, it is a website asset and outside Play's
   scope, but reusing it as a listing graphic would put it back in scope.
-- The captures are of a **real** library and log — 347 exercises, real workout names, actual history.
-  That is the populated state the listing wanted, and it is public once uploaded. Re-capturing against
-  seeded data is the alternative if that ever becomes unwanted.
-- The 2026-08-19 log was built by running sessions back to back, so every session reads `0 min` in
-  History and Stats totals barely a minute. Nothing is wrong; it just doesn't look like a year of
-  training. Worth a slower log before the next upload — `history` and `stats` are 2 of the 8 slots.
-- `programs.jpg` was captured **before** the week-count fix and still shows the pre-fix
-  "8 weeks with notes or overrides" for a four-week program. Re-shoot it before the next upload.
-- The completion capture names two records but no estimated 1RM, both PRs being unloaded. The copy
-  says "for loaded sets", so it is accurate — but a `heaviest set` PR would demonstrate the whole
-  claim, and the 2026-08-04 capture did.
+- The 2026-11-17 captures run on the **seed** library and a generated log: five weeks of the seed's
+  Dumbbell Strength program and Mixed Conditioning, loads climbing week to week, written as session
+  files onto the AVD's `.dev` app for the capture and the app's own data restored after. Nothing in
+  them is anyone's real training. The receipt and the three session screens are a real session run
+  in real time on top of that log, so its 19 minutes and two records are genuine.
+- The generator isn't committed. If the next recapture wants the same state, it is worth committing
+  beside `build-assets.js` rather than writing it a third time.

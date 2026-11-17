@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 import { rawLibrarySchema } from '@/domain/schema';
 
-// No node types in this project's tsconfig, as `conformance.test.ts` declares them too.
+// No node types in this project's tsconfig, so the two node globals this reads are declared here.
 // oxlint-disable-next-line no-underscore-dangle -- node's own global; the name isn't ours to choose.
 declare const __dirname: string;
 declare function require(id: 'node:fs'): {

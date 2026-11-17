@@ -1137,6 +1137,28 @@ decision assembled across several commits. Open work belongs in the sections at 
   - `"$comment"` keys in the JSON to keep the notes beside the values. Every reader would have to
     know to skip them, and the test already holds what the notes claim.
 
+- ✅ **The TS domain is retired, not kept as a second implementation, and the corpus is the format's
+  authority.** (Decided on #346, and carried out in the PRs it lists; #348 handed the goldens to Kotlin.)
+  After M7 nothing ships the TS: the app is `:shared` plus Compose, and iOS reuses `:shared` through
+  Kotlin Multiplatform rather than a third parser. What it was still for, and what replaces each:
+
+  - **Retired rather than frozen.** Keeping it as a reference implementation would double the cost of
+    every format change, both parsers moved and the corpus diffed between them, to protect a copy
+    nothing runs. Git history keeps it for anyone who wants to read how a rule was first written.
+  - **The corpus is the authority, not a spec document.** `conformance/`'s inputs plus Kotlin's
+    goldens say what a file means; prose (the README's rules, `site/format.html`) explains them and
+    loses to them. Kotlin took the corpus over unchanged, so nothing TS pinned was lost, and a golden
+    diff is a change to what users' files mean, reviewed as one.
+  - **`library-schema.json` becomes hand-maintained** (#349, generated from `schema.ts` until then),
+    the format statement the assistant brief carries. A declarative Kotlin schema with a JSON Schema
+    emitter was costed and **deferred**: it means rewriting `SchemaReader` and the `*Schema.kt`
+    readers as data, plus an interpreter for zod 4's fatal and non-fatal rules, to generate one file
+    that changes when the format does. **Publishing a Kotlin zod-alike library was refused**: Kettle
+    would own a general-purpose validation library to serve one schema.
+  - **Node is to survive only for oxfmt** (#353; jest still runs until then), which formats `site/`
+    and the JSON nothing else owns. The guards jest runs move to JVM tests rather than keeping a
+    Node test runner for them.
+
 - **Device checks of the user journeys stay in-house scripts, not a test framework (#172).** The CUJ
   checks grow out of `scripts/route-check.sh` and its `.ps1` twin: adb, the debug receivers and a
   `uiautomator` dump, with no dependency. With one developer and no test devices, a script anyone can

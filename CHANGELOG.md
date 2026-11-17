@@ -20,10 +20,38 @@ here, next to what it describes.
 
 ## Unreleased
 
+Nothing since 0.17.1.
+
+---
+
+## 0.17.1 — versionCode 24, 17 November 2026
+
 ### What changed
 
 - **A much smaller app**: Kettle now leaves out the library code it never uses, so the download is
   much smaller. Nothing you can see changes (#367).
+
+### Play release notes
+
+Counted at 30 (en-US) and 33 (pt-BR), against a limit of 500. Re-count programmatically
+if you edit them rather than trusting these numbers — over-limit copy is a rejected upload, not a
+truncated one.
+
+A generic note: nothing in this release is visible in the app. Two blocks, as in 0.8.0 onwards: the
+Play listing does not carry ja-JP.
+
+```
+<en-US>
+What's new
+
+Fixes and updates.
+</en-US>
+<pt-BR>
+Novidades
+
+Correções e melhorias.
+</pt-BR>
+```
 
 ---
 

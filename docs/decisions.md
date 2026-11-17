@@ -1149,14 +1149,15 @@ decision assembled across several commits. Open work belongs in the sections at 
     goldens say what a file means; prose (the README's rules, `site/format.html`) explains them and
     loses to them. Kotlin took the corpus over unchanged, so nothing TS pinned was lost, and a golden
     diff is a change to what users' files mean, reviewed as one.
-  - **`library-schema.json` becomes hand-maintained** (#349, generated from `schema.ts` until then), the format statement the assistant brief
-    carries. A declarative Kotlin schema with a JSON Schema emitter was costed and **deferred**: it
+  - **`library-schema.json` becomes hand-maintained** (#349, generated from `schema.ts` until then),
+    the format statement the assistant brief carries. A declarative Kotlin schema with a JSON Schema emitter was costed and **deferred**: it
     means rewriting `SchemaReader` and the `*Schema.kt` readers as data, plus an interpreter for zod
     4's fatal and non-fatal rules, to generate one file that changes when the format does.
     **Publishing a Kotlin zod-alike library was refused**: Kettle would own a general-purpose
     validation library to serve one schema.
-  - **Node is to survive only for oxfmt** (#353; jest still runs until then), which formats `site/` and the JSON nothing else owns.
-    The guards jest ran move to JVM tests rather than keeping a Node test runner for them.
+  - **Node is to survive only for oxfmt** (#353; jest still runs until then), which formats `site/`
+    and the JSON nothing else owns. The guards jest runs move to JVM tests rather than keeping a
+    Node test runner for them.
 
 - **Device checks of the user journeys stay in-house scripts, not a test framework (#172).** The CUJ
   checks grow out of `scripts/route-check.sh` and its `.ps1` twin: adb, the debug receivers and a

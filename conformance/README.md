@@ -62,8 +62,7 @@ more, and how long a session ran.
 `steps` isn't a file either: it is what a workout *runs*, step by step. It held the native runner to
 RN's while both existed (#303). The flip release (#308) deleted RN's, `src/hooks/session-steps.ts`
 with it, and kept the corpus: it is still the plainest statement of what each workout runs, and a
-change to it still shows up as a golden diff. It was the first suite Kotlin wrote, a release before
-the rest.
+change to it still shows up as a golden diff.
 
 ## Reading the goldens
 

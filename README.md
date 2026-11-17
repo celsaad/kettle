@@ -11,12 +11,12 @@ transmitted.
 [example libraries](https://celsaad.github.io/kettle/examples.html)
 
 <p>
-  <img src="site/assets/img/workouts.jpg" width="240"
-       alt="Kettle home screen showing the next workout queued as Week 2 Day 1 with a Start session button, above the workout list." />
+  <img src="site/assets/img/today.jpg" width="240"
+       alt="Kettle's Today screen: a program in week 3, the week's days marked, and the next day's workout queued with Start session." />
   <img src="site/assets/img/session-hiit.jpg" width="240"
-       alt="Session runner mid-HIIT: round 1 of 4, a large countdown, with Pause and Skip controls." />
+       alt="The session screen mid-HIIT, orange while the clock runs the work: round 1 of 4 with a large countdown, and Back, Pause and Skip." />
   <img src="site/assets/img/import.jpg" width="240"
-       alt="Import library sheet: choose a YAML file or paste YAML, copy the format for an assistant, merge and import." />
+       alt="Importing a starter pack: Review the changes, with what is new, updated and cleared, before Import." />
 </p>
 
 ## What it does
@@ -32,8 +32,9 @@ transmitted.
   library, so what an LLM writes references your exercises instead of inventing near-duplicates.
   Kettle never calls a model itself: it supplies the format and validates the result, and what you
   should actually be doing in a workout stays between you and whoever you asked.
-- **History and progression** — per-exercise volume charts, current streak and weekly totals, all
-  read back from the local log, and a mis-logged set can be corrected rather than only deleted.
+- **History and progression** — a calendar of training days, what got stronger over eight weeks,
+  and each exercise's heaviest set charted, all read back from the local log, and a mis-logged set
+  can be corrected rather than only deleted.
   Export the library or the whole log as plain files any time.
 - **English, Brazilian Portuguese and Japanese**, the seeded starter library included, with dates, numbers,
   first day of week and kg/lb following the device locale. User data is never translated.

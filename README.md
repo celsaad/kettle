@@ -33,7 +33,8 @@ transmitted.
   Kettle never calls a model itself: it supplies the format and validates the result, and what you
   should actually be doing in a workout stays between you and whoever you asked.
 - **History and progression** — a calendar of training days, what got stronger over eight weeks,
-  and each exercise's heaviest set charted, all read back from the local log, and a mis-logged set can be corrected rather than only deleted.
+  and each exercise's heaviest set charted, all read back from the local log, and a mis-logged set
+  can be corrected rather than only deleted.
   Export the library or the whole log as plain files any time.
 - **English, Brazilian Portuguese and Japanese**, the seeded starter library included, with dates, numbers,
   first day of week and kg/lb following the device locale. User data is never translated.

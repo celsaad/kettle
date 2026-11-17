@@ -46,20 +46,19 @@ order.
 
 Each of these cost a rejected upload or a wrong guess once, so they are asserted in the script:
 
-- **Screenshots: max dimension ≤ 2× min dimension**, and **at most eight** per device type. 2×1080
-  is 2160, so that is the height ceiling; `build-assets.js` enforces both, the second with an explicit
-  throw so a ninth entry in `SHOTS` fails loudly rather than at upload.
+- **Screenshots: max dimension ≤ 2× min dimension**, and **at most eight** per device type.
+  `build-assets.js` enforces both, the second with an explicit throw so a ninth entry in `SHOTS` fails
+  loudly rather than at upload.
 
-  The 2026-08-19 and 2026-11-17 captures are 1080x2204, which is 2.041:1 — over the ceiling — so
-  the extract in the script does real work again and trims 44px from the bottom. The 2026-11-17 set
-  was taken with the AVD at `wm size 1080x2330`, which leaves exactly 2204px of app between the
-  status bar and the gesture strip, so nothing is cropped out of the screen itself. That leaves no
-  margin to trim for Play — the session screens' buttons reach row 2161 — so `build-assets.js` widens
-  instead: 11px a side in each image's own edge colour, 1102x2204, under 2:1 with nothing cut. The 2026-08-04 set
-  was cropped to 2160 at capture time and made that extract a no-op; don't read the code as though
-  that is still true. Earlier captures were 1080x2242 and got trimmed the same way, the gesture-pill
-  band being the only strip with nothing worth keeping. Letterboxing to fit would put visible bars
-  down both sides, which is why none of these approaches does it.
+  How a capture gets under 2:1 has changed with the captures. Sets of 1080x2242 and then 1080x2204
+  were trimmed from the bottom, the gesture-pill band or the tab bar's padding being the only strip
+  with nothing worth keeping; the 2026-08-04 set was cropped to 2160 at capture time instead. The
+  2026-11-17 set leaves nothing to trim: it was taken with the AVD at `wm size 1080x2330`, which makes
+  2204px exactly the app between the status bar and the gesture strip, and the session screens'
+  buttons reach the bottom row. So the script now **widens**: 11px a side in the colour at each
+  side's edge, giving 1102x2204, exactly 2:1, with nothing cut. The ceiling to keep in mind is now
+  width × 2. Every captured screen's sides are a flat field, so the band doesn't show, where a
+  fixed-colour letterbox would read as bars on half of them.
 - **App icon: full square, no transparency, no baked corner radius or shadow.** Play applies its own
   30% radius and shadow, so pre-rounding doubles up. The script asserts zero non-opaque pixels.
 - **Feature graphic: no alpha channel.** Flattened explicitly.

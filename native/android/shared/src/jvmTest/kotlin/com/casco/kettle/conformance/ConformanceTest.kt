@@ -64,12 +64,13 @@ import java.io.File
 
 /**
  * Runs the repo's `conformance/` corpus against `:shared`, and with `-PupdateConformance` writes its
- * goldens too (the corpus README). The goldens were TypeScript's until the TS domain was retired
- * (#348); Kotlin took them over with a zero-diff regeneration, so the corpus is the format's
- * authority and a golden diff is a change to what users' files mean.
+ * goldens too (the corpus README). An update run compares each golden with the output it just
+ * wrote, so it passes whatever the runners say: the golden diff it leaves is the only check, and
+ * reading it is the review.
  *
  * Suites are discovered from the directory rather than listed, and a suite with no runner below is
- * reported as skipped under its own name, never as passing. Porting a suite is adding its runner.
+ * reported as skipped under its own name, never as passing, and is never written. Adding a suite is
+ * adding its runner.
  */
 class ConformanceTest {
     private val runners: Map<String, (Case) -> Any?> =
@@ -103,9 +104,8 @@ class ConformanceTest {
     @TestFactory
     fun roundTrips(): List<DynamicContainer> =
         listOf(
-            // Unlike the TS round-trip, the `source` cases are in too: the published examples are the
-            // largest real libraries the corpus has, and nothing about reading them from a file
-            // changes what the writer owes.
+            // The `source` cases are in too: the published examples are the largest real libraries
+            // the corpus has, and nothing about reading them from a file changes what the writer owes.
             dynamicContainer(
                 "library",
                 readSuite("library").mapNotNull { case ->

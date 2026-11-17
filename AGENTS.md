@@ -142,8 +142,8 @@ mistake here that cannot be fixed for anyone who has already installed it.
 - `conformance/` — the format's behaviour as data, and its authority: hand-written YAML inputs and
   golden outputs, checked and written by the Kotlin runner in `:shared`; its README is the contract.
   A behaviour change in `:shared` needs `./gradlew :shared:jvmTest -PupdateConformance` (then
-  `pnpm run format`), and the golden diff is part of the review. TS no longer reads the corpus (#348);
-  `src/domain/` is retiring (decision log), so a format change made there alone reaches no golden.
+  `pnpm run format`), and the golden diff is part of the review. TS doesn't read the corpus, so a
+  format change made in `src/domain/` alone reaches no golden.
 
 **YAML is snake_case, domain code is camelCase**, bridged only in `yaml-mapping.ts`. Program
 `overrides` are partial *raw* (snake_case) patches — that asymmetry is deliberate and load-bearing.

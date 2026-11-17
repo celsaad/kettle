@@ -47,18 +47,17 @@ so an edit to that content moves their goldens, and the diff is the record of wh
 is how both apps translate that shipped content: a table only ever replaces names, notes and day
 labels, and its header lists the rules.
 
-`search` isn't part of the file format, but it is the same problem: two implementations must agree on
-which workout a search finds. Its rules are in the header of `src/domain/search.ts`.
+`search` isn't part of the file format, but it is the same problem: every platform must find the
+same workout for the same search. Its rules are in the header of `src/domain/search.ts` until that
+goes (#353), and in `:shared`'s `Search.kt`.
 
-`preferences` is the same again, for `preferences.json`: RN writes it until M5, and the native shell
-reads its scheme from it, so the two must refuse the same files.
+`preferences` is the same again, for `preferences.json`, and `supporter` for `supporter.json`: the
+app's own settings files, which a platform must read, and refuse, the same way. Both were suites
+while RN and native shared those files.
 
-`supporter` is the other way round, for `supporter.json`: from M4 native's Support writes it, and RN
-Settings reads it until M5.
-
-`records` is not a file at all but what one means: which entries are a record, and on what. RN's
-runner keeps its live best-marker past M4 while native Stats and exercise progress read the same
-rules, so the two sides must agree on what counts as doing more, and on how long a session ran.
+`records` is not a file at all but what one means: which entries are a record, and on what. It held
+RN's runner and native Stats to one rule while both existed, and it still pins what counts as doing
+more, and how long a session ran.
 
 `steps` isn't a file either: it is what a workout *runs*, step by step. It held the native runner to
 RN's while both existed (#303). The flip release (#308) deleted RN's, `src/hooks/session-steps.ts`

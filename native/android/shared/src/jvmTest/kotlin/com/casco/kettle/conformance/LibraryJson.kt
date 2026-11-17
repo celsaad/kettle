@@ -47,9 +47,9 @@ private fun configJson(config: ExerciseConfig): Pair<String, Map<String, Any?>> 
     configFields(config).let { (type, fields) -> type to optionals(*fields.toTypedArray()) }
 
 /**
- * A config's type and every field it has, absent ones as null, in the order TS's
- * `exerciseToDomain` builds them. The order is what the goldens hold, and [exerciseMergeJson] puts a
- * patched config back into it, the way TS's round-trip through the domain type does.
+ * A config's type and every field it has, absent ones as null, in the order the goldens hold
+ * (TS's, which Kotlin kept when it took them over, so a regeneration never churns on key order).
+ * [exerciseMergeJson] puts a patched config back into it.
  */
 private fun configFields(config: ExerciseConfig): Pair<String, List<Pair<String, Any?>>> =
     when (config) {
@@ -105,7 +105,7 @@ private fun workoutJson(workout: Workout): Map<String, Any?> =
 
 private fun blockJson(block: WorkoutBlock): Map<String, Any?> = optionals(*blockFields(block).toTypedArray())
 
-/** A block's every field, absent ones as null, in TS's `workoutBlockToDomain` order (see [configFields]). */
+/** A block's every field, absent ones as null, in the goldens' order (see [configFields]). */
 private fun blockFields(block: WorkoutBlock): List<Pair<String, Any?>> =
     when (block) {
         is WorkoutBlock.ExerciseBlock -> {
@@ -241,9 +241,9 @@ internal fun blockMergeJson(
     )
 
 /**
- * [map]'s keys in the order of [fields], the shape's own, as TS's `asAuthored` comes back out
- * of the domain constructor. A plain `+` appends a key the target didn't have, which is the same JSON
- * but a different golden file.
+ * [map]'s keys in the order of [fields], the shape's own. A plain `+` appends a key the target
+ * didn't have, which is the same JSON but a different golden file. A key [fields] doesn't name goes
+ * last; none can, since `asAuthored` holds only the target type's own overridable fields.
  */
 private fun inOrder(
     map: Map<String, Any?>,

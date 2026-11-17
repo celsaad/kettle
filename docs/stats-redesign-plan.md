@@ -14,9 +14,8 @@
 > 4 and 5 landed as one commit, since the old screen tests asserted the flat rows the rework hides.
 > The held-steady toggle is text ("Show" / "Hide"), following import's "Show all", rather than the
 > chevron the canvas drew. And the THIS WEEK tile's "2h 0m" moved into a locale key along the way,
-> because the calendar's row label needed one. The site screenshot went
-> with the 0.17.0 recapture (`progress.jpg` replaced `stats.jpg`). **Not done:** the large-text check
-> on a device is still open.
+> because the calendar's row label needed one. **Not done:** the large-text check on a device is
+> still open.
 
 ## The problem
 

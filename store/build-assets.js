@@ -42,35 +42,25 @@ const ROOT = path.join(__dirname, '..');
 const OUT = path.join(__dirname, 'out');
 
 /**
- * Play: "Maximum dimension cannot exceed twice the minimum dimension." 2 * 1080 is 2160, so that is
- * the ceiling, and the extract below enforces it however tall the source happens to be.
+ * Play: "Maximum dimension cannot exceed twice the minimum dimension." The captures are 1080x2204,
+ * 2.041:1, so each needs 44px more width or 44px less height.
  *
- * The captures used to be 1080x2242 and were trimmed here, from the bottom, because the gesture-pill
- * band was the only strip with nothing worth keeping. The 2026-08-04 set is cropped to 2160 at
- * capture time instead — both the status bar and the gesture pill removed, with the window centred on
- * each screen's own content — so this extract is now a no-op guard rather than the thing doing the
- * work. It stays for the next capture that arrives oversized. Letterboxing to fit would put visible
- * bars down both sides, which is why neither approach does it.
+ * The 2026-11-17 set leaves nothing to trim: the AVD ran at a size that makes 2204 exactly the app
+ * between the system bars, and the session screens' buttons reach the bottom row. Trimming 44px cut
+ * their outlines. So the shot is widened instead, 11px a side, in the colour at that side's edge:
+ * every screen's sides are a flat field (the page, or the runner's phase colour), so the band is
+ * invisible, where letterboxing in a fixed colour would show as bars on half of them.
  */
-const SHOT_W = 1080;
-const SHOT_H = 2160;
-// Captures come off the device at 1080x2204, which is 2.041:1 and over Play's ceiling — so the
-// extract below is load-bearing, not the no-op it was for the 2160-tall 2026-08-04 set. It trims
-// from the bottom, where the tab bar's own padding is the only thing in the last 44px.
+const PAD = 11;
 
 /**
  * Order matters: this is the order they appear in the listing, and Play caps a phone listing at
- * **eight**. That cap is why this is a chosen subset rather than every screen that has a capture —
- * `site/assets/img` also holds session-hold, library and settings, which the landing page can afford
- * to show and the listing cannot.
+ * **eight**, so it is a chosen subset. `site/assets/img` also holds session-hold, import, exercise
+ * and settings, which the landing page can afford and the listing cannot.
  *
- * The runner leads, per the repositioned pitch (#58): the set row carrying "last time" is the single
- * image that evidences the claim the listing now opens with, and the completion screen is the only
- * one naming a record. Drop either of those before dropping a list screen and the copy is left
- * unbacked.
- *
- * `today` and `workouts` used to be two entries; the tabs merged, so one capture now serves both and
- * `stats` takes the slot that freed — it is what backs "calculated on your device from that log".
+ * Today leads, since it is the first thing the app shows; the reps set (carrying "last time") and the
+ * receipt (the only shot naming a record) back the listing's claims about remembering what you
+ * lifted, so drop a list screen before either of those.
  */
 const SHOTS = ['today', 'session-reps', 'session-hiit', 'session-complete', 'library', 'programs', 'progress', 'sessions'];
 
@@ -130,8 +120,19 @@ async function screenshots() {
   let n = 1;
   for (const name of SHOTS) {
     const out = path.join(OUT, `screen-${String(n).padStart(2, '0')}-${name}.png`);
-    await sharp(path.join(ROOT, 'site/assets/img', `${name}.jpg`))
-      .extract({ left: 0, top: 0, width: SHOT_W, height: SHOT_H })
+    const src = sharp(path.join(ROOT, 'site/assets/img', `${name}.jpg`));
+    const { data, info } = await src.clone().raw().toBuffer({ resolveWithObject: true });
+    // The edge colour at mid-height, on each side: a flat field on every captured screen.
+    const at = (x) => {
+      const i = (Math.floor(info.height / 2) * info.width + x) * info.channels;
+      return { r: data[i], g: data[i + 1], b: data[i + 2] };
+    };
+    const left = await src
+      .clone()
+      .extend({ left: PAD, background: at(0) })
+      .toBuffer();
+    await sharp(left)
+      .extend({ right: PAD, background: at(info.width - 1) })
       .removeAlpha()
       .png()
       .toFile(out);

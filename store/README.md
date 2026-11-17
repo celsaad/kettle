@@ -53,7 +53,9 @@ Each of these cost a rejected upload or a wrong guess once, so they are asserted
   The 2026-08-19 and 2026-11-17 captures are 1080x2204, which is 2.041:1 — over the ceiling — so
   the extract in the script does real work again and trims 44px from the bottom. The 2026-11-17 set
   was taken with the AVD at `wm size 1080x2330`, which leaves exactly 2204px of app between the
-  status bar and the gesture strip, so nothing is cropped out of the screen itself. The 2026-08-04 set
+  status bar and the gesture strip, so nothing is cropped out of the screen itself. That leaves no
+  margin to trim for Play — the session screens' buttons reach row 2161 — so `build-assets.js` widens
+  instead: 11px a side in each image's own edge colour, 1102x2204, under 2:1 with nothing cut. The 2026-08-04 set
   was cropped to 2160 at capture time and made that extract a no-op; don't read the code as though
   that is still true. Earlier captures were 1080x2242 and got trimmed the same way, the gesture-pill
   band being the only strip with nothing worth keeping. Letterboxing to fit would put visible bars
@@ -375,7 +377,12 @@ do not resolve on a locally installed APK.
 - The 2026-11-17 captures run on the **seed** library and a generated log: five weeks of the seed's
   Dumbbell Strength program and Mixed Conditioning, loads climbing week to week, written as session
   files onto the AVD's `.dev` app for the capture and the app's own data restored after. Nothing in
-  them is anyone's real training. The receipt and the three session screens are a real session run
-  in real time on top of that log, so its 19 minutes and two records are genuine.
+  them is anyone's real training. The receipt and the hold are one real session of Dumbbell Full
+  Body B run in real time on that log, so its 19 minutes and two records are genuine; the reps set is
+  an earlier, discarded run of the same day (52.9 lb, before the load went up a step), and the HIIT
+  shot is a Mixed Conditioning session started for it and saved then restored away.
+- The listing copy below still says RPE, and promises streaks and per-exercise volume that the
+  2026-11-17 Progress screenshots don't show (they show a calendar, Getting stronger and a heaviest-set
+  chart). It is the listing's words to change, at the next upload.
 - The generator isn't committed. If the next recapture wants the same state, it is worth committing
   beside `build-assets.js` rather than writing it a third time.

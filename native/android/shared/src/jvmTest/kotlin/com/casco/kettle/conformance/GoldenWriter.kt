@@ -1,9 +1,9 @@
 package com.casco.kettle.conformance
 
 /**
- * A golden as `conformance.test.ts` wrote one, `JSON.stringify(value, null, 2)` and a newline, so a
- * suite whose only implementation is Kotlin can be regenerated without its whole file churning. The
- * `steps` suite is the first (#308): its TS twin went with RN's runner.
+ * A golden as the retired TS writer wrote one, `JSON.stringify(value, null, 2)` and a newline, so
+ * Kotlin took the corpus over (#348) without a single file churning, and a diff stays a behaviour
+ * change rather than a layout one.
  *
  * JS's rules, where they differ from a naive Kotlin print: a whole double is written as an integer
  * (`3`, never `3.0`), an empty object or list stays on one line, and only `"`, `\` and control

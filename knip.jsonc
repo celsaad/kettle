@@ -11,6 +11,16 @@
   // make up the domain union, the chart layout's point types — and un-exporting them buys nothing.
   // What this still catches is an export nothing uses at all, which is the dead code worth deleting.
   "ignoreExportsUsedInFile": true,
+  // Only the TS conformance test used these, and it went when Kotlin took the goldens (#348). The TS
+  // domain is deleted whole in #353, these entries with it; until then it stays as it is, not
+  // trimmed piecemeal.
+  "ignoreIssues": {
+    "src/domain/preferences.ts": ["files"],
+    "src/domain/search.ts": ["exports"],
+    "src/domain/tip.ts": ["exports"],
+    "src/domain/yaml-mapping.ts": ["exports"],
+    "src/state/selectors/session-summary.ts": ["exports"],
+  },
   // The Kotlin app has no JavaScript of its own; what knip finds there is Gradle's test-report output.
   "ignore": ["native/**"],
   "ignoreDependencies": [

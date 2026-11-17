@@ -1,29 +1,28 @@
 # Conformance corpus
 
-The library and session formats' behaviour, pinned as data rather than as one implementation's tests,
-so that a second implementation can be held to exactly what the first does. It exists for the Kotlin
-port in [`docs/native-migration-plan.md`](../docs/native-migration-plan.md): while two parsers exist,
-a case one passes and the other fails is a fork of the file format, and it fails CI rather than a
-user's import.
+The library and session formats' behaviour, pinned as data rather than as one implementation's tests.
+It is the format's authority: what a file means is what these cases and their goldens say, and the
+prose around them, here and in `site/format.html`, explains them and loses to them. It was built to
+hold the Kotlin port in [`docs/native-migration-plan.md`](../docs/native-migration-plan.md) to the
+TypeScript parser, a case one passed and the other failed being a fork of the file format. TS has
+since been retired (#348, the decision log): Kotlin took the goldens over with a regeneration that
+changed no file, so the corpus is exactly what TS wrote, and it now holds `:shared` to itself and to
+every platform that reuses it.
 
 Each suite is two files:
 
 - **`<suite>.yaml`** — the inputs, hand-written. Every case has a `name`, and some have a `why`.
-- **`<suite>.expected.json`** — the outputs, **generated** from the TypeScript implementation (or,
-  for `steps`, the Kotlin one) and keyed by case name. Never hand-edit these.
+- **`<suite>.expected.json`** — the outputs, **generated** from `:shared` and keyed by case name.
+  Never hand-edit these.
 
-`src/domain/__tests__/conformance.test.ts` checks the TypeScript output against the goldens. When a
-change to `src/domain/` is meant to change behaviour, run `pnpm run conformance:update`, then
-`pnpm run format`. The golden diff it leaves is part of the review, because a change there is a change
-to what users' files mean.
+`native/android/shared/src/jvmTest/.../ConformanceTest.kt` checks `:shared` against these files, read
+in place, and writes them. It finds suites by listing this directory, and one with no runner is
+reported as skipped under its own name, never as passing. Adding a suite is adding its runner there.
 
-`native/android/shared/src/jvmTest/.../ConformanceTest.kt` checks the Kotlin port against the same
-files, read in place. It finds suites by listing this directory, and one with no Kotlin runner yet is
-reported as skipped under its own name, never as passing. Porting a suite is adding its runner there.
-
-A suite whose TS twin is gone is written from Kotlin instead: `steps`, since the flip release (#308).
-A change to `:shared`'s `RunnerSteps.kt`, `SessionOutline.kt` or `ComingUpTimeline.kt` that is meant to change behaviour is
-`./gradlew :shared:jvmTest -PupdateConformance` from `native/android`, then `pnpm run format`.
+When a change to `:shared` is meant to change behaviour, run
+`./gradlew :shared:jvmTest -PupdateConformance` from `native/android`, then `pnpm run format`. The
+golden diff it leaves is part of the review, because a change there is a change to what users' files
+mean. The writer keeps the key order TS wrote, so key order alone never shows up as a diff.
 
 ## Suites
 
@@ -40,7 +39,7 @@ A change to `:shared`'s `RunnerSteps.kt`, `SessionOutline.kt` or `ComingUpTimeli
 | `search` | `rankByName` and `filterByName` over `names` with `query` | `{ ranked, filtered }`, lists of names |
 | `preferences` | `parsePreferences(input)`, the text of a `preferences.json` | the preferences with defaults filled in, or `null` where the file is refused |
 | `supporter` | `parseSupporterState(input)`, the text of a `supporter.json` | the supporter state, the empty one where the file is refused |
-| `steps` | the runner's `buildStepsWithLimits`, its mid-session edits, `upcomingOutline` and Coming up's `comingUpTimeline`, over the workout in `library`; **Kotlin only** | the step list, the list after each edit, or the outline or timeline per index (the file's header) |
+| `steps` | the runner's `buildStepsWithLimits`, its mid-session edits, `upcomingOutline` and Coming up's `comingUpTimeline`, over the workout in `library` | the step list, the list after each edit, or the outline or timeline per index (the file's header) |
 | `records` | by `op`: `entryBest`, `sessionEntryResult` or `sessionSetCount` over the session file in `session`; `recordKey(exercise, kind)`; `sessionDurationMinutes` of `session`; or `sessionRecords` of `session` against the session files in `prior`, named from the inline `library` | a list of `{ kind, value, reps, oneRepMaxKg }` or `null` per entry; a list of entry results; a set count; the key string; whole minutes; a list of `{ kind, exerciseId, exerciseName, … }` records, the kind's own fields after |
 
 The `source` cases read `site/examples/` and the shipped seed and packs in `src/content/` in place,
@@ -64,8 +63,8 @@ rules, so the two sides must agree on what counts as doing more, and on how long
 `steps` isn't a file either: it is what a workout *runs*, step by step. It held the native runner to
 RN's while both existed (#303). The flip release (#308) deleted RN's, `src/hooks/session-steps.ts`
 with it, and kept the corpus: it is still the plainest statement of what each workout runs, and a
-change to it still shows up as a golden diff. Its goldens are Kotlin's from then on, written by the
-command above.
+change to it still shows up as a golden diff. It was the first suite Kotlin wrote, a release before
+the rest.
 
 ## Reading the goldens
 
@@ -75,16 +74,16 @@ These rules are what an implementation has to meet. Everything else is free.
   - `{ ok: false, kind: "invalidYaml" }` when the text isn't YAML the loader accepts.
   - `{ ok: false, kind: "schemaMismatch", paths: [...] }` when it is YAML but the schema refuses it.
   `paths` holds the refused fields in dotted form (`exercises.0.config.sets`), de-duplicated and
-  sorted, with `(root)` for the document itself. **The wording of the error is not pinned.** js-yaml's
-  and zod's messages are library output, and no second implementation can match them.
-- **Values are the camelCase domain model** from `src/domain/types.ts`, as JSON. An absent optional
+  sorted, with `(root)` for the document itself. **The wording of the error is not pinned.** A
+  loader's and a validator's messages are library output, and no second implementation can match them.
+- **Values are the camelCase domain model** of `:shared` (`Library.kt`, `Session.kt`), as JSON. An absent optional
   field is **absent**, never `null`. `null` appears only where the domain type says `| null`.
 - **Compare numbers numerically, not as text.** `3` and `3.0` are the same value.
 - **Lists keep their order.** Order is behaviour here: merge keeps the existing order and appends new
   ids in the order they arrived.
 - **What a writer emits is not pinned. That it reads back is.** The test checks that every library
   and session case that parses survives serialize → parse unchanged. A second implementation owes the
-  same round-trip, never js-yaml's layout.
+  same round-trip, never the Kotlin writer's layout.
 
 ## Behaviour a port is most likely to get wrong
 
@@ -132,7 +131,7 @@ Every one of these has a case, because each is a default that differs between YA
   ranges, never a regex script class, so no engine's Unicode tables can change *that*. Word
   splitting, accent folding and lowercasing still use each platform's own tables (`\p{L}`/`\p{N}`/
   `\p{M}`, NFD/NFC, case mapping), so a character newer than a runtime's Unicode version can split
-  differently there. CI's JDK 17 is behind the Node that writes the goldens. No case uses such a
+  differently there. The JDK that writes the goldens and the runtime on a phone needn't agree. No case uses such a
   character, because no fix exists short of shipping one Unicode table to every platform.
 - An EMOM's interval count is `floor(total_minutes * 60 / interval_sec)`, compared after the floor.
   Comparing the raw quotient refuses `total_minutes: 8.333333333333334` over a rounding error.
@@ -141,6 +140,7 @@ Every one of these has a case, because each is a default that differs between YA
 
 1. **Add it to the suite's YAML.** A refusal case should carry one defect, so its `paths` don't
    depend on the order a validator checks things in.
-2. **Run `pnpm run conformance:update`** and read the golden diff. A case whose golden doesn't say
+2. **Run `./gradlew :shared:jvmTest -PupdateConformance`** from `native/android`, then
+   `pnpm run format`, and read the golden diff. A case whose golden doesn't say
    what its name says is a finding about the format, not about the case.
 3. **Commit both files together.**

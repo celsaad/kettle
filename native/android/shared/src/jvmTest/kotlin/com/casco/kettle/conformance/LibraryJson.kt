@@ -37,21 +37,29 @@ private fun exerciseJson(exercise: Exercise): Map<String, Any?> =
     buildMap {
         put("id", exercise.id)
         put("name", exercise.name)
-        exercise.notes?.let { put("notes", it) }
         val (type, config) = configJson(exercise.config)
         put("type", type)
         put("config", config)
+        exercise.notes?.let { put("notes", it) }
     }
 
 private fun configJson(config: ExerciseConfig): Pair<String, Map<String, Any?>> =
+    configFields(config).let { (type, fields) -> type to optionals(*fields.toTypedArray()) }
+
+/**
+ * A config's type and every field it has, absent ones as null, in the order TS's
+ * `exerciseToDomain` builds them. The order is what the goldens hold, and [exerciseMergeJson] puts a
+ * patched config back into it, the way TS's round-trip through the domain type does.
+ */
+private fun configFields(config: ExerciseConfig): Pair<String, List<Pair<String, Any?>>> =
     when (config) {
         is ExerciseConfig.Hiit -> {
-            "hiit" to mapOf("workSec" to config.workSec, "restSec" to config.restSec, "rounds" to config.rounds)
+            "hiit" to listOf("workSec" to config.workSec, "restSec" to config.restSec, "rounds" to config.rounds)
         }
 
         is ExerciseConfig.Emom -> {
             "emom" to
-                optionals(
+                listOf(
                     "intervalSec" to config.intervalSec,
                     "totalMinutes" to config.totalMinutes,
                     "targetReps" to config.targetReps,
@@ -59,12 +67,12 @@ private fun configJson(config: ExerciseConfig): Pair<String, Map<String, Any?>> 
         }
 
         is ExerciseConfig.Amrap -> {
-            "amrap" to mapOf("timeCapSec" to config.timeCapSec)
+            "amrap" to listOf("timeCapSec" to config.timeCapSec)
         }
 
         is ExerciseConfig.Reps -> {
             "reps" to
-                optionals(
+                listOf(
                     "sets" to config.sets,
                     "targetRepsMin" to config.targetRepsMin,
                     "targetRepsMax" to config.targetRepsMax,
@@ -75,7 +83,7 @@ private fun configJson(config: ExerciseConfig): Pair<String, Map<String, Any?>> 
 
         is ExerciseConfig.TimedHold -> {
             "timed_hold" to
-                optionals(
+                listOf(
                     "sets" to config.sets,
                     "holdSecMin" to config.holdSecMin,
                     "holdSecMax" to config.holdSecMax,
@@ -84,21 +92,24 @@ private fun configJson(config: ExerciseConfig): Pair<String, Map<String, Any?>> 
         }
 
         is ExerciseConfig.Cardio -> {
-            "cardio" to optionals("durationSec" to config.durationSec, "distanceMeters" to config.distanceMeters)
+            "cardio" to listOf("durationSec" to config.durationSec, "distanceMeters" to config.distanceMeters)
         }
 
         is ExerciseConfig.Rest -> {
-            "rest" to mapOf("durationSec" to config.durationSec)
+            "rest" to listOf("durationSec" to config.durationSec)
         }
     }
 
 private fun workoutJson(workout: Workout): Map<String, Any?> =
     mapOf("id" to workout.id, "name" to workout.name, "blocks" to workout.blocks.map(::blockJson))
 
-private fun blockJson(block: WorkoutBlock): Map<String, Any?> =
+private fun blockJson(block: WorkoutBlock): Map<String, Any?> = optionals(*blockFields(block).toTypedArray())
+
+/** A block's every field, absent ones as null, in TS's `workoutBlockToDomain` order (see [configFields]). */
+private fun blockFields(block: WorkoutBlock): List<Pair<String, Any?>> =
     when (block) {
         is WorkoutBlock.ExerciseBlock -> {
-            optionals(
+            listOf(
                 "kind" to "exercise",
                 "exerciseId" to block.exerciseId,
                 "configOverride" to block.configOverride?.let(::overrideJson),
@@ -106,7 +117,7 @@ private fun blockJson(block: WorkoutBlock): Map<String, Any?> =
         }
 
         is WorkoutBlock.Circuit -> {
-            optionals(
+            listOf(
                 "kind" to "circuit",
                 "id" to block.id,
                 "rounds" to block.rounds,
@@ -216,7 +227,7 @@ internal fun exerciseMergeJson(
     overrideMergeJson(
         merge,
         exerciseJson(merge.effective),
-        exerciseJson(target) + ("config" to camelCase(merge.asAuthored)),
+        exerciseJson(target) + ("config" to inOrder(camelCase(merge.asAuthored), configFields(target.config).second)),
     )
 
 internal fun blockMergeJson(
@@ -226,8 +237,23 @@ internal fun blockMergeJson(
     overrideMergeJson(
         merge,
         blockJson(merge.effective),
-        blockJson(target) + camelCase(merge.asAuthored),
+        inOrder(blockJson(target) + camelCase(merge.asAuthored), blockFields(target)),
     )
+
+/**
+ * [map]'s keys in the order of [fields], the shape's own, as TS's `asAuthored` comes back out
+ * of the domain constructor. A plain `+` appends a key the target didn't have, which is the same JSON
+ * but a different golden file.
+ */
+private fun inOrder(
+    map: Map<String, Any?>,
+    fields: List<Pair<String, Any?>>,
+): Map<String, Any?> {
+    val order = fields.map { it.first }
+    return map.entries
+        .sortedBy { (key, _) -> order.indexOf(key).let { if (it < 0) order.size else it } }
+        .associate { it.toPair() }
+}
 
 private fun overrideMergeJson(
     merge: OverrideMerge<*>,

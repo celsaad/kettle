@@ -139,12 +139,11 @@ mistake here that cannot be fixed for anyone who has already installed it.
   `Medium_Phone_API_37.0` AVD after touching the runner, its service, cues or notifications; the PR
   template lists the checks it can't do.
 
-- `conformance/` — the format's behaviour as data: hand-written YAML inputs and generated golden
-  outputs, checked by `conformance.test.ts` and by the Kotlin runner in `:shared`. It exists so the
-  Kotlin port can be held to exactly what the TS parser does; its README is the contract. A behaviour
-  change in `src/domain/` needs `pnpm run conformance:update`, and the golden diff is part of the
-  review. `steps` has no TS twin since the flip release: its goldens are written from `:shared`
-  (`./gradlew :shared:jvmTest -PupdateConformance`), as the README says.
+- `conformance/` — the format's behaviour as data, and its authority: hand-written YAML inputs and
+  golden outputs, checked and written by the Kotlin runner in `:shared`; its README is the contract.
+  A behaviour change in `:shared` needs `./gradlew :shared:jvmTest -PupdateConformance` (then
+  `pnpm run format`), and the golden diff is part of the review. TS no longer reads the corpus (#348);
+  `src/domain/` is retiring (decision log), so a format change made there alone reaches no golden.
 
 **YAML is snake_case, domain code is camelCase**, bridged only in `yaml-mapping.ts`. Program
 `overrides` are partial *raw* (snake_case) patches — that asymmetry is deliberate and load-bearing.
@@ -296,8 +295,10 @@ published page shipped with five of seven type tables wrong (`emom` taking `roun
 on import. The first two of those are now regression-tested — reintroducing either one fails
 `format-mirrors.test.ts`, which is how it was verified.
 
-A format change also moves `conformance/`: add a case for the new behaviour, regenerate the goldens,
-and read the diff. Once the Kotlin parser exists, the same PR has to make it pass too.
+A format change also moves `conformance/` and the Kotlin parser in `:shared`, which writes the
+goldens: add a case for the new behaviour, make the change in `:shared`, regenerate with
+`./gradlew :shared:jvmTest -PupdateConformance`, and read the diff. Until the TS domain goes (#353),
+`schema.ts` moves in the same PR too, since the mirror tests and `library-schema.json` still read it.
 
 It also moves `src/content/library-schema.json`, the JSON Schema native's assistant brief carries,
 generated from `schema.ts` because Kotlin can't run zod. `library-schema-file.test.ts` fails until

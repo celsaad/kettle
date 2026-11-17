@@ -63,11 +63,10 @@ import org.junit.jupiter.api.TestFactory
 import java.io.File
 
 /**
- * Runs the repo's `conformance/` corpus against `:shared`, the Kotlin half of what
- * `src/domain/__tests__/conformance.test.ts` does for TypeScript. The goldens are generated from
- * the TS implementation, so a case that fails here is the two parsers disagreeing about the format.
- * The exception is [KOTLIN_WRITES]: suites whose TS twin is gone, so this writes their goldens too,
- * with `-PupdateConformance` (the corpus README).
+ * Runs the repo's `conformance/` corpus against `:shared`, and with `-PupdateConformance` writes its
+ * goldens too (the corpus README). The goldens were TypeScript's until the TS domain was retired
+ * (#348); Kotlin took them over with a zero-diff regeneration, so the corpus is the format's
+ * authority and a golden diff is a change to what users' files mean.
  *
  * Suites are discovered from the directory rather than listed, and a suite with no runner below is
  * reported as skipped under its own name, never as passing. Porting a suite is adding its runner.
@@ -135,7 +134,7 @@ class ConformanceTest {
         runner: (Case) -> Any?,
     ): List<DynamicNode> {
         val cases = readSuite(suite)
-        if (suite in KOTLIN_WRITES && System.getProperty("kettle.updateConformance") == "true") {
+        if (System.getProperty("kettle.updateConformance") == "true") {
             val written = cases.associate { it.name to runner(it) }
             File(conformanceDir, "$suite.expected.json").writeText(goldenJson(written))
         }
@@ -416,9 +415,6 @@ private fun libraryText(
     case: Case,
     key: String = "input",
 ): String = case.string("source")?.let { File(conformanceDir.parentFile, it).readText() } ?: case.string(key)!!
-
-/** The suites with no TS runner left, whose goldens this writes: `steps` since RN's runner went (#308). */
-private val KOTLIN_WRITES = setOf("steps")
 
 // Lazy so a missing property fails the test with this message, not as the ExceptionInInitializerError
 // a top-level initialiser would throw.

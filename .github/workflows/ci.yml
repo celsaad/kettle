@@ -90,7 +90,7 @@ jobs:
   # the same zero-warning rule `pnpm run lint` holds. No Node: the build reads the repo's plain files
   # (the locale bundles, theme.json, src/content, the sounds) and nothing a JS install provides, so
   # this job is the fresh-clone check that it stays that way. The conformance tests read the repo's own
-  # conformance/, so a golden that moves on the TS side fails here too until the Kotlin port agrees.
+  # conformance/, whose goldens :shared writes, so a behaviour change without its golden fails here.
   native:
     runs-on: ubuntu-latest
     timeout-minutes: 45

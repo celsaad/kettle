@@ -47,9 +47,10 @@ const OUT = path.join(__dirname, 'out');
  *
  * The 2026-11-17 set leaves nothing to trim: the AVD ran at a size that makes 2204 exactly the app
  * between the system bars, and the session screens' buttons reach the bottom row. Trimming 44px cut
- * their outlines. So the shot is widened instead, 11px a side, in the colour at that side's edge:
- * every screen's sides are a flat field (the page, or the runner's phase colour), so the band is
- * invisible, where letterboxing in a fixed colour would show as bars on half of them.
+ * their outlines. So the shot is widened instead, 11px a side, each side repeating its own edge column:
+ * the sides are a flat field (the page, or the runner's phase colour), so the band is invisible, and a
+ * hairline that runs to the edge, like the tab bar's, runs on through it. A letterbox in a fixed
+ * colour would show as bars on half of them.
  */
 const PAD = 11;
 
@@ -120,19 +121,8 @@ async function screenshots() {
   let n = 1;
   for (const name of SHOTS) {
     const out = path.join(OUT, `screen-${String(n).padStart(2, '0')}-${name}.png`);
-    const src = sharp(path.join(ROOT, 'site/assets/img', `${name}.jpg`));
-    const { data, info } = await src.clone().raw().toBuffer({ resolveWithObject: true });
-    // The edge colour at mid-height, on each side: a flat field on every captured screen.
-    const at = (x) => {
-      const i = (Math.floor(info.height / 2) * info.width + x) * info.channels;
-      return { r: data[i], g: data[i + 1], b: data[i + 2] };
-    };
-    const left = await src
-      .clone()
-      .extend({ left: PAD, background: at(0) })
-      .toBuffer();
-    await sharp(left)
-      .extend({ right: PAD, background: at(info.width - 1) })
+    await sharp(path.join(ROOT, 'site/assets/img', `${name}.jpg`))
+      .extend({ left: PAD, right: PAD, extendWith: 'copy' })
       .removeAlpha()
       .png()
       .toFile(out);

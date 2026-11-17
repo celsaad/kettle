@@ -55,8 +55,8 @@ Each of these cost a rejected upload or a wrong guess once, so they are asserted
   with nothing worth keeping; the 2026-08-04 set was cropped to 2160 at capture time instead. The
   2026-11-17 set leaves nothing to trim: it was taken with the AVD at `wm size 1080x2330`, which makes
   2204px exactly the app between the status bar and the gesture strip, and the session screens'
-  buttons reach the bottom row. So the script now **widens**: 11px a side in the colour at each
-  side's edge, giving 1102x2204, exactly 2:1, with nothing cut. The ceiling to keep in mind is now
+  buttons reach the bottom row. So the script now **widens**: 11px a side, each side repeating its
+  own edge column, giving 1102x2204, exactly 2:1, with nothing cut. The ceiling to keep in mind is now
   width × 2. Every captured screen's sides are a flat field, so the band doesn't show, where a
   fixed-colour letterbox would read as bars on half of them.
 - **App icon: full square, no transparency, no baked corner radius or shadow.** Play applies its own

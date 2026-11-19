@@ -1134,12 +1134,9 @@
     "pasteDetail": "De um editor de texto ou de um chat",
     "packs": "Pacotes iniciais",
     "takeItWithYou": "Leve com você",
-    "openAsYaml": "Abrir como YAML",
-    "openAsYamlDetail": "Leia como está escrito, pesos em quilos",
     "shareFile": "Compartilhar arquivo",
     "exportLog": "Exportar registro",
-    "backupChange": "Trocar pasta",
-    "unitsNote": "Os pesos estão em quilos, como o arquivo os guarda."
+    "backupChange": "Trocar pasta"
   },
   "exerciseDetail": {
     "edit": "Editar",

@@ -188,7 +188,11 @@ private fun WaysIn(
     ) { importOn(ImportStart.Packs) }
 }
 
-/** Take it with you: the YAML view, and the library and the log out through the share sheet. */
+/**
+ * Take it with you: the library and the log out through the share sheet. No whole-file YAML view: a
+ * big library laid out as one block froze the main thread for seconds, and one exercise's YAML is on
+ * Exercise detail.
+ */
 @Composable
 private fun WaysOut(
     sessions: List<Session>,
@@ -201,9 +205,6 @@ private fun WaysOut(
         style = KettleType.heading,
         color = KettleTheme.colors.text,
     )
-    ActionRow(stringResource(R.string.file_openAsYaml), stringResource(R.string.file_openAsYamlDetail)) {
-        actions.open(Route(Destination.LibraryYaml))
-    }
     ActionRow(stringResource(R.string.file_shareFile), stringResource(R.string.settings_exportLibraryDetail)) {
         share(actions.export.library)
     }
@@ -237,9 +238,9 @@ private fun counts(library: Library): String {
     )
 }
 
-/** The file's name as a sheet's title, in monospace: this one's, and the YAML view's. */
+/** The file's name as the sheet's title, in monospace. */
 @Composable
-internal fun FileNameTitle() =
+private fun FileNameTitle() =
     Text(
         LIBRARY_FILE_NAME,
         Modifier.semantics { heading() },

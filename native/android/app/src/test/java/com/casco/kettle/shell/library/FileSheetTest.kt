@@ -172,14 +172,12 @@ class FileSheetTest {
     }
 
     @Test
-    fun `the ways out open the YAML view and share the two files`() {
+    fun `the ways out share the two files`() {
         show(Files(sessions = listOf(session)))
 
-        row("Abrir como YAML").performScrollTo().performClick()
         row("Compartilhar arquivo").performScrollTo().performClick()
         row("Exportar registro").performScrollTo().assertIsEnabled().performClick()
 
-        assertEquals(listOf(Route(Destination.LibraryYaml)), opened)
         assertEquals(1, libraryShares)
         assertEquals(listOf(listOf(session)), historyShares)
     }

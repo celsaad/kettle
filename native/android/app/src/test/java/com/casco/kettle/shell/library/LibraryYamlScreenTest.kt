@@ -126,7 +126,7 @@ class LibraryYamlScreenTest {
     /** Null is a library not read yet, and the screen shows no YAML before it has one. */
     @Test
     fun `shows no YAML before there is a library`() {
-        show(Files(library = null))
+        show(Files(library = null), exerciseId = "squat")
 
         compose.onNodeWithText("exercises:", substring = true).assertDoesNotExist()
         compose.onNodeWithText("Este exercício não está mais na sua biblioteca.").assertDoesNotExist()

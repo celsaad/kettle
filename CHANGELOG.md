@@ -22,9 +22,9 @@ here, next to what it describes.
 
 ### What changed
 
-- **No more freeze from your file's settings**: "Open as YAML", which showed the whole library as
+- **No more freeze opening your file as YAML**: "Open as YAML", which showed the whole library as
   text, is gone. On a large library it froze the app for several seconds before it appeared. Share
-  file still hands over the whole file, and one exercise's YAML is still on its own page.
+  file still hands over the whole file, and one exercise's YAML is still on its own page (#526).
 
 ---
 

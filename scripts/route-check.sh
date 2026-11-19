@@ -76,11 +76,10 @@ steps=(
   'tap:Exercises|tab:Exercises' 'tap:Push-ups|YAML' 'tap:Edit|Edit exercise' 'back|YAML'
   'back|tab:Exercises'
   'tap:New exercise|New exercise' 'back|tab:Exercises'
-  # The file's name under Library's title opens the file sheet; Open as YAML and Paste YAML open their own
-  # sheets over it, and back returns through each (#413).
+  # The file's name under Library's title opens the file sheet; Paste YAML opens its own sheet over it,
+  # and back returns through it (#413).
   'tap:exercises.yaml|Have an assistant write your training'
-  'tap:Open as YAML|Weights are in kilograms, as the file stores them.'
-  'back|Have an assistant write your training' 'tap:Paste YAML|Import library'
+  'tap:Paste YAML|Import library'
   'back|Have an assistant write your training' 'back|tab:Exercises'
   # Today's gear pushes native Settings over it, and back returns (#235); a sheet over Settings closes
   # back onto it (#489). All workouts opens Library's Workouts (#412), whose New workout opens the

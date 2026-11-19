@@ -27,35 +27,32 @@ import com.casco.kettle.shell.theme.KettleTheme
 import com.casco.kettle.shell.theme.KettleType
 import com.casco.kettle.shell.theme.Spacing
 
-/** What the route table draws at `Destination.LibraryYaml`: the whole file, or one exercise of it. */
+/** What the route table draws at `Destination.LibraryYaml`: one exercise of the library, as YAML. */
 @Composable
 fun LibraryYamlRoute(params: Map<String, String> = emptyMap()) =
     LibraryYamlScreen(LocalLatestFiles.current, params[EXERCISE_PARAM])
 
 /**
- * The library as YAML, read-only (#413): the app's own serialisation, so it reads as an export would
- * rather than as the file was last hand-written, numbered and coloured (#444). Weights are the file's
- * kilograms whatever the reader's units, and it says so above them. No editing here.
+ * Exercise detail's YAML, read-only (#444): that one exercise as a complete file, `version`, the
+ * exercise, and empty workouts and programs, so Copy and Share hand over something that imports on its
+ * own. The app's own serialisation, so it reads as an export would rather than as the file was last
+ * hand-written, numbered and coloured. Weights are the file's kilograms whatever the reader's units,
+ * and it says so above them. An id the library doesn't have, or none, says so, as Exercise detail does.
  *
- * With [exerciseId], Exercise detail's YAML (#444): that one exercise as a complete file, `version`,
- * the exercise, and empty workouts and programs, so Copy and Share hand over something that imports on
- * its own. An id the library doesn't have says so, as Exercise detail does.
+ * One exercise only: the whole library was a view of its own once (#413), and a big one, laid out as a
+ * single block, held the main thread for seconds before the sheet drew.
  */
 @Composable
 fun LibraryYamlScreen(
     files: LatestFiles,
-    exerciseId: String? = null,
+    exerciseId: String?,
 ) {
     val colors = KettleTheme.colors
     val library = files.library
     val exercise = exerciseId?.let { id -> library?.exercises?.firstOrNull { it.id == id } }
     val yaml =
-        remember(library, exerciseId) {
-            when {
-                library == null -> null
-                exerciseId == null -> serializeLibraryYaml(library)
-                else -> exercise?.let { serializeLibraryYaml(Library(1, listOf(it), emptyList(), emptyList())) }
-            }
+        remember(exercise) {
+            exercise?.let { serializeLibraryYaml(Library(1, listOf(it), emptyList(), emptyList())) }
         }
     Box(Modifier.fillMaxSize().verticalScroll(rememberScrollState()), contentAlignment = Alignment.TopCenter) {
         Column(
@@ -64,12 +61,7 @@ fun LibraryYamlScreen(
                 .padding(bottom = Spacing.four)
                 .navigationBarsPadding(),
         ) {
-            if (exerciseId == null) {
-                FileNameTitle()
-                Text(stringResource(R.string.file_unitsNote), style = KettleType.small, color = colors.textSecondary)
-            } else {
-                ExerciseHeader(exercise?.name, files)
-            }
+            ExerciseHeader(exercise?.name, files)
             if (yaml == null && library != null) {
                 Text(
                     stringResource(R.string.exerciseDetail_missing),
@@ -80,7 +72,7 @@ fun LibraryYamlScreen(
             }
             yaml?.let {
                 YamlCode(it, Modifier.padding(top = Spacing.three))
-                if (exerciseId != null) SendActions(it)
+                SendActions(it)
             }
         }
     }

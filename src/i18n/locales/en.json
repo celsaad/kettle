@@ -1071,12 +1071,9 @@
     "pasteDetail": "From a text editor or a chat",
     "packs": "Starter packs",
     "takeItWithYou": "Take it with you",
-    "openAsYaml": "Open as YAML",
-    "openAsYamlDetail": "Read it as it is written, weights in kilograms",
     "shareFile": "Share file",
     "exportLog": "Export log",
-    "backupChange": "Change folder",
-    "unitsNote": "Weights are in kilograms, as the file stores them."
+    "backupChange": "Change folder"
   },
   "exerciseDetail": {
     "edit": "Edit",

@@ -41,7 +41,7 @@ import org.robolectric.annotation.Config
 import org.robolectric.annotation.Implementation
 import org.robolectric.annotation.Implements
 
-/** The library as YAML, read-only (#413). In `pt`, so the units note is the bundle's, not a literal. */
+/** One exercise as YAML, read-only (#444). In `pt`, so the notes are the bundle's, not literals. */
 @RunWith(RobolectricTestRunner::class)
 @Config(qualifiers = "pt")
 class LibraryYamlScreenTest {
@@ -55,24 +55,6 @@ class LibraryYamlScreenTest {
         val latest =
             LatestFiles(files, CoroutineScope(Dispatchers.Unconfined), io = Dispatchers.Unconfined).apply { reread() }
         compose.setContent { KettleTheme(darkTheme = false) { LibraryYamlScreen(latest, exerciseId) } }
-    }
-
-    @Test
-    fun `shows the library as the app writes it, under the file's name`() {
-        show()
-
-        compose.onNodeWithText("exercises.yaml").assert(isHeading())
-        // The block draws the document without its closing newline.
-        compose.onNodeWithText(serializeLibraryYaml(squatLibrary).trimEnd('\n')).assertExists()
-    }
-
-    /** The file keeps kilograms whatever the reader's units, so a pounds reader is told what they see. */
-    @Test
-    fun `keeps kilograms for a reader in pounds, and says so`() {
-        show(Files(Preferences(UnitSystem.IMPERIAL, ThemePreference.SYSTEM, false, true, null)))
-
-        compose.onNodeWithText("Os pesos estão em quilos, como o arquivo os guarda.").assertExists()
-        compose.onNodeWithText("target_weight: 60", substring = true).assertExists()
     }
 
     /** Exercise detail's YAML (#444): the one exercise as a complete file, so a copy imports on its own. */
@@ -129,6 +111,15 @@ class LibraryYamlScreenTest {
         show(exerciseId = "deleted")
 
         compose.onNodeWithText("- id:", substring = true).assertDoesNotExist()
+        compose.onNodeWithText("Este exercício não está mais na sua biblioteca.").assertExists()
+    }
+
+    // The route with no id: the whole-file view it once opened is gone, so it reads as a missing exercise.
+    @Test
+    fun `says so, with no YAML, for a route that names no exercise`() {
+        show()
+
+        compose.onNodeWithText("exercises:", substring = true).assertDoesNotExist()
         compose.onNodeWithText("Este exercício não está mais na sua biblioteca.").assertExists()
     }
 

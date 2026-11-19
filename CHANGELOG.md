@@ -20,7 +20,11 @@ here, next to what it describes.
 
 ## Unreleased
 
-Nothing since 0.17.1.
+### What changed
+
+- **No more freeze from your file's settings**: "Open as YAML", which showed the whole library as
+  text, is gone. On a large library it froze the app for several seconds before it appeared. Share
+  file still hands over the whole file, and one exercise's YAML is still on its own page.
 
 ---
 

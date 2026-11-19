@@ -1008,12 +1008,9 @@
     "pasteDetail": "テキストエディタやチャットから",
     "packs": "スターターパック",
     "takeItWithYou": "持ち出す",
-    "openAsYaml": "YAML で開く",
-    "openAsYamlDetail": "書かれたとおりに表示（重量はキログラム）",
     "shareFile": "ファイルを共有",
     "exportLog": "記録を書き出す",
-    "backupChange": "フォルダを変更",
-    "unitsNote": "重量はファイルに保存されているとおりキログラムです。"
+    "backupChange": "フォルダを変更"
   },
   "exerciseDetail": {
     "edit": "編集",

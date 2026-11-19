@@ -81,7 +81,6 @@ $steps = @(
   @('/program-guide', 'Writing a program by hand'), @('back', 'tab:Progress'),
   @('/session-editor', 'Edit session'), @('back', 'tab:Progress'),
   @('/your-file', 'Have an assistant write your training'), @('back', 'tab:Progress'),
-  @('/library-yaml', 'Weights are in kilograms, as the file stores them.'), @('back', 'tab:Progress'),
   @('/library-yaml?id=pushups', 'As YAML'), @('back', 'tab:Progress'),
   @('/exercise?id=pushups', 'YAML'), @('back', 'tab:Progress'),
   # A section's row opens its native sheet over the tab (#197, #233), and back returns to it.

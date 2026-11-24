@@ -264,7 +264,7 @@ after any delegated change, and skim the diff.
 ## Changing the YAML format
 
 This one stays inline rather than moving to `docs/`, because the failure mode is not realising you're
-in it: a renamed key looks like a local change and silently breaks three copies you didn't open.
+in it: a renamed key looks like a local change and silently breaks the copies you didn't open.
 
 A change to the format — a new field, a renamed key, a changed requirement, a new exercise type —
 lands in one PR, in all of these:
@@ -274,8 +274,9 @@ lands in one PR, in all of these:
   `./gradlew :shared:jvmTest -PupdateConformance` (then `pnpm run format`) and read the golden diff.
 - **`src/content/library-schema.json`**, the JSON Schema the assistant brief carries. It is
   hand-maintained, the declarative statement of the format. `LibrarySchemaFileTest` in `:shared`
-  holds it to the corpus: every `ok` case validates, and every `schemaMismatch` case is refused at
-  its golden's paths, except the refinements it names, which the file doesn't state.
+  holds it to the importer: every `ok` corpus case validates, every `schemaMismatch` case is refused
+  at its golden's paths, and every one-edit variant of `every-shape` is refused where `:shared`
+  refuses it, except for the refinements it names, which the file doesn't state.
 - **`schema.ts`, until the TS domain goes (#353)**, since the mirror and sample tests below still
   read it.
 - **The three hand-maintained mirrors, and the public one is outside `docs/`:**

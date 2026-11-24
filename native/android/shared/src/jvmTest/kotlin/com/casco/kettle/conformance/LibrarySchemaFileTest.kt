@@ -1,7 +1,10 @@
 package com.casco.kettle.conformance
 
+import com.casco.kettle.domain.ParseResult
 import com.casco.kettle.domain.YamlLoad
+import com.casco.kettle.domain.dumpYaml
 import com.casco.kettle.domain.loadYaml
+import com.casco.kettle.domain.parseLibraryYaml
 import com.github.erosb.jsonsKema.ConstValidationFailure
 import com.github.erosb.jsonsKema.JsonParser
 import com.github.erosb.jsonsKema.Keyword
@@ -15,21 +18,31 @@ import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Assertions.fail
 import org.junit.jupiter.api.DynamicNode
 import org.junit.jupiter.api.DynamicTest.dynamicTest
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestFactory
 import java.io.File
+import kotlin.math.abs
+
+/** JavaScript's `Number.MAX_SAFE_INTEGER`, the file's own ceiling on an unbounded integer. */
+private const val MAX_SAFE_INTEGER = 9_007_199_254_740_991.0
 
 /**
  * `src/content/library-schema.json` is the format's declarative statement, the one the assistant
- * brief carries whole, and it is edited by hand (#349). This holds it to `:shared`'s validator over
- * the corpus's `library` suite, which is the format's authority: every case whose golden is `ok`
- * validates against the file, and every `schemaMismatch` case is refused at exactly the golden's
- * paths. `invalidYaml` cases never reach a schema, so they aren't the file's to answer.
+ * brief carries whole, and it is edited by hand (#349). This holds it to `:shared`'s validator twice:
  *
+ * - over the corpus's `library` suite, the format's authority: every case whose golden is `ok`
+ *   validates against the file, and every `schemaMismatch` case is refused at exactly the golden's
+ *   paths. `invalidYaml` cases never reach a schema, so they aren't the file's to answer.
+ * - over variants of `every-shape`, the case written to hold every type, block, override and week
+ *   kind: each key dropped and each value swapped for a probe, with the file and `:shared` refusing
+ *   at the same paths. The corpus pins one refusal per rule it thought to write a case for; this is
+ *   what catches a required field made optional, or a bound dropped, that no case happens to hit.
+ *
+ * Both set aside `:shared`'s refinements, the rules the file doesn't state (see [refinements]).
  * The file is only ever this test's input: nothing that ships validates against it, which is why the
  * validator is a test dependency.
  */
@@ -42,14 +55,15 @@ class LibrarySchemaFileTest {
             val document = (loadYaml(libraryText(case)) as? YamlLoad.Loaded)?.value
             when {
                 golden["ok"] == true -> {
-                    dynamicTest("${case.name} validates") { assertNull(refusal(document)?.let(::refusedPaths)) }
+                    dynamicTest("${case.name} validates") { assertEquals(emptyList<String>(), fileRefuses(document)) }
                 }
 
                 case.name in refinements -> {
                     // Asserted rather than skipped, so a rule the file learns to state leaves the list.
-                    dynamicTest("${case.name} is a refinement the file can't state, so it validates") {
-                        assertNull(
-                            refusal(document)?.let(::refusedPaths),
+                    dynamicTest("${case.name} is a refinement the file doesn't state, so it validates") {
+                        assertEquals(
+                            emptyList<String>(),
+                            fileRefuses(document),
                             "the file refuses it now: drop it from refinements",
                         )
                     }
@@ -57,13 +71,18 @@ class LibrarySchemaFileTest {
 
                 golden["kind"] == "schemaMismatch" -> {
                     dynamicTest("${case.name} is refused at its golden's paths") {
-                        val refusal = refusal(document) ?: fail("the file accepts it")
-                        assertEquals(golden["paths"], refusedPaths(refusal).sorted())
+                        assertEquals(golden["paths"], fileRefuses(document).ifEmpty { fail("the file accepts it") })
                     }
                 }
 
-                else -> {
+                golden["kind"] == "invalidYaml" -> {
                     null
+                }
+
+                else -> {
+                    dynamicTest(
+                        "${case.name} has a golden this test knows",
+                    ) { fail("unknown golden kind ${golden["kind"]}") }
                 }
             }
         }
@@ -77,36 +96,177 @@ class LibrarySchemaFileTest {
         }
     }
 
+    @Test
+    fun `the file and shared refuse every variant of every-shape at the same paths`() {
+        val case = readSuite("library").single { it.name == "every-shape" }
+        val document = (loadYaml(libraryText(case)) as YamlLoad.Loaded).value
+        val variants = edits(document, emptyList())
+        val disagreements =
+            variants.mapNotNull { (path, edit) ->
+                val variant = applyEdit(document, path, edit)
+                val shared = sharedRefuses(variant)
+                val file = fileRefuses(variant)
+                if (shared ==
+                    file
+                ) {
+                    null
+                } else {
+                    "${path.joinToString(".")} = ${edit ?: "null"}: :shared $shared, file $file"
+                }
+            }
+        // Vacuity guard: the probes must actually provoke refusals, or agreeing proves nothing.
+        assertTrue(
+            variants.count { (path, edit) -> sharedRefuses(applyEdit(document, path, edit)).isNotEmpty() } >
+                variants.size / 2,
+        )
+        assertEquals(emptyList<String>(), disagreements)
+    }
+
     /**
-     * The `schemaMismatch` cases the file accepts, each a rule `:shared`'s readers check and JSON
-     * Schema, as written here, doesn't state. Most compare two fields or look across a list, which
-     * JSON Schema has no keyword for; the rest it could state with `dependentRequired` or `if`/`then`,
-     * but the zod the file was generated from held them as refinements, and zod's emitter drops
-     * refinements. The brief's own prose carries these rules to the assistant.
+     * The `schemaMismatch` cases the file accepts, each a rule `:shared`'s readers check and the file
+     * doesn't state. Most compare two fields or look across a list, which JSON Schema has no keyword
+     * for. The rest it could state (`dependentRequired`, `if`/`then`) and doesn't yet: zod, which the
+     * file was generated from until #349, held them as refinements and its emitter dropped them.
+     * The brief tells the assistant only that such rules exist; Import's refusal and repair loop is
+     * what teaches them.
      */
     private val refinements =
         mapOf(
             "reps-max-below-min" to "target_reps_max ≥ target_reps_min compares two fields",
-            "hold-max-without-min" to "hold_sec_max needing hold_sec_min was a zod refinement",
+            "hold-max-without-min" to "hold_sec_max needing hold_sec_min is statable (dependentRequired), not stated",
             "hold-max-below-min" to "hold_sec_max ≥ hold_sec_min compares two fields",
             "emom-derived-count-past-ceiling" to "the interval count is total_minutes over interval_sec",
             "emom-tiny-interval" to "the interval count is total_minutes over interval_sec",
-            "week-without-workout" to "workout being required turns on rest_day, a zod refinement",
-            "rest-week-with-workout" to "workout being refused turns on rest_day, a zod refinement",
-            "rest-week-with-overrides" to "overrides being refused turns on rest_day, a zod refinement",
+            "week-without-workout" to "workout required unless rest_day is statable (if/then), not stated",
+            "rest-week-with-workout" to "workout refused on a rest_day is statable (if/then), not stated",
+            "rest-week-with-overrides" to "overrides refused on a rest_day is statable (if/then), not stated",
             "program-of-only-rest-weeks" to "at least one training week looks across the list",
             "repeated-week-and-day" to "a unique week and day pair looks across the list",
-            "override-naming-both-targets" to "exactly one of exercise and block was a zod refinement",
-            "override-naming-no-target" to "exactly one of exercise and block was a zod refinement",
+            "override-naming-both-targets" to "exactly one of exercise and block is statable (oneOf), not stated",
+            "override-naming-no-target" to "exactly one of exercise and block is statable (oneOf), not stated",
         )
 
-    private fun refusal(document: Any?): ValidationFailure? =
-        validator.validate(JsonParser(json(document).toString()).parse())
+    /**
+     * The messages of `:shared`'s refinements (`ExerciseSchema.kt`, `ProgramSchema.kt`), as prefixes.
+     * A refusal with one of these is set aside before comparing. A reworded message stops matching
+     * and shows up as a disagreement, never as a silent pass.
+     */
+    private val refinementMessages =
+        listOf(
+            "must be >= target_reps_min",
+            "needs hold_sec_min",
+            "must be >= hold_sec_min",
+            "must come to at most",
+            "needs a workout unless rest_day: true",
+            "a rest_day week cannot name a workout",
+            "a rest_day week has nothing to override",
+            "needs at least one week that runs a workout",
+            "must not repeat the same (week, day) pair",
+            "must specify exactly one of exercise or block",
+        )
+
+    /** `:shared`'s refused paths for [document], its refinements set aside. */
+    private fun sharedRefuses(document: Any?): List<String> =
+        when (val result = parseLibraryYaml(dumpYaml(document))) {
+            is ParseResult.Ok -> {
+                emptyList()
+            }
+
+            is ParseResult.SchemaMismatch -> {
+                result.detail
+                    .split("; ")
+                    .map { it.split(": ", limit = 2) }
+                    .filter { (_, message) -> refinementMessages.none(message::startsWith) }
+                    .map { (path, _) -> path }
+                    .distinct()
+                    .sorted()
+            }
+
+            is ParseResult.InvalidYaml -> {
+                fail("a variant written by dumpYaml didn't load: ${result.detail}")
+            }
+        }
+
+    /** The file's refused paths for [document], sorted; empty when it validates. */
+    private fun fileRefuses(document: Any?): List<String> =
+        validator
+            .validate(JsonParser(json(document).toString()).parse())
+            ?.let(::refusedPaths)
+            ?.sorted()
+            .orEmpty()
+
+    /**
+     * Every single edit [edits] makes: each key dropped, a list cut short by one, a mapping or list
+     * replaced by a probe, and each scalar replaced by every probe. Paths are keys and indices.
+     */
+    private fun edits(
+        node: Any?,
+        path: List<Any>,
+    ): List<Pair<List<Any>, Any?>> =
+        buildList {
+            when (node) {
+                is Map<*, *> -> {
+                    collectionProbes.forEach { add(path to it) }
+                    node.forEach { (key, value) ->
+                        add(path + key!! to Drop)
+                        addAll(edits(value, path + key))
+                    }
+                }
+
+                is List<*> -> {
+                    collectionProbes.forEach { add(path to it) }
+                    if (node.isNotEmpty()) add(path to node.dropLast(1))
+                    node.forEachIndexed { index, item -> addAll(edits(item, path + index)) }
+                }
+
+                else -> {
+                    scalarProbes.forEach { add(path to it) }
+                }
+            }
+        }
+
+    /** A wrong type, each side of every bound the file states (0, a fraction, past any ceiling), and empty. */
+    private val scalarProbes = listOf(null, "", "x", true, -1, 0, 0.5, 1e12)
+    private val collectionProbes = listOf(null, "x")
+
+    private object Drop
+
+    @Suppress("UNCHECKED_CAST")
+    private fun applyEdit(
+        node: Any?,
+        path: List<Any>,
+        edit: Any?,
+    ): Any? =
+        when {
+            path.isEmpty() -> {
+                edit
+            }
+
+            node is Map<*, *> -> {
+                val map = node as Map<Any?, Any?>
+                val key = path.first()
+                if (path.size == 1 &&
+                    edit === Drop
+                ) {
+                    map - key
+                } else {
+                    map + (key to applyEdit(map[key], path.drop(1), edit))
+                }
+            }
+
+            else -> {
+                (node as List<Any?>).toMutableList().also {
+                    val index = path.first() as Int
+                    it[index] = applyEdit(it[index], path.drop(1), edit)
+                }
+            }
+        }
 
     /**
      * The golden's form of a refusal: dotted instance paths, a missing property at its own path, as
-     * `:shared` reports it. A `oneOf` over exercise or block types reports every branch's failures,
-     * so it is narrowed to the branch whose `type` matched; when none did, the refusal is the `type`.
+     * `:shared` reports it. A `oneOf` (or `anyOf`) over exercise or block types reports every
+     * branch's failures, so it is narrowed to the branch whose `type` matched; when none did, because
+     * `type` is unknown or missing, the refusal is the `type`.
      */
     private fun refusedPaths(failure: ValidationFailure): Set<String> =
         when {
@@ -114,11 +274,11 @@ class LibrarySchemaFileTest {
                 failure.missingProperties.map { dotted(failure, it) }.toSet()
             }
 
-            failure.keyword == Keyword.ONE_OF -> {
+            failure.keyword == Keyword.ONE_OF || failure.keyword == Keyword.ANY_OF -> {
                 val discriminator = dotted(failure, "type")
                 val matched =
-                    failure.causes.filter { branch ->
-                        branch.flatten().none { it is ConstValidationFailure && dotted(it) == discriminator }
+                    failure.causes.filterNot { branch ->
+                        branch.flatten().any { refusesType(it, discriminator) }
                     }
                 if (matched.isEmpty()) setOf(discriminator) else matched.flatMap(::refusedPaths).toSet()
             }
@@ -132,21 +292,47 @@ class LibrarySchemaFileTest {
             }
         }
 
+    private fun refusesType(
+        failure: ValidationFailure,
+        discriminator: String,
+    ): Boolean =
+        (failure is ConstValidationFailure && dotted(failure) == discriminator) ||
+            (
+                failure is RequiredValidationFailure &&
+                    failure.missingProperties.any { dotted(failure, it) == discriminator }
+            )
+
     private fun dotted(
         failure: ValidationFailure,
         vararg below: String,
     ): String = (failure.instance.location.pointer.segments + below).joinToString(".").ifEmpty { "(root)" }
 
-    /** The loaded tree as JSON, which it already is in shape: maps, lists and core-schema scalars. */
+    /**
+     * The loaded tree as JSON, which it already is in shape: maps, lists and core-schema scalars. A
+     * non-finite number (`.inf`, `.nan`) has no JSON form, so it goes over as a string, refused as
+     * not a number at its own path, as `:shared` refuses it.
+     */
     private fun json(value: Any?): JsonElement =
         when (value) {
             null -> JsonNull
             is String -> JsonPrimitive(value)
             is Boolean -> JsonPrimitive(value)
+            is Double -> number(value)
             is Number -> JsonPrimitive(value)
             is Map<*, *> -> JsonObject(value.entries.associate { (key, item) -> key.toString() to json(item) })
             is List<*> -> JsonArray(value.map(::json))
             else -> error("the loader built a ${value::class}, which JSON has no form for")
+        }
+
+    /**
+     * A whole number goes over as the integer it is, as a JS writer prints it: json-sKema reads
+     * `1.0E12` as a fraction, and would refuse it where an integer goes.
+     */
+    private fun number(value: Double): JsonPrimitive =
+        when {
+            !value.isFinite() -> JsonPrimitive(value.toString())
+            value % 1.0 == 0.0 && abs(value) <= MAX_SAFE_INTEGER -> JsonPrimitive(value.toLong())
+            else -> JsonPrimitive(value)
         }
 
     private val validator by lazy {

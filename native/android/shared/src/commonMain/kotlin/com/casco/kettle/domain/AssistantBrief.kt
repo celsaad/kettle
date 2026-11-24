@@ -8,8 +8,8 @@ package com.casco.kettle.domain
  * **This carries format and never intent.** No goals, no prescriptions, nothing about the user's body:
  * the app owns the file format, and the user owns what goes in the file (the decision log).
  *
- * [schema] is `src/content/library-schema.json`, hand-maintained and held to the conformance corpus by
- * `LibrarySchemaFileTest`, so it can't drift from what the importer accepts.
+ * [schema] is `src/content/library-schema.json`, hand-maintained. `LibrarySchemaFileTest` holds it to
+ * what the importer accepts, over the corpus and variants of it, but for the refinements it names.
  */
 object AssistantBrief {
     /** The brief's own words, in the reader's language: the screen's to supply, since `:shared` holds no prose. */

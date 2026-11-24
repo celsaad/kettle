@@ -375,11 +375,14 @@ private fun DiskFiles.resumeOpening(now: Long): Opening? {
 
 /**
  * What [plan]'s sets open from: the log as it is now, which can't hold the session being run since it
- * has no end yet, and the units as the screen reads them.
+ * has no end yet, and the units as the screen reads them. A log that can't be read opens every set on
+ * its target rather than refusing the session: last time is a nicety, the workout isn't.
  */
 private fun DiskFiles.runnerContext(plan: RunnerPlan.Runnable): RunnerContext =
     RunnerContext(
-        sessionLog().logged,
+        runCatching { sessionLog().logged }
+            .onFailure { Log.w(TAG, "Couldn't read the log; sets open on their targets", it) }
+            .getOrDefault(emptyList()),
         preferencesOrDefault(preferences(), deviceUnitSystem(Locale.getDefault())).unitSystem,
         plan.loadsSetByProgram,
     )

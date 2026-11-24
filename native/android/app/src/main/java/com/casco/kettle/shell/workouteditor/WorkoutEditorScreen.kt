@@ -257,7 +257,7 @@ private class Editor(
         confirmingDelete = false
     }
 
-    /** Asks [usedBy] again: the library is read again while the confirm is up. */
+    /** Asks [usedBy] again: the library can change while the confirm is up. */
     fun delete() {
         if (closed) return
         val workout = existing ?: return

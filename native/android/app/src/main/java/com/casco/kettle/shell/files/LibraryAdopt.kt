@@ -3,11 +3,11 @@ package com.casco.kettle.shell.files
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
+import com.casco.kettle.domain.Library
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.sync.withLock
 
 /**
  * The runner's adopt (#220): a load the session ran becomes the exercise's target in the library. For
@@ -15,17 +15,17 @@ import kotlinx.coroutines.sync.withLock
  */
 object LibraryAdopt {
     /**
-     * The write itself, blocking: whether it wrote the library. Set once, on the application's context
-     * rather than an activity's.
+     * The write itself, blocking: the library it wrote, or null for none. Set once, on the application's
+     * context rather than an activity's.
      */
-    @Volatile var adoptTargetWeight: ((exerciseId: String, weightKg: Double) -> Boolean)? = null
+    @Volatile var adoptTargetWeight: ((exerciseId: String, weightKg: Double) -> Library?)? = null
 
     /**
-     * Native wrote the library, on the main thread, so the screens read it again: an editor opened after
-     * the runner builds on the file, not on the library from before the adopt. The current activity's,
-     * which clears it as it goes.
+     * Native wrote the library, on the main thread, handed over as written so the screens show it: an
+     * editor opened after the runner builds on it, not on the library from before the adopt. The current
+     * activity's, which clears it as it goes.
      */
-    var onLibraryWritten: (() -> Unit)? = null
+    var onLibraryWritten: ((Stamped<Library>) -> Unit)? = null
 
     private val main = Handler(Looper.getMainLooper())
 
@@ -34,7 +34,8 @@ object LibraryAdopt {
 
     /**
      * [weightKg] becomes [exerciseId]'s target load in the library, off the main thread, and every screen
-     * reads it again. The runner calls it directly (#297), and it takes the library's one lock.
+     * shows it. The runner calls it directly (#297), and it takes the library's one lock. An adopt that
+     * wrote nothing still takes a stamp, which shows nothing and only counts it as landed.
      */
     fun adoptLoad(
         exerciseId: String,
@@ -47,8 +48,9 @@ object LibraryAdopt {
             return
         }
         background.launch {
-            if (!LibraryWrites.lock.withLock { write(exerciseId, weightKg) }) return@launch
-            main.post { onLibraryWritten?.invoke() }
+            val written = LibraryWrites.write { write(exerciseId, weightKg) }
+            val library = written.value ?: return@launch
+            main.post { onLibraryWritten?.invoke(Stamped(library, written.stamp)) }
         }
     }
 

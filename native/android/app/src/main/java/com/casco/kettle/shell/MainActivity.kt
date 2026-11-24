@@ -13,12 +13,14 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
+import com.casco.kettle.domain.Library
 import com.casco.kettle.domain.RunnerStart
 import com.casco.kettle.shell.files.DiskFiles
 import com.casco.kettle.shell.files.LatestFiles
 import com.casco.kettle.shell.files.LibraryAdopt
 import com.casco.kettle.shell.files.LibraryGate
 import com.casco.kettle.shell.files.LocalLatestFiles
+import com.casco.kettle.shell.files.Stamped
 import com.casco.kettle.shell.files.StoragePaths
 import com.casco.kettle.shell.files.adoptTargetWeight
 import com.casco.kettle.shell.nav.LocalNavigator
@@ -58,17 +60,12 @@ class MainActivity : ComponentActivity() {
         LatestFiles(
             DiskFiles(paths),
             lifecycleScope,
-            onRead = { log, preferences -> reconcileReminder(log, preferences) },
+            onShown = { log, preferences -> reconcileReminder(log, preferences) },
             prepared = { LibraryGate.prepared(this) },
         )
     }
 
-    private val navigator =
-        Navigator(
-            onReselect = { tabReselects.tryEmit(it) },
-            // The runner writes its session as it goes, and the screens it covered read it on the way back.
-            onRunnerClosed = { latestFiles.reread() },
-        )
+    private val navigator = Navigator(onReselect = { tabReselects.tryEmit(it) })
 
     /** What [LocalTabReselects] carries. One slot, since a tap's scroll replaces the one before it. */
     private val tabReselects =
@@ -97,7 +94,7 @@ class MainActivity : ComponentActivity() {
         // The runner's recovery reads the library, so the launch's seed and repair come first (#221).
         LibraryGate.awaitPrepared(this)
         recoverRunner(paths)
-        rereadOnStartAndStop(latestFiles)
+        rereadOnStart(latestFiles)
         val preferences = paths.preferences
         val layout =
             ShellLayout(
@@ -224,19 +221,16 @@ private const val BACK_STACK = "com.casco.kettle.shell.BACK_STACK"
 /** Whether this process has run [recoverRunner]: on the main thread only, as onCreate is. */
 private var runnerRecovered = false
 
-/** The files read again as this activity starts and stops. */
-private fun LifecycleOwner.rereadOnStartAndStop(files: LatestFiles) =
+/**
+ * The files read again as this activity starts: the cold start's read, and a read on every return, for
+ * whatever changed while the app was out of view (a restore, `adb run-as`). A new activity over the same
+ * runtime reads too, since writes that landed while there was none went unheard. Nothing reads on the
+ * way out: every native write is already shown, and the rest-day alarm reconciled, as it lands (#324).
+ */
+private fun LifecycleOwner.rereadOnStart(files: LatestFiles) =
     lifecycle.addObserver(
         object : DefaultLifecycleObserver {
-            // The cold start's read, and a read on every return. A new activity over the same
-            // runtime reads too, since it may have missed a hand-back while there was none to hear it.
             override fun onStart(owner: LifecycleOwner) = files.reread()
-
-            // And on leaving: the runner writes its session the moment it starts, and someone who
-            // logs one and goes home from the runner never hands the tabs back. Without this the
-            // rest-day alarm stays where the previous session put it, and can fire on a day they
-            // trained (#236).
-            override fun onStop(owner: LifecycleOwner) = files.reread()
         },
     )
 
@@ -266,16 +260,16 @@ private fun Activity.connectAdoptToLibrary() {
 /**
  * What this activity hears of the files native writes outside a screen, until a newer one takes over:
  * a library the runner's adopt wrote ([LibraryAdopt]) and a session the runner's service wrote
- * ([RunnerHost], #297) each reread [files].
+ * ([RunnerHost], #297), each shown in [files] as written (#324).
  */
 private fun ComponentActivity.listenForWrites(files: LatestFiles) {
-    val reread: () -> Unit = files::reread
-    LibraryAdopt.onLibraryWritten = reread
-    RunnerHost.onSessionWritten = reread
+    val libraryWritten: (Stamped<Library>) -> Unit = files::libraryWritten
+    LibraryAdopt.onLibraryWritten = libraryWritten
+    RunnerHost.onSessionWritten = files::sessionWritten
     lifecycle.addObserver(
         object : DefaultLifecycleObserver {
             override fun onDestroy(owner: LifecycleOwner) {
-                if (LibraryAdopt.onLibraryWritten !== reread) return
+                if (LibraryAdopt.onLibraryWritten !== libraryWritten) return
                 LibraryAdopt.onLibraryWritten = null
                 RunnerHost.onSessionWritten = null
             }

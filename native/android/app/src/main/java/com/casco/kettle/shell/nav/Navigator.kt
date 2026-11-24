@@ -15,11 +15,10 @@ import com.casco.kettle.domain.RunnerStart
  * `usePreventRemove` until #309.
  *
  * [onReselect] hears a tap on the tab already showing, which a tab's screen answers by scrolling to its
- * top. [onRunnerClosed] hears the slot pop: what the runner wrote is read again then (#194).
+ * top.
  */
 class Navigator(
     private val onReselect: (Tab) -> Unit = {},
-    private val onRunnerClosed: () -> Unit = {},
 ) {
     var tab by mutableStateOf(Tab.Today)
         private set
@@ -115,7 +114,6 @@ class Navigator(
     fun closeRunner() {
         if (!runnerShown) return
         go(MoveKind.Back, runner = null)
-        onRunnerClosed()
     }
 
     /**

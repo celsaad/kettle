@@ -10,8 +10,7 @@ import org.junit.Test
 
 class NavigatorTest {
     private val reselected = mutableListOf<Tab>()
-    private var runnerClosed = 0
-    private val navigator = Navigator(onReselect = reselected::add, onRunnerClosed = { runnerClosed++ })
+    private val navigator = Navigator(onReselect = reselected::add)
 
     private val bench = RunnerStart.Planned(SessionParams.Workout("bench"))
 
@@ -156,7 +155,6 @@ class NavigatorTest {
         assertNull(navigator.runner)
         assertEquals(Route(Destination.ProgramDetail), navigator.sheet)
         assertEquals(Tab.Library, navigator.tab)
-        assertEquals(1, runnerClosed)
     }
 
     /** `kettle://session`, and route-check's own message for it. */

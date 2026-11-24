@@ -199,7 +199,7 @@ private class Editor(
     }
 
     /**
-     * Asks [usedBy] again: the library is read again while the confirm is up, and a workout that started
+     * Asks [usedBy] again: the library can change while the confirm is up, and a workout that started
      * using the exercise meanwhile would be left pointing at nothing.
      */
     fun delete() {

@@ -126,7 +126,7 @@ fun lastLogged(state: RunnerState): LoggedUnit? {
 
 /**
  * [memberKey]'s exercise name when the member is a circuit's, else null. Any of its steps will do: a
- * swap moves what's left to a key of its own (`swapped`), so one key is only ever one exercise.
+ * circuit member can't be swapped (`swapExerciseForMember` refuses one), so its key is one exercise.
  */
 private fun circuitExercise(
     steps: List<RunnerStep>,

@@ -43,10 +43,7 @@ fun Resources.loggedText(
 ): String =
     when (logged) {
         is LoggedUnit.Set -> {
-            when (val name = logged.circuitExercise) {
-                null -> setText(logged.number, logged.set, units)
-                else -> roundText(logged.number, name, logged.set, units)
-            }
+            setText(logged.number, logged.circuitExercise, logged.set, units)
         }
 
         is LoggedUnit.Round -> {
@@ -62,48 +59,43 @@ fun Resources.loggedText(
         }
     }
 
-/** One logged set after its number: "set 2 · 8 × 60 kg". */
+/**
+ * One logged set after its number, "set 2 · 8 × 60 kg", or a circuit member's, which is its round, after
+ * its [circuitExercise] name verbatim: "Pull-ups · round 2 · 6 × 20 kg". The name sorts between the
+ * index and the rest of the placeholders, so it slots in second whichever key is said.
+ */
 private fun Resources.setText(
     number: Int,
+    circuitExercise: String?,
     set: PreviousSet,
     units: UnitSystem,
 ): String {
-    val index = "$number"
+    val lead = listOfNotNull("$number", circuitExercise)
+
+    // getString only takes varargs, and the copy the spread makes is of two to four strings, once a rest.
+    @Suppress("SpreadOperator")
+    fun say(
+        setKey: Int,
+        roundKey: Int,
+        vararg rest: String,
+    ) = getString(if (circuitExercise == null) setKey else roundKey, *(lead + rest).toTypedArray())
+
     return when (set) {
         is PreviousSet.Hold -> {
-            getString(R.string.session_logged_setHold, index, seconds(set.holdSec))
+            say(R.string.session_logged_setHold, R.string.session_logged_roundHold, seconds(set.holdSec))
         }
 
         is PreviousSet.Reps -> {
             val kg = set.weightKg?.takeIf { it > 0 }
             if (kg == null) {
-                getString(R.string.session_logged_setBodyweight, index, reps(set.reps))
+                say(R.string.session_logged_setBodyweight, R.string.session_logged_roundBodyweight, reps(set.reps))
             } else {
-                getString(R.string.session_logged_setLoaded, index, "${set.reps}", weightText(kg, units))
-            }
-        }
-    }
-}
-
-/** A circuit member's set, which is its round, after the member's [name] verbatim. */
-private fun Resources.roundText(
-    number: Int,
-    name: String,
-    set: PreviousSet,
-    units: UnitSystem,
-): String {
-    val index = "$number"
-    return when (set) {
-        is PreviousSet.Hold -> {
-            getString(R.string.session_logged_roundHold, index, name, seconds(set.holdSec))
-        }
-
-        is PreviousSet.Reps -> {
-            val kg = set.weightKg?.takeIf { it > 0 }
-            if (kg == null) {
-                getString(R.string.session_logged_roundBodyweight, index, name, reps(set.reps))
-            } else {
-                getString(R.string.session_logged_roundLoaded, index, name, "${set.reps}", weightText(kg, units))
+                say(
+                    R.string.session_logged_setLoaded,
+                    R.string.session_logged_roundLoaded,
+                    "${set.reps}",
+                    weightText(kg, units),
+                )
             }
         }
     }

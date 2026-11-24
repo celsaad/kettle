@@ -122,7 +122,8 @@ class DiskFiles(
  *
  * Every write is stamped ([StampedWrites]), and a write is only ever shown over an older one: the
  * runner's arrive by a post after its lock is let go, so a screen's write can land on the disk after
- * one of them and be shown before it.
+ * one of them and be shown before it. A read that lands applies again the session writes shown while
+ * it ran, which it may have listed the files before, rather than being made again for them.
  */
 class LatestFiles(
     private val files: StoredFiles,
@@ -180,6 +181,15 @@ class LatestFiles(
 
     /** Each session file's newest write shown since that read, by file name. */
     private val sessionShownAt = mutableMapOf<String, Long>()
+
+    /**
+     * The session writes shown that the last read to land hadn't counted, oldest first: a read under way
+     * may have taken the files before they landed, so each is applied again over what it found.
+     */
+    private val sessionsShownSince = mutableListOf<ShownSession>()
+
+    /** How many preferences writes have landed, which a read compares to tell whether one raced it. */
+    private var preferencesLanded = 0L
 
     /** The newest library write shown, by a read or by the write itself. */
     private var libraryShownAt = 0L
@@ -250,15 +260,20 @@ class LatestFiles(
         writingPreferences.withLock { withContext(io) { files.writePreferences(preferences) } }
         // Only this write's own: a newer tap waiting its turn holds its choice until it lands too.
         if (unsaved === preferences) unsaved = null
-        readAgainIfReading()
+        preferencesLanded++
     }
 
-    /** Reads all three files again. A read still under way is dropped, so an older one can't land last. */
+    /**
+     * Reads all three files again. A read still under way is dropped, so an older one can't land last.
+     * Only the return to the app asks for this: a write never does, since a cancelled read still parses
+     * the whole log to the end (its I/O never stops to check), and only its result is thrown away.
+     */
     fun reread() {
         reading?.cancel()
         reading =
             scope.launch {
                 prepared()
+                val preferencesAt = preferencesLanded
                 val read =
                     withContext(io) {
                         // Taken before the files are, so every write these count is in what's read.
@@ -266,9 +281,14 @@ class LatestFiles(
                         val libraryAt = LibraryWrites.landed
                         Read(files.sessionLog(), files.library(), files.preferences(), sessionsAt, libraryAt)
                     }
-                // The held choice for the reminder too, so the alarm agrees with the toggle on screen.
-                val shown = unsaved ?: read.preferences
-                sessionLog = read.log
+                // The held choice for the reminder too, so the alarm agrees with the toggle on screen. A
+                // write that landed while this read ran may not be in the file it took, and is the one shown.
+                val shown =
+                    unsaved ?: if (preferencesLanded == preferencesAt) read.preferences else preferences
+                // Writes shown while this read ran, which it may have listed the files before, go back on.
+                sessionsShownSince.removeAll { it.stamp <= read.sessionsAt }
+                val log = sessionsShownSince.fold(read.log) { log, write -> write.change(log) }
+                sessionLog = log
                 sessionsReadAt = read.sessionsAt
                 sessionShownAt.values.removeAll { it <= read.sessionsAt }
                 this@LatestFiles.preferences = shown
@@ -277,14 +297,14 @@ class LatestFiles(
                     libraryShownAt = read.libraryAt
                 }
                 reads++
-                onShown(read.log, shown)
+                onShown(log, shown)
             }
     }
 
     /**
-     * [change] to the log, for a write to [file] stamped [stamp], unless what's shown is newer. Before
-     * the first read there is no log to change, and that read finds the write: one under way is made
-     * again, and one not yet begun counts the write as landed.
+     * [change] to the log, for a write to [file] stamped [stamp], unless what's shown is newer, and
+     * kept for the next read to land to apply again ([sessionsShownSince]). Before the first read there
+     * is no log to change, and that read applies it.
      */
     private fun showSession(
         file: String,
@@ -293,12 +313,12 @@ class LatestFiles(
     ) {
         if (stamp <= sessionsReadAt || stamp <= (sessionShownAt[file] ?: 0L)) return
         sessionShownAt[file] = stamp
+        sessionsShownSince += ShownSession(stamp, change)
         sessionLog?.let { log ->
             val next = change(log)
             sessionLog = next
             onShown(next, unsaved ?: preferences)
         }
-        readAgainIfReading()
     }
 
     /**
@@ -312,13 +332,11 @@ class LatestFiles(
         CurrentFiles.latest?.takeIf { it !== this }?.show()
     }
 
-    /**
-     * A write just landed, and a read under way may have listed the files before it did, so it would
-     * put the old file back: that read is dropped and made again. With none under way nothing is read.
-     */
-    private fun readAgainIfReading() {
-        if (reading?.isActive == true) reread()
-    }
+    /** A session write as shown: its stamp, and what it does to a log, which applies again unchanged. */
+    private class ShownSession(
+        val stamp: Long,
+        val change: (SessionLog) -> SessionLog,
+    )
 
     private class Read(
         val log: SessionLog,

@@ -146,6 +146,21 @@ class LatestFilesTest {
         assertEquals(listOf("running"), ids())
     }
 
+    /**
+     * Only writes a read hadn't counted go back on over what it found: one it did count is older than
+     * the file, and a change made behind the app's back since would be undone by it.
+     */
+    @Test
+    fun `a full read keeps a change made behind the app's back over an earlier write of the same file`() {
+        files.reread()
+        runBlocking { files.writeSession(session("restored", workout = "the app's")) }
+
+        writeSession("restored")
+        files.reread()
+
+        assertEquals(listOf("w"), files.sessionLog?.sessions?.map { it.workout })
+    }
+
     /** The return to the app reads everything again, for a file changed behind its back. */
     @Test
     fun `a full read finds a session file put in the folder behind the app's back`() {
@@ -469,10 +484,11 @@ class LatestFilesTest {
 
     /**
      * The return to the app reads the folder while a set is being logged: the read listed the files
-     * before the set's write landed, and must not land after it and put the old file back.
+     * before the set's write landed, and must not land after it and put the old file back. Nor is the
+     * read made again for it, since a cancelled read still parses the whole log to the end.
      */
     @Test
-    fun `a write shown while a read is under way has that read made again`() {
+    fun `a write shown while a read is under way survives that read landing, with no second read`() {
         val main = Tasks()
         val io = Tasks()
         val disk = FakeFiles()
@@ -491,11 +507,9 @@ class LatestFilesTest {
         io.run()
         main.runLast()
         main.run()
-        io.run()
-        main.run()
 
         assertEquals(listOf("logged"), files.sessionLog?.sessions?.map { it.id })
-        assertEquals(3, disk.reads)
+        assertEquals(2, disk.reads)
     }
 
     @Test
@@ -567,10 +581,10 @@ class LatestFilesTest {
 
     /**
      * A preferences write lets go of its held choice once it lands, so a read that took the old file
-     * before then would put the old setting back unless it's made again.
+     * before then would put the old setting back, unless it knows a write landed while it ran.
      */
     @Test
-    fun `a preferences write landing while a read is under way has that read made again`() {
+    fun `a preferences write landing while a read is under way survives that read landing`() {
         val main = Tasks()
         val io = Tasks()
         val disk = FakeFiles()
@@ -586,11 +600,9 @@ class LatestFilesTest {
         io.run()
         main.runLast()
         main.run()
-        io.run()
-        main.run()
 
         assertEquals(chosen, files.preferences)
-        assertEquals(2, disk.reads)
+        assertEquals(1, disk.reads)
     }
 
     /**

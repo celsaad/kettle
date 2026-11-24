@@ -47,8 +47,8 @@ class ShippedContent(
     ): Library = localized("packs/$id", language)
 
     /**
-     * The JSON Schema of `exercises.yaml`, as the assistant brief carries it: generated from RN's
-     * validator by `pnpm run schema:update` and held to it by `library-schema-file.test.ts`.
+     * The JSON Schema of `exercises.yaml`, as the assistant brief carries it: hand-maintained, and held
+     * to the conformance corpus by `:shared`'s `LibrarySchemaFileTest`.
      */
     fun librarySchema(): String = read("library-schema.json")
 

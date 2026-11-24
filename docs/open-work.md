@@ -62,8 +62,9 @@ wanting states and assignees, it wants GitHub issues instead.
   - ~~**A machine-readable schema to hand the model.**~~ ~~**The user's existing ids, alongside
     it.**~~ ✅ Both shipped, as one payload: `domain/assistant-brief.ts` builds a "Copy the format for
     an assistant" brief of `z.toJSONSchema(rawLibrarySchema)` plus every id/name/type currently in the
-    library, and the import screen copies it. Generated rather than written out, so it can't drift
-    from what the importer accepts — which was the whole argument, given
+    library, and the import screen copies it. Generated rather than written out, so it couldn't drift
+    from what the importer accepts (native's is the hand-maintained `library-schema.json` since #349,
+    held to the importer by `LibrarySchemaFileTest` instead) — which was the whole argument, given
     `authoring-exercises-yaml.md` had already drifted. Two things worth knowing before extending it:
     `toJSONSchema` **silently drops zod's cross-field refinements** (`target_reps_max >=
     target_reps_min`, an override targeting exactly one of `exercise`/`block`, unique `(week, day)`),

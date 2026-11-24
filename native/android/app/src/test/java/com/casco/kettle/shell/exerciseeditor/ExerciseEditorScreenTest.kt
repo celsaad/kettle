@@ -402,7 +402,7 @@ class ExerciseEditorScreenTest {
     }
 
     /**
-     * The library is read again while the sheet is up, and on `.dev` RN can write it meanwhile. A
+     * The library can change while the sheet is up: a read on the return to the app, or an adopt. A
      * workout that starts using the exercise while the confirm is open must stop the delete there,
      * or the workout is left pointing at nothing.
      */

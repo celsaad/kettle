@@ -24,6 +24,7 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -130,8 +131,9 @@ class LatestFiles(
     private val scope: CoroutineScope,
     private val io: CoroutineDispatcher = Dispatchers.IO,
     /**
-     * The log and the preferences each time either changes, by a read or a write, on [scope]'s thread:
-     * the rest-day reminder reconciles from it (#236).
+     * The log and the preferences each time a read lands or a session write is shown, on [scope]'s
+     * thread, while [scope] is alive: the rest-day reminder reconciles from it (#236). A preferences
+     * write doesn't call it, since Settings' toggle reconciles the reminder itself.
      */
     private val onShown: (SessionLog, Preferences?) -> Unit = { _, _ -> },
     /**
@@ -179,17 +181,16 @@ class LatestFiles(
     /** The session writes the last read to land had already seen: none older is shown over it. */
     private var sessionsReadAt = 0L
 
-    /** Each session file's newest write shown since that read, by file name. */
-    private val sessionShownAt = mutableMapOf<String, Long>()
-
     /**
-     * The session writes shown that the last read to land hadn't counted, oldest first: a read under way
-     * may have taken the files before they landed, so each is applied again over what it found.
+     * Each session file's newest write shown that the last read to land hadn't counted, by file name. A
+     * read under way may have taken the files before it landed, so each is applied again over what that
+     * read found. Only the newest per file, since each replaces or removes that file's entry whole: one
+     * per file written since the last return to the app, not one per logged set.
      */
-    private val sessionsShownSince = mutableListOf<ShownSession>()
+    private val sessionsShown = mutableMapOf<String, ShownSession>()
 
     /** How many preferences writes have landed, which a read compares to tell whether one raced it. */
-    private var preferencesLanded = 0L
+    private var preferencesWrites = 0L
 
     /** The newest library write shown, by a read or by the write itself. */
     private var libraryShownAt = 0L
@@ -260,7 +261,16 @@ class LatestFiles(
         writingPreferences.withLock { withContext(io) { files.writePreferences(preferences) } }
         // Only this write's own: a newer tap waiting its turn holds its choice until it lands too.
         if (unsaved === preferences) unsaved = null
-        preferencesLanded++
+        everywhere { preferencesLanded(preferences) }
+    }
+
+    /**
+     * A preferences write landed: shown unless a newer choice of this files' own is still held, and
+     * counted, so a read that took the file before it can tell.
+     */
+    private fun preferencesLanded(written: Preferences) {
+        preferencesWrites++
+        if (unsaved == null) preferences = written
     }
 
     /**
@@ -273,7 +283,7 @@ class LatestFiles(
         reading =
             scope.launch {
                 prepared()
-                val preferencesAt = preferencesLanded
+                val preferencesAt = preferencesWrites
                 val read =
                     withContext(io) {
                         // Taken before the files are, so every write these count is in what's read.
@@ -284,40 +294,40 @@ class LatestFiles(
                 // The held choice for the reminder too, so the alarm agrees with the toggle on screen. A
                 // write that landed while this read ran may not be in the file it took, and is the one shown.
                 val shown =
-                    unsaved ?: if (preferencesLanded == preferencesAt) read.preferences else preferences
+                    unsaved ?: if (preferencesWrites == preferencesAt) read.preferences else preferences
                 // Writes shown while this read ran, which it may have listed the files before, go back on.
-                sessionsShownSince.removeAll { it.stamp <= read.sessionsAt }
-                val log = sessionsShownSince.fold(read.log) { log, write -> write.change(log) }
+                sessionsShown.values.removeAll { it.stamp <= read.sessionsAt }
+                val log = sessionsShown.values.fold(read.log) { log, write -> write.change(log) }
                 sessionLog = log
                 sessionsReadAt = read.sessionsAt
-                sessionShownAt.values.removeAll { it <= read.sessionsAt }
                 this@LatestFiles.preferences = shown
                 if (read.library != null && read.libraryAt >= libraryShownAt) {
                     this@LatestFiles.library = read.library
                     libraryShownAt = read.libraryAt
                 }
                 reads++
-                onShown(log, shown)
+                if (scope.isActive) onShown(log, shown)
             }
     }
 
     /**
      * [change] to the log, for a write to [file] stamped [stamp], unless what's shown is newer, and
-     * kept for the next read to land to apply again ([sessionsShownSince]). Before the first read there
-     * is no log to change, and that read applies it.
+     * kept for the next read to land to apply again ([sessionsShown]). Before the first read there is
+     * no log to change, and that read applies it. The reminder hears it only from live files: a write
+     * that outlived its activity is shown in the current one's too ([everywhere]), which reconciles
+     * from a log that has the runner's writes since.
      */
     private fun showSession(
         file: String,
         stamp: Long,
         change: (SessionLog) -> SessionLog,
     ) {
-        if (stamp <= sessionsReadAt || stamp <= (sessionShownAt[file] ?: 0L)) return
-        sessionShownAt[file] = stamp
-        sessionsShownSince += ShownSession(stamp, change)
+        if (stamp <= sessionsReadAt || stamp <= (sessionsShown[file]?.stamp ?: 0L)) return
+        sessionsShown[file] = ShownSession(stamp, change)
         sessionLog?.let { log ->
             val next = change(log)
             sessionLog = next
-            onShown(next, unsaved ?: preferences)
+            if (scope.isActive) onShown(next, unsaved ?: preferences)
         }
     }
 

@@ -32,6 +32,28 @@ data class SessionLog(
 fun sessionFileName(id: String) = "$id.yaml"
 
 /**
+ * Why a session file couldn't be read, as its line in [SessionLog.errors] names it: the kinds spelled as
+ * RN's `listSessions` spells them. One place for the line, since [withoutSession] finds a file's error
+ * by it again.
+ */
+enum class SessionFileError(
+    private val kind: String,
+) {
+    InvalidYaml("invalidYaml"),
+    SchemaMismatch("schemaMismatch"),
+    ;
+
+    /** [file]'s line, saying why. */
+    fun line(
+        file: String,
+        detail: String,
+    ) = prefix(file) + detail
+
+    /** Exactly what [line] starts with: a bare "$file (" would also take a file named "$file (copy).yaml". */
+    fun prefix(file: String) = "$file ($kind): "
+}
+
+/**
  * This log once [session]'s file has been written: whatever its file held before goes, a session or
  * an unreadable file's error, and [session] takes the place a read would give it. Newest `startedAt`
  * first, and a tie in file-name order, as the reader's name-order listing and stable sort leave it.
@@ -60,8 +82,7 @@ fun SessionLog.withSession(session: Session): SessionLog {
 fun SessionLog.withoutSession(id: String): SessionLog {
     val name = sessionFileName(id)
     val kept = files.indices.filter { files[it] != name }
-    // The reader's two prefixes exactly: a bare "$name (" would also take a file named "$name (copy).yaml".
-    val errorPrefixes = listOf("$name (invalidYaml): ", "$name (schemaMismatch): ")
+    val errorPrefixes = SessionFileError.entries.map { it.prefix(name) }
     return SessionLog(
         sessions = kept.map { sessions[it] },
         errors = errors.filter { line -> errorPrefixes.none { line.startsWith(it) } },

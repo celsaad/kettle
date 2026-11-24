@@ -4,6 +4,7 @@ import com.casco.kettle.domain.Library
 import com.casco.kettle.domain.ParseResult
 import com.casco.kettle.domain.Preferences
 import com.casco.kettle.domain.Session
+import com.casco.kettle.domain.SessionFileError
 import com.casco.kettle.domain.SessionLog
 import com.casco.kettle.domain.parseLibraryYaml
 import com.casco.kettle.domain.parsePreferences
@@ -24,11 +25,8 @@ fun readSessionLog(dir: File): SessionLog {
         val text = file.readTextOrNull() ?: continue
         when (val result = parseSessionYaml(text)) {
             is ParseResult.Ok -> read += file.name to result.value
-
-            // The line `listSessions` writes, kinds spelled as RN spells them.
-            is ParseResult.InvalidYaml -> errors += "${file.name} (invalidYaml): ${result.detail}"
-
-            is ParseResult.SchemaMismatch -> errors += "${file.name} (schemaMismatch): ${result.detail}"
+            is ParseResult.InvalidYaml -> errors += SessionFileError.InvalidYaml.line(file.name, result.detail)
+            is ParseResult.SchemaMismatch -> errors += SessionFileError.SchemaMismatch.line(file.name, result.detail)
         }
     }
     val sorted = read.sortedByDescending { it.second.startedAt }

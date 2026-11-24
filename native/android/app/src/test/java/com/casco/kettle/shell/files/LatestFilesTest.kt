@@ -7,9 +7,11 @@ import com.casco.kettle.domain.SessionLog
 import com.casco.kettle.domain.ThemePreference
 import com.casco.kettle.domain.UnitSystem
 import com.casco.kettle.domain.withSession
+import com.casco.kettle.domain.withoutSession
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -395,8 +397,8 @@ class LatestFilesTest {
         files.reread()
 
         assertEquals(chosen, files.preferences)
-        // And the reminder reconciles from the same choice the screen shows, or a tab tap cancels the
-        // alarm the toggle just set.
+        // And the reminder reconciles from the same choice the screen shows, or the next read cancels
+        // the alarm the toggle just set.
         assertEquals(chosen, heard.last())
     }
 
@@ -556,9 +558,8 @@ class LatestFilesTest {
     }
 
     /**
-     * A read that took the library before an adopt landed mustn't put it back. It needn't be made
-     * again for it, unlike a session's: the library is one file, and the read knows it didn't count
-     * the adopt.
+     * A read that took the library before an adopt landed mustn't put it back: it knows it didn't count
+     * the adopt, and keeps the adopted library rather than the one it found.
      */
     @Test
     fun `an adopt shown while a read is under way survives that read landing`() {
@@ -616,11 +617,15 @@ class LatestFilesTest {
         val current =
             LatestFiles(disk, CoroutineScope(Dispatchers.Unconfined), io = Dispatchers.Unconfined).apply { reread() }
         val library = Library(1, emptyList(), emptyList(), emptyList())
+        val chosen = Preferences(UnitSystem.IMPERIAL, ThemePreference.DARK, false, true, null)
         CurrentFiles.latest = current
         try {
             runBlocking {
                 old.writeSession(session("edited"))
+                old.writeSession(session("deleted"))
+                old.deleteSession("deleted")
                 old.writeLibrary(library)
+                old.writePreferences(chosen)
             }
         } finally {
             CurrentFiles.latest = null
@@ -629,6 +634,76 @@ class LatestFilesTest {
         assertEquals(listOf("edited"), current.sessionLog?.sessions?.map { it.id })
         assertEquals(library, current.library)
         assertEquals(onDisk(), current.sessionLog)
+        assertEquals(chosen, current.preferences)
+    }
+
+    /**
+     * A cold start: the first read takes the files, then the runner's write lands and is posted before
+     * that read does. There's no log yet to put it in, so the read landing puts it back on.
+     */
+    @Test
+    fun `a write shown before the first read lands is applied once that read does`() {
+        val main = Tasks()
+        val io = Tasks()
+        val disk = FakeFiles()
+        val files = LatestFiles(disk, CoroutineScope(main.asCoroutineDispatcher()), io.asCoroutineDispatcher())
+        files.reread()
+        main.run()
+        io.run()
+
+        files.sessionWritten(runBlocking { SessionWrites.write { session("running").also(disk::writeSession) } })
+        assertNull(files.sessionLog)
+        main.run()
+
+        assertEquals(listOf("running"), files.sessionLog?.sessions?.map { it.id })
+    }
+
+    /** As for a write: a read that listed the file before a delete landed mustn't bring the row back. */
+    @Test
+    fun `a delete shown while a read is under way survives that read landing`() {
+        val main = Tasks()
+        val io = Tasks()
+        val disk = FakeFiles().apply { log = SessionLog.Empty.withSession(session("deleted")) }
+        val scope = CoroutineScope(main.asCoroutineDispatcher())
+        val files = LatestFiles(disk, scope, io.asCoroutineDispatcher())
+        files.reread()
+        main.run()
+        io.run()
+        main.run()
+
+        files.reread()
+        main.run()
+        scope.launch { files.deleteSession("deleted") }
+        main.run()
+        io.run()
+        main.runLast()
+        main.run()
+
+        assertEquals(SessionLog.Empty, files.sessionLog)
+    }
+
+    /**
+     * A write that outlived its activity is shown in that activity's files too, but the reminder hears
+     * it only from the current one's, whose log has every runner write since: the old log may not.
+     */
+    @Test
+    fun `files whose activity has gone show a write but hand nothing to the reminder`() {
+        val heard = mutableListOf<List<String>>()
+        val job = Job()
+        val files =
+            LatestFiles(
+                FakeFiles(),
+                CoroutineScope(job + Dispatchers.Unconfined),
+                io = Dispatchers.Unconfined,
+                onShown = { log, _ -> heard += log.sessions.map { it.id } },
+            )
+        files.reread()
+        job.cancel()
+
+        files.sessionWritten(runBlocking { SessionWrites.write { session("late") } })
+
+        assertEquals(listOf("late"), files.sessionLog?.sessions?.map { it.id })
+        assertEquals(listOf(emptyList<String>()), heard)
     }
 
     private fun log(error: String) = SessionLog(emptyList(), listOf(error))
@@ -651,7 +726,9 @@ class LatestFilesTest {
             return log
         }
 
-        override fun deleteSession(id: String) = Unit
+        override fun deleteSession(id: String) {
+            log = log.withoutSession(id)
+        }
 
         override fun writeSession(session: Session) {
             log = log.withSession(session)

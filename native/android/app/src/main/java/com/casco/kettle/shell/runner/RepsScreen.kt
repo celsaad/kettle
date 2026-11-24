@@ -45,6 +45,7 @@ import com.casco.kettle.domain.RunnerStep
 import com.casco.kettle.domain.UnitSystem
 import com.casco.kettle.domain.fromDisplayWeight
 import com.casco.kettle.domain.jsNumber
+import com.casco.kettle.domain.repsInRange
 import com.casco.kettle.domain.repsTarget
 import com.casco.kettle.domain.toDisplayWeight
 import com.casco.kettle.domain.weightStep
@@ -116,9 +117,11 @@ private fun spokenUnit(units: UnitSystem) =
     }
 
 /**
- * Last time's set as a plain line, still adopting its load with a tap (there's nothing to take from a
- * bodyweight set), the record badge beside it, and "Try 53.5 lb" at the end when double progression
- * has one (#410). Either tap sets this set's load; the library takes it only once the set is logged.
+ * Last time's set as a plain line, adopting it with a tap (there's nothing to take from a bodyweight
+ * set), the record badge beside it, and "Try 53.5 lb" at the end when double progression has one
+ * (#410). Last time sets this set's load and its reps held to the range; Try sets its load and drops
+ * the reps to the bottom of the range, as adding load does. The library takes the load only once the
+ * set is logged.
  */
 @Composable
 private fun LastTimeRow(
@@ -132,11 +135,11 @@ private fun LastTimeRow(
     val tryKg = context.readings.tryKg
     if (text == null && tryKg == null) return
     val adopt: (@Composable () -> Unit)? =
-        if (text != null && kg != null) {
+        if (previous != null && text != null && kg != null) {
             {
                 TextControl(
                     text,
-                    { context.controls.adopt(step.exerciseId, kg) },
+                    { context.controls.adopt(step.exerciseId, kg, repsInRange(step, previous.reps)) },
                     Modifier.hang(start = Spacing.two),
                     style = KettleType.small.copy(color = runnerColors.textSecondary),
                     description =
@@ -155,7 +158,7 @@ private fun LastTimeRow(
         if (tryKg != null) {
             OutlinedPill(
                 stringResource(R.string.session_reps_tryLoad, resources.weightText(tryKg, context.units)),
-                { context.controls.adopt(step.exerciseId, tryKg) },
+                { context.controls.adopt(step.exerciseId, tryKg, step.targetReps) },
             )
         }
     }

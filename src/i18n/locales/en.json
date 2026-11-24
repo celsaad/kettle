@@ -383,7 +383,7 @@
       "loadAccessibilityBodyweight": "Load: bodyweight. Tap to enter an exact value.",
       "bodyweightAbbr": "BW",
       "increaseLoad": "Increase load",
-      "adoptPrevious": "Use last time's load, {{weight}} {{unit}}, and save it as the new target",
+      "adoptPrevious": "Use last time's set, {{weight}} {{unit}}, and save its load as the new target",
       "beatsBest": "Beats your best",
       "logSet": "Log set",
       "repsDone": "Reps done",

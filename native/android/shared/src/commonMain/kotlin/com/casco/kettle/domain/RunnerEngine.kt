@@ -213,6 +213,7 @@ fun startRunner(
     plan: RunnerPlan.Runnable,
     start: RunnerStart?,
     now: Long,
+    context: RunnerContext = RunnerContext(),
 ): RunnerTransition {
     val slot = (start as? RunnerStart.Planned)?.params as? SessionParams.ProgramSlot
     val startedAt = isoInstant(now)
@@ -244,7 +245,7 @@ fun startRunner(
             updatedAt = now,
         )
     val effects = listOf(RunnerEffect.WriteSession(session), RunnerEffect.SaveSnapshot(debounce = false))
-    return RunnerTransition(seeded(RunnerState(snapshot, session), now), effects)
+    return RunnerTransition(seeded(RunnerState(snapshot, session), now, context), effects)
 }
 
 /**
@@ -255,6 +256,7 @@ fun reduceRunner(
     state: RunnerState,
     command: RunnerCommand,
     now: Long,
+    context: RunnerContext = RunnerContext(),
 ): RunnerTransition {
     if (state.finished) return unchanged(state)
     val moved =
@@ -292,7 +294,7 @@ fun reduceRunner(
                 editSteps(state, command)
             }
         }
-    return settled(state, moved, now, debounce = command is RunnerCommand.InputEdit)
+    return settled(state, moved, now, context, debounce = command is RunnerCommand.InputEdit)
 }
 
 internal fun unchanged(state: RunnerState) = RunnerTransition(state, emptyList())
@@ -307,13 +309,14 @@ private fun settled(
     before: RunnerState,
     moved: RunnerTransition,
     now: Long,
+    context: RunnerContext,
     debounce: Boolean,
 ): RunnerTransition {
     val after = moved.state
     val changed = after.snapshot !== before.snapshot || after.session !== before.session
     if (!changed || after.finished) return moved
     val reseeded =
-        if (stepIdentity(before.snapshot) != stepIdentity(after.snapshot)) seeded(after, now) else after
+        if (stepIdentity(before.snapshot) != stepIdentity(after.snapshot)) seeded(after, now, context) else after
     return RunnerTransition(
         reseeded.copy(snapshot = reseeded.snapshot.copy(updatedAt = now)),
         moved.effects + RunnerEffect.SaveSnapshot(debounce),

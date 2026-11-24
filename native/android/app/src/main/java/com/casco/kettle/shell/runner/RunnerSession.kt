@@ -4,6 +4,7 @@ import android.util.Log
 import com.casco.kettle.domain.CountIn
 import com.casco.kettle.domain.LoggedUnit
 import com.casco.kettle.domain.RunnerCommand
+import com.casco.kettle.domain.RunnerContext
 import com.casco.kettle.domain.RunnerPlan
 import com.casco.kettle.domain.RunnerStart
 import com.casco.kettle.domain.RunnerState
@@ -28,6 +29,7 @@ import java.util.concurrent.atomic.AtomicReference
  *
  * Everything a caller calls posts to the loop, so state is only ever read and written there.
  */
+@Suppress("LongParameterList") // Each is the service's to hand over; a holder would serve its one call site.
 class RunnerSession(
     private val plan: RunnerPlan.Runnable,
     private val start: RunnerStart?,
@@ -35,6 +37,8 @@ class RunnerSession(
     private val now: () -> Long,
     private val effects: RunnerEffects,
     private val publish: (RunnerView) -> Unit,
+    /** The log, the units and the program's loads the sets open from, read once as the session opens. */
+    private val context: RunnerContext = RunnerContext(),
 ) {
     private var countIn: CountIn? = null
     private var state: RunnerState? = null
@@ -120,7 +124,7 @@ class RunnerSession(
             update.cues.forEach(effects::cue)
             if (update.done) {
                 countIn = null
-                settle(startRunner(plan, start, at))
+                settle(startRunner(plan, start, at, context))
             } else {
                 countIn = update.countIn
                 show(RunnerView.CountingIn(plan, start, update.countIn))
@@ -150,7 +154,7 @@ class RunnerSession(
     private fun apply(command: RunnerCommand) {
         val current = state ?: return
         try {
-            settle(reduceRunner(current, command, now()))
+            settle(reduceRunner(current, command, now(), context))
         } catch (
             @Suppress("TooGenericExceptionCaught") e: Exception,
         ) {
@@ -169,7 +173,7 @@ class RunnerSession(
         }
         val logged = lastLogged(after)
         if ((shown as? RunnerView.Running)?.shows(after, logged) != true) {
-            show(RunnerView.Running(plan, after.snapshot, after.session, start, logged))
+            show(RunnerView.Running(plan, after.snapshot, after.session, start, logged, context))
         }
         reschedule(after)
     }

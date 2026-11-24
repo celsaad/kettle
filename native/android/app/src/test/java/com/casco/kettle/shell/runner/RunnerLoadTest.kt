@@ -39,12 +39,21 @@ class RunnerLoadTest : RunnerScreenHarness() {
         prior = listOf(lastBench(12))
         show(running(plan(block(bench))))
         button("Tentar 62.5 kg").assertIsTarget().performClick()
-        assertEquals(RunnerCommand.SetWeight(62.5), sent.last())
+        // Adding load starts the reps over from the bottom of the range, as double progression does.
+        assertEquals(listOf(RunnerCommand.SetWeight(62.5), RunnerCommand.SetReps(8)), sent.takeLast(2))
         assertEquals(emptyList<Pair<String, Double>>(), adopted)
 
         show(running(plan(block(bench)), started(plan(block(bench))).after(RunnerCommand.SetWeight(62.5))))
         button("Registrar série").performClick()
         assertEquals(listOf("bench" to 62.5), adopted)
+    }
+
+    @Test
+    fun `last time's tap takes its reps as well as its load, held to the range`() {
+        prior = listOf(lastBench(10))
+        show(running(plan(block(bench))))
+        button("Usar a série da última vez, 60 quilogramas, e salvar a carga como novo alvo").performClick()
+        assertEquals(listOf(RunnerCommand.SetWeight(60.0), RunnerCommand.SetReps(10)), sent.takeLast(2))
     }
 
     @Test

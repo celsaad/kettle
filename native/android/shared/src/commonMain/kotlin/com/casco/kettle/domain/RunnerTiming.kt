@@ -42,6 +42,7 @@ private fun stepEndSec(step: RunnerStep?): Double =
 internal fun seeded(
     state: RunnerState,
     now: Long,
+    context: RunnerContext,
 ): RunnerState {
     val snapshot = state.snapshot
     val step = snapshot.step
@@ -50,29 +51,31 @@ internal fun seeded(
             snapshot.copy(
                 visit = snapshot.visit + 1,
                 clock = StepClock(now, null, 0, stepEndSec(step)),
-                inputs = seededInputs(state, step),
+                inputs = seededInputs(state, step, context),
             ),
         cues = CueMarks(),
     )
 }
 
 /**
- * Reps from the target every set, since varying them is what's being logged, and an EMOM minute from
- * its own; load carried from the member's last logged set, else the target, and left alone off a
- * reps step; rounds and extra reps from zero; effort empty, never carried from the last set (#410).
+ * A reps set from last time and its load ([openingLoadKg], [openingReps]), and an EMOM minute from its
+ * own target; load left alone off a reps step; rounds and extra reps from zero; effort empty, never
+ * carried from the last set (#410).
  */
 private fun seededInputs(
     state: RunnerState,
     step: RunnerStep?,
+    context: RunnerContext,
 ): StepInputs {
     val inputs = state.snapshot.inputs
+    val loadKg = (step as? RunnerStep.Reps)?.let { state.openingLoadKg(it, context) }
     val reps =
         when (step) {
-            is RunnerStep.Reps -> step.targetReps
+            is RunnerStep.Reps -> openingReps(step, loadKg, context)
             is RunnerStep.Interval -> step.targetReps ?: 0
             else -> 0
         }
-    val weightKg = if (step is RunnerStep.Reps) state.openingLoadKg(step) ?: 0.0 else inputs.weightKg
+    val weightKg = if (step is RunnerStep.Reps) loadKg ?: 0.0 else inputs.weightKg
     return inputs.copy(reps = reps, weightKg = weightKg, rpe = null, roundsCompleted = 0, extraReps = 0)
 }
 
@@ -181,10 +184,3 @@ private fun cued(
     val effects = cues.map(RunnerEffect::PlayCue)
     return if (next == marks) unchanged(state) else RunnerTransition(state.copy(cues = next), effects)
 }
-
-/**
- * The load [step] opens on: its member's last logged set's, else its target; null with neither. The set
- * seeds it, and the rest before says it (#473), so the two can't disagree.
- */
-fun RunnerState.openingLoadKg(step: RunnerStep.Reps): Double? =
-    (memberEntry(step.memberKey) as? SessionEntry.Reps)?.sets?.lastOrNull()?.weightKg ?: step.targetWeightKg

@@ -106,7 +106,7 @@ fun RunnerScreen(
                 overlays = overlays.open(Overlay.PAD, view.snapshot.visit)
             },
             confirmFinish = askToFinish,
-            adopt = { id, kg -> adopting.pickLoad(id, kg, view.snapshot.visit) },
+            adopt = { id, kg, reps -> adopting.pickLoad(id, kg, reps, view.snapshot.visit) },
             // The one reading the field is drawn from, so the header and the colour can't disagree.
             minute = MinuteRest(resting) { restedAt = view.snapshot.visit },
         )

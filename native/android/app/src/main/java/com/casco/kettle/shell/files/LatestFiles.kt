@@ -190,7 +190,7 @@ class LatestFiles(
      */
     suspend fun deleteSession(id: String) {
         val stamp = SessionWrites.write { withContext(io) { files.deleteSession(id) } }.stamp
-        showSession(sessionFileName(id), stamp) { it.withoutSession(id) }
+        everywhere { showSession(sessionFileName(id), stamp) { it.withoutSession(id) } }
     }
 
     /**
@@ -198,12 +198,12 @@ class LatestFiles(
      * the disk refuses, and the log is left as it was.
      */
     suspend fun writeSession(session: Session) {
-        sessionWritten(
+        val written =
             SessionWrites.write {
                 withContext(io) { files.writeSession(session) }
                 session
-            },
-        )
+            }
+        everywhere { sessionWritten(written) }
     }
 
     /** A session the runner's service wrote, on [scope]'s thread, shown unless a newer write is. */
@@ -217,24 +217,24 @@ class LatestFiles(
      * refuses, and the library is left as it was.
      */
     suspend fun writeLibrary(library: Library) {
-        libraryWritten(
+        val written =
             LibraryWrites.write {
                 withContext(io) { files.writeLibrary(library) }
                 library
-            },
-        )
+            }
+        everywhere { libraryWritten(written) }
     }
 
     /**
      * A library written outside a screen, the runner's adopt's, on [scope]'s thread. Shown unless a
      * newer write is: an editor saves the whole library it shows, so an older one shown last would be
-     * written back over the newer file by the next save.
+     * written back over the newer file by the next save. A read under way is left to land: it keeps its
+     * library only if it counted this write, and the log it carries is no older for it.
      */
     fun libraryWritten(written: Stamped<Library>) {
         if (written.stamp <= libraryShownAt) return
         libraryShownAt = written.stamp
         library = written.value
-        readAgainIfReading()
     }
 
     /**
@@ -283,7 +283,8 @@ class LatestFiles(
 
     /**
      * [change] to the log, for a write to [file] stamped [stamp], unless what's shown is newer. Before
-     * the first read there is no log to change, and that read, launched by now, finds the write.
+     * the first read there is no log to change, and that read finds the write: one under way is made
+     * again, and one not yet begun counts the write as landed.
      */
     private fun showSession(
         file: String,
@@ -301,6 +302,17 @@ class LatestFiles(
     }
 
     /**
+     * [show] here, and in the current activity's files if they aren't these. A screen's write runs on
+     * past its screen, so one can land after its activity was recreated, and the new one's first read
+     * may have listed the files before it did: unheard, it would show the old file until the next return
+     * to the app, and an editor's next save would write the old library back over it.
+     */
+    private inline fun everywhere(show: LatestFiles.() -> Unit) {
+        show()
+        CurrentFiles.latest?.takeIf { it !== this }?.show()
+    }
+
+    /**
      * A write just landed, and a read under way may have listed the files before it did, so it would
      * put the old file back: that read is dropped and made again. With none under way nothing is read.
      */
@@ -315,6 +327,14 @@ class LatestFiles(
         val sessionsAt: Long,
         val libraryAt: Long,
     )
+}
+
+/**
+ * The current activity's [LatestFiles], on the main thread only: where a screen's write that outlived its
+ * activity is shown too. `MainActivity` sets it, and clears it as it goes.
+ */
+object CurrentFiles {
+    var latest: LatestFiles? = null
 }
 
 /** A write's [value] and its [stamp], the order it landed among its file's writes. */

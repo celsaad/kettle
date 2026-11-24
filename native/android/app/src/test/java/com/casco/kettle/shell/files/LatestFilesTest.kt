@@ -520,12 +520,119 @@ class LatestFilesTest {
         assertEquals(log("newer"), files.sessionLog)
     }
 
+    /**
+     * A write the read hadn't counted when it took the files is shown once it arrives, even after that
+     * read has landed: only what a read already counted is too old to show.
+     */
+    @Test
+    fun `a runner write that landed after a read took the files is shown after it lands`() {
+        val main = Tasks()
+        val io = Tasks()
+        val disk = FakeFiles()
+        val files = LatestFiles(disk, CoroutineScope(main.asCoroutineDispatcher()), io.asCoroutineDispatcher())
+        files.reread()
+        main.run()
+        io.run()
+
+        val late = runBlocking { SessionWrites.write { session("logged").also { disk.writeSession(it) } } }
+        main.run()
+        files.sessionWritten(late)
+
+        assertEquals(listOf("logged"), files.sessionLog?.sessions?.map { it.id })
+    }
+
+    /**
+     * A read that took the library before an adopt landed mustn't put it back. It needn't be made
+     * again for it, unlike a session's: the library is one file, and the read knows it didn't count
+     * the adopt.
+     */
+    @Test
+    fun `an adopt shown while a read is under way survives that read landing`() {
+        val main = Tasks()
+        val io = Tasks()
+        val disk = FakeFiles().apply { library = Library(1, emptyList(), emptyList(), emptyList()) }
+        val files = LatestFiles(disk, CoroutineScope(main.asCoroutineDispatcher()), io.asCoroutineDispatcher())
+        files.reread()
+        main.run()
+        io.run()
+
+        val adopted = Library(2, emptyList(), emptyList(), emptyList())
+        disk.library = adopted
+        files.libraryWritten(runBlocking { LibraryWrites.write { adopted } })
+        main.run()
+
+        assertEquals(adopted, files.library)
+        assertEquals(1, disk.reads)
+    }
+
+    /**
+     * A preferences write lets go of its held choice once it lands, so a read that took the old file
+     * before then would put the old setting back unless it's made again.
+     */
+    @Test
+    fun `a preferences write landing while a read is under way has that read made again`() {
+        val main = Tasks()
+        val io = Tasks()
+        val disk = FakeFiles()
+        val scope = CoroutineScope(main.asCoroutineDispatcher())
+        val files = LatestFiles(disk, scope, io.asCoroutineDispatcher())
+        val chosen = Preferences(UnitSystem.IMPERIAL, ThemePreference.DARK, false, true, null)
+        files.reread()
+        main.run()
+
+        scope.launch { files.writePreferences(chosen) }
+        main.run()
+        // The read takes the old file, then the write lands and is shown first.
+        io.run()
+        main.runLast()
+        main.run()
+        io.run()
+        main.run()
+
+        assertEquals(chosen, files.preferences)
+        assertEquals(2, disk.reads)
+    }
+
+    /**
+     * A screen's write runs on past its screen, so it can land after a density change has recreated
+     * the activity, whose first read may have taken the files before it: the new activity's files show
+     * it too, or an editor's next save writes the old library back over it.
+     */
+    @Test
+    fun `a screen write that outlives its activity is shown in the current one`() {
+        val old = files.apply { reread() }
+        val current =
+            LatestFiles(disk, CoroutineScope(Dispatchers.Unconfined), io = Dispatchers.Unconfined).apply { reread() }
+        val library = Library(1, emptyList(), emptyList(), emptyList())
+        CurrentFiles.latest = current
+        try {
+            runBlocking {
+                old.writeSession(session("edited"))
+                old.writeLibrary(library)
+            }
+        } finally {
+            CurrentFiles.latest = null
+        }
+
+        assertEquals(listOf("edited"), current.sessionLog?.sessions?.map { it.id })
+        assertEquals(library, current.library)
+        assertEquals(onDisk(), current.sessionLog)
+    }
+
     private fun log(error: String) = SessionLog(emptyList(), listOf(error))
 
     private class FakeFiles : FakeStoredFiles() {
         var log = SessionLog.Empty
 
         var reads = 0
+
+        var library: Library? = null
+
+        var preferences: Preferences? = null
+
+        override fun library() = library
+
+        override fun preferences() = preferences
 
         override fun sessionLog(): SessionLog {
             reads++
@@ -545,6 +652,7 @@ class LatestFilesTest {
 
         override fun writePreferences(preferences: Preferences) {
             if (refusing) throw IOException("disk full")
+            this.preferences = preferences
         }
     }
 

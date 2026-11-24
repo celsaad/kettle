@@ -50,6 +50,7 @@ import com.casco.kettle.domain.WorkoutBlock
 import com.casco.kettle.shell.R
 import com.casco.kettle.shell.files.FakeStoredFiles
 import com.casco.kettle.shell.files.LatestFiles
+import com.casco.kettle.shell.files.SessionWrites
 import com.casco.kettle.shell.nav.Destination
 import com.casco.kettle.shell.nav.Route
 import com.casco.kettle.shell.nav.Section
@@ -60,6 +61,7 @@ import com.casco.kettle.shell.theme.KettleTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
@@ -654,6 +656,23 @@ class HomeScreenTest {
 
         text("Dia de descanso").assertDoesNotExist()
         text("Próximo · Day 3").assertExists()
+    }
+
+    /**
+     * A session the runner logs past midnight with the app open moves the card on with no read (#324),
+     * and the date over it has to move with it, or the card is for a day the title isn't.
+     */
+    @Test
+    fun `a session written after midnight moves the date with the card`() {
+        val latest = show(seededFiles())
+        compose.onNodeWithText("quarta-feira", substring = true).assertExists()
+
+        clock.at = Now + 1.days
+        val session = programSession("Day 1").copy(startedAt = clock.at.toString())
+        latest.sessionWritten(runBlocking { SessionWrites.write { session } })
+        compose.waitForIdle()
+
+        compose.onNodeWithText("quinta-feira", substring = true).assertExists()
     }
 
     /** Off the plan reads the card's workout, so it has to follow the card across the day turning. */

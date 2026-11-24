@@ -15,6 +15,7 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import com.casco.kettle.domain.Library
 import com.casco.kettle.domain.RunnerStart
+import com.casco.kettle.shell.files.CurrentFiles
 import com.casco.kettle.shell.files.DiskFiles
 import com.casco.kettle.shell.files.LatestFiles
 import com.casco.kettle.shell.files.LibraryAdopt
@@ -260,18 +261,21 @@ private fun Activity.connectAdoptToLibrary() {
 /**
  * What this activity hears of the files native writes outside a screen, until a newer one takes over:
  * a library the runner's adopt wrote ([LibraryAdopt]) and a session the runner's service wrote
- * ([RunnerHost], #297), each shown in [files] as written (#324).
+ * ([RunnerHost], #297), each shown in [files] as written (#324), and a screen's write that outlived the
+ * activity that made it ([CurrentFiles]).
  */
 private fun ComponentActivity.listenForWrites(files: LatestFiles) {
     val libraryWritten: (Stamped<Library>) -> Unit = files::libraryWritten
     LibraryAdopt.onLibraryWritten = libraryWritten
     RunnerHost.onSessionWritten = files::sessionWritten
+    CurrentFiles.latest = files
     lifecycle.addObserver(
         object : DefaultLifecycleObserver {
             override fun onDestroy(owner: LifecycleOwner) {
                 if (LibraryAdopt.onLibraryWritten !== libraryWritten) return
                 LibraryAdopt.onLibraryWritten = null
                 RunnerHost.onSessionWritten = null
+                CurrentFiles.latest = null
             }
         },
     )

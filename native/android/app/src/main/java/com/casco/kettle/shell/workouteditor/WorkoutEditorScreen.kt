@@ -267,8 +267,9 @@ private class Editor(
 
     /**
      * [change] applied to the library as it is now, not as it was when the sheet opened, then
-     * [written], which [closes] the sheet or doesn't. Not cancelled with the screen once it starts,
-     * since RN's stores must hear a file that changed.
+     * [written], which [closes] the sheet or doesn't. Not cancelled with the screen once it starts: a
+     * write that lands is shown only by the call that made it, so one cut off after the disk would
+     * leave the old library on screen.
      */
     private fun write(
         kind: Failure.Kind,

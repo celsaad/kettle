@@ -32,8 +32,9 @@ import kotlin.time.Instant
  * The opt-in rest-day nudge (#221, #236): one pending alarm, sitting a couple of days past the newest
  * session, so logging a session pushes it back out and someone training regularly never sees it.
  *
- * Kept in step by running this on every read of the files, from the boot receiver, and from Settings'
- * toggle. Never asks for the notification permission: that's the toggle's job.
+ * Kept in step by running this whenever the log or the preferences change, by a read of the files or
+ * a write shown in memory (#324), from the boot receiver, and from Settings' toggle. Never asks for
+ * the notification permission: that's the toggle's job.
  *
  * An inexact alarm, since Play restricts `SCHEDULE_EXACT_ALARM` and a nudge minutes late costs
  * nothing. Local only: nothing here transmits (`AGENTS.md` → "Platform constraints").

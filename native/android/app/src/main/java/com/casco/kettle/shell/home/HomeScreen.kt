@@ -109,7 +109,7 @@ fun HomeScreen(
                 ),
         ) {
             item(key = "header") {
-                TitleRow(remember(files.reads) { clock.now() }) { open(Route(Destination.Settings)) }
+                TitleRow(remember(library, log, files.reads) { clock.now() }) { open(Route(Destination.Settings)) }
                 // Nothing below the title before there is a library, so the screen never says "none"
                 // before it has looked.
                 if (library != null) {

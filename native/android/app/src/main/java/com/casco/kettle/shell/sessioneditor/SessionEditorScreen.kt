@@ -285,8 +285,9 @@ internal class Editor(
 
     /**
      * Checks every entry before writing anything, so a refusal leaves the file as it was rather than
-     * half-corrected. Not cancelled with the screen once the write starts: RN's stores must hear a
-     * file that changed, or they keep listing the session as it was.
+     * half-corrected. Not cancelled with the screen once the write starts: a write that lands is shown
+     * only by the call that made it, so one cut off after the disk would keep listing the session as
+     * it was.
      */
     fun save() {
         if (saving || closed) return

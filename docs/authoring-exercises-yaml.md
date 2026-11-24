@@ -546,8 +546,8 @@ exercises/workouts/programs you want to add or change.
 
 If an assistant is writing the YAML for you, start from **Library → Import → Copy the format for an
 assistant**: that puts the format's JSON Schema, checked against the importer, plus every
-id/name/type already in your library, on the clipboard to paste into a chat. The ids matter as much as the schema
-— import merges by `id`, so a generated program can only reference exercises that already exist (or
+id/name/type already in your library, on the clipboard to paste into a chat. The ids matter as much
+as the schema — import merges by `id`, so a generated program can only reference exercises that already exist (or
 that the same file defines).
 
 There are two ways in, both reaching the same validation and the same preview:

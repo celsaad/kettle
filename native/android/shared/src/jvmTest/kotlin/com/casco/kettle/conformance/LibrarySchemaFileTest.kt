@@ -27,8 +27,8 @@ import org.junit.jupiter.api.TestFactory
 import java.io.File
 import kotlin.math.abs
 
-/** JavaScript's `Number.MAX_SAFE_INTEGER`, the file's own ceiling on an unbounded integer. */
-private const val MAX_SAFE_INTEGER = 9_007_199_254_740_991.0
+/** A key no reader knows, which every level of the format drops. */
+private const val UNKNOWN_KEY = "zz_unknown"
 
 /**
  * `src/content/library-schema.json` is the format's declarative statement, the one the assistant
@@ -100,24 +100,18 @@ class LibrarySchemaFileTest {
     fun `the file and shared refuse every variant of every-shape at the same paths`() {
         val case = readSuite("library").single { it.name == "every-shape" }
         val document = (loadYaml(libraryText(case)) as YamlLoad.Loaded).value
-        val variants = edits(document, emptyList())
-        val disagreements =
-            variants.mapNotNull { (path, edit) ->
+        val results =
+            edits(document, emptyList()).map { (path, edit) ->
                 val variant = applyEdit(document, path, edit)
-                val shared = sharedRefuses(variant)
-                val file = fileRefuses(variant)
-                if (shared ==
-                    file
-                ) {
-                    null
-                } else {
-                    "${path.joinToString(".")} = ${edit ?: "null"}: :shared $shared, file $file"
-                }
+                Triple("${path.joinToString(".")} = ${edit ?: "null"}", sharedRefuses(variant), fileRefuses(variant))
+            }
+        val disagreements =
+            results.filter { (_, shared, file) -> shared != file }.map { (edit, shared, file) ->
+                "$edit: :shared $shared, file $file"
             }
         // Vacuity guard: the probes must actually provoke refusals, or agreeing proves nothing.
         assertTrue(
-            variants.count { (path, edit) -> sharedRefuses(applyEdit(document, path, edit)).isNotEmpty() } >
-                variants.size / 2,
+            results.count { (_, shared, _) -> shared.isNotEmpty() } > results.size / 2,
         )
         assertEquals(emptyList<String>(), disagreements)
     }
@@ -196,8 +190,10 @@ class LibrarySchemaFileTest {
             .orEmpty()
 
     /**
-     * Every single edit [edits] makes: each key dropped, a list cut short by one, a mapping or list
-     * replaced by a probe, and each scalar replaced by every probe. Paths are keys and indices.
+     * Every single edit [edits] makes: each key dropped, an unknown key added to each mapping, a list
+     * cut short by one, a mapping or list replaced by a probe, and each scalar replaced by every
+     * probe. Paths are keys and indices. The unknown key is what catches the file refusing extra
+     * keys (`additionalProperties: false`) that `:shared` drops.
      */
     private fun edits(
         node: Any?,
@@ -207,6 +203,7 @@ class LibrarySchemaFileTest {
             when (node) {
                 is Map<*, *> -> {
                     collectionProbes.forEach { add(path to it) }
+                    add(path + UNKNOWN_KEY to 1)
                     node.forEach { (key, value) ->
                         add(path + key!! to Drop)
                         addAll(edits(value, path + key))
@@ -225,11 +222,16 @@ class LibrarySchemaFileTest {
             }
         }
 
-    /** A wrong type, each side of every bound the file states (0, a fraction, past any ceiling), and empty. */
-    private val scalarProbes = listOf(null, "", "x", true, -1, 0, 0.5, 1e12)
+    /**
+     * A wrong type, empty, and each side of every bound the file states: below and at zero, a
+     * fraction, past the stated ceilings, and past the safe-integer one (2^53 − 1).
+     */
+    private val scalarProbes = listOf(null, "", "x", true, -1, 0, 0.5, 1e12, 1e16)
     private val collectionProbes = listOf(null, "x")
 
-    private object Drop
+    private data object Drop {
+        override fun toString() = "(dropped)"
+    }
 
     @Suppress("UNCHECKED_CAST")
     private fun applyEdit(
@@ -326,12 +328,12 @@ class LibrarySchemaFileTest {
 
     /**
      * A whole number goes over as the integer it is, as a JS writer prints it: json-sKema reads
-     * `1.0E12` as a fraction, and would refuse it where an integer goes.
+     * `1.0E12` as a fraction, and would refuse it where an integer goes before any `maximum` could.
      */
     private fun number(value: Double): JsonPrimitive =
         when {
             !value.isFinite() -> JsonPrimitive(value.toString())
-            value % 1.0 == 0.0 && abs(value) <= MAX_SAFE_INTEGER -> JsonPrimitive(value.toLong())
+            value % 1.0 == 0.0 && abs(value) < Long.MAX_VALUE -> JsonPrimitive(value.toLong())
             else -> JsonPrimitive(value)
         }
 

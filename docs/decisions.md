@@ -833,9 +833,20 @@ decision assembled across several commits. Open work belongs in the sections at 
     but not the target. Try is hidden for an exercise whose load this program week sets (the plan's
     `loadsSetByProgram`), which is the first bullet's corner seen from the other side: suggesting a
     load the week would override next time would be the same "appears to do nothing".
-  - **Adopt takes the load, never the reps.** Reps re-seed from the target on every set because
-    varying reps is the normal thing being logged; pinning last week's would fight double
-    progression, which is the progression model the `reps` config exists to express.
+  - **A set opens on last time's reps, held to the range, and starts over when the load goes up.**
+    This replaced "reps re-seed from the target on every set", whose worry was that pinning last
+    week's reps would fight double progression. Holding them to `target_reps_min`..`max` answers
+    most of that, and the rest is the reset: a set whose opening load reads heavier than last time's
+    for that set (in the user's units, or a pound typed on the pad reads heavier than itself) opens
+    at the bottom of the range, and Try drops the reps there as it sets the load. "Last time" is the
+    same set number of the newest finished session (`previousSetFor`), never today's earlier sets,
+    so one bad set can't pull the rest down. Load opens on today's carry, then a program week's
+    `target_weight`, then `max(last time, target)`. Two corners are accepted rather than solved: a
+    lowered target is floored by last time's load, so a deload is dialled down by hand (the log
+    doesn't say what the target was last session); and today's carry is per member while last time
+    reads an exercise's first entry, so the same exercise in two blocks seeds both from the first.
+    The engine gets the log through `RunnerContext`, not the snapshot: a set already seeded is saved
+    with it, and recovery re-reads the log, which can't hold the running session.
   - **The snapshot is for the subscription, not for correctness — and the test can only see one of
     those.** The runner reads the session log once at session start via `getState()`. Two separate
     things defend "last time" against reporting the set you finished two minutes ago: this snapshot,

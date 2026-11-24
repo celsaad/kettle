@@ -2,6 +2,7 @@ package com.casco.kettle.shell.runner
 
 import com.casco.kettle.domain.CountIn
 import com.casco.kettle.domain.LoggedUnit
+import com.casco.kettle.domain.RunnerContext
 import com.casco.kettle.domain.RunnerPlan
 import com.casco.kettle.domain.RunnerSnapshot
 import com.casco.kettle.domain.RunnerStart
@@ -32,7 +33,8 @@ sealed interface RunnerView {
 
     /**
      * [logged] is what Undo would take back, null when there's nothing to: kept in the engine's memory
-     * only, so the view is told it rather than reading it off the snapshot.
+     * only, so the view is told it rather than reading it off the snapshot. [context] is what the
+     * engine seeds sets from, so a rest's preview of the next load is the one the set will open on.
      */
     data class Running(
         override val plan: RunnerPlan.Runnable,
@@ -40,6 +42,7 @@ sealed interface RunnerView {
         val session: Session,
         override val start: RunnerStart? = null,
         val logged: LoggedUnit? = null,
+        val context: RunnerContext = RunnerContext(),
     ) : Active
 
     /** The session is over and written. Held until the completion screen's Done ([RunnerHost.dismiss]). */

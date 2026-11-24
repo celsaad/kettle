@@ -9,6 +9,8 @@ internal class Runner(
     workout: Workout?,
     val exercises: List<Exercise> = RUNNER_EXERCISES,
     start: Long = T0,
+    /** What the sets open from; no history by default, so every set opens on its target. */
+    val context: RunnerContext = RunnerContext(),
 ) {
     var now = start
     var state: RunnerState
@@ -16,7 +18,7 @@ internal class Runner(
 
     init {
         val plan = RunnerPlan.Runnable(workout, exercises, workout?.let { buildSteps(it, exercises) }.orEmpty())
-        val started = startRunner(plan, null, now)
+        val started = startRunner(plan, null, now, context)
         state = started.state
         effects += started.effects
     }
@@ -31,7 +33,7 @@ internal class Runner(
     val completions: Int get() = effects.count { it is RunnerEffect.Completed }
 
     fun send(command: RunnerCommand): RunnerTransition {
-        val transition = reduceRunner(state, command, now)
+        val transition = reduceRunner(state, command, now, context)
         state = transition.state
         effects += transition.effects
         return transition

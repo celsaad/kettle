@@ -136,19 +136,21 @@ private fun fits(
  * That includes a rest or a reps step, whose RN screens have no Resume control: every step kind
  * pauses and resumes through [RunnerCommand.TogglePause], so the screen that lands paused offers it.
  *
- * It starts with nothing to undo, and the caller re-reads the log for the prior sessions. Cues and
+ * It starts with nothing to undo. [context] is the caller's, read from the log as it is now: the session
+ * being resumed has no end, so it is skipped there as it was at start. Cues and
  * step-end alerts are dropped: the user is looking at the prompt, not waiting on a cue.
  */
 fun resumeRunner(
     prompt: RunnerRecovery.Prompt,
     now: Long,
+    context: RunnerContext = RunnerContext(),
 ): RunnerTransition {
-    val caught = caughtUp(RunnerState(prompt.snapshot, prompt.session), now)
+    val caught = caughtUp(RunnerState(prompt.snapshot, prompt.session), now, context)
     val paused =
         if (caught.state.finished || caught.state.snapshot.clock.paused) {
             caught
         } else {
-            val landed = reduceRunner(caught.state, RunnerCommand.TogglePause, now)
+            val landed = reduceRunner(caught.state, RunnerCommand.TogglePause, now, context)
             RunnerTransition(landed.state, caught.effects + landed.effects)
         }
     val quiet = paused.effects.filterNot { it is RunnerEffect.PlayCue || it is RunnerEffect.StepEnded }
@@ -162,14 +164,16 @@ fun resumeRunner(
 private fun caughtUp(
     state: RunnerState,
     now: Long,
+    context: RunnerContext,
 ): RunnerTransition {
     val snapshot = state.snapshot
     val clock = snapshot.clock
     val restEnd = clock.phaseStartedAt + clock.pausedMs + ceil(clock.stepEndSec).toLong() * MS_PER_SECOND
     val update = RunnerCommand.TimeUpdate(snapshot.visit)
-    if (snapshot.step !is RunnerStep.Rest || clock.paused || restEnd >= now) return reduceRunner(state, update, now)
-    val ended = reduceRunner(state, update, restEnd)
-    return if (ended.state.finished) ended else RunnerTransition(seeded(ended.state, now), ended.effects)
+    val ranOut = snapshot.step is RunnerStep.Rest && !clock.paused && restEnd < now
+    if (!ranOut) return reduceRunner(state, update, now, context)
+    val ended = reduceRunner(state, update, restEnd, context)
+    return if (ended.state.finished) ended else RunnerTransition(seeded(ended.state, now, context), ended.effects)
 }
 
 /**

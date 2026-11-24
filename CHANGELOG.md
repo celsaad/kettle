@@ -25,6 +25,10 @@ here, next to what it describes.
 - **No more freeze opening your file as YAML**: "Open as YAML", which showed the whole library as
   text, is gone. On a large library it froze the app for several seconds before it appeared. Share
   file still hands over the whole file, and one exercise's YAML is still on its own page (#526).
+- **Sets start from last time**: a set's reps now open on what you did in that set last time, kept
+  within the exercise's rep range, and its load on last time's (never below the target). Add weight,
+  by Try or by hand, and the reps start again from the bottom of the range. Tapping last time's set
+  takes its reps as well as its load.
 
 ---
 

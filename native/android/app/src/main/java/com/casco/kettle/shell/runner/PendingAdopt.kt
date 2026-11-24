@@ -41,8 +41,9 @@ internal fun writesLibraryOn(
 }
 
 /**
- * The runner's commands with a picked load riding along (#410): [pickLoad] sets the set's load at once and
- * holds it; [send] writes it to the library as the command that logs that set goes out, by [writesLibraryOn].
+ * The runner's commands with a picked load riding along (#410): [pickLoad] sets the set's load and reps
+ * at once (Try's reset to the bottom of the range, or last time's set) and holds the load; [send] writes
+ * it to the library as the command that logs that set goes out, by [writesLibraryOn].
  * Anything that leaves the set drops it. [actions] and [view] are read when called, so a held command
  * never acts on a composition already gone.
  */
@@ -55,9 +56,11 @@ internal class AdoptingSend(
     fun pickLoad(
         exerciseId: String,
         weightKg: Double,
+        reps: Long,
         visit: Long,
     ) {
         send(RunnerCommand.SetWeight(weightKg))
+        send(RunnerCommand.SetReps(reps))
         pending = PendingAdopt(exerciseId, weightKg, visit)
     }
 

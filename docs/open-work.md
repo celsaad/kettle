@@ -254,6 +254,10 @@ wanting states and assignees, it wants GitHub issues instead.
   strings at all. The system per-app picker would be the only override there is, which is a feature,
   not a duplicate, and cheaper than building the Settings row it would otherwise take.
 
+- **Holds that open from last time.** A reps set opens on last time's reps held to the range; a
+  `timed_hold` with `hold_sec_max` has the same shape but no counter to seed, so it would need its
+  own form (a mark at last time's hold on the clock, say). Not started.
+
 ## Open bugs
 
 Found while planning the tests/a11y/i18n work (see `testing-a11y-i18n-plan.md`), each verified against

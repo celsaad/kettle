@@ -408,7 +408,7 @@
       "loadAccessibilityBodyweight": "Carga: peso corporal. Toque para inserir um valor exato.",
       "bodyweightAbbr": "PC",
       "increaseLoad": "Aumentar carga",
-      "adoptPrevious": "Usar a carga da última vez, {{weight}} {{unit}}, e salvar como novo alvo",
+      "adoptPrevious": "Usar a série da última vez, {{weight}} {{unit}}, e salvar a carga como novo alvo",
       "beatsBest": "Supera seu recorde",
       "logSet": "Registrar série",
       "repsDone": "Reps feitas",

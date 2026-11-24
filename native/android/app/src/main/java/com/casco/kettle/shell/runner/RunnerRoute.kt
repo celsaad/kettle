@@ -167,7 +167,7 @@ private fun RunnerWindow(
         // Collected here rather than read in composition, which pauses while the app is stopped and then
         // sees every advance since at once: an advance made while nobody watches buzzes nobody.
         var last: Pair<String, Int>? = null
-        var spoken: String? = null
+        var spoken: Pair<String, Long>? = null
         RunnerHost.view.collect { shown ->
             // The advance that ends the workout buzzes like any other; a Finish doesn't, as RN's didn't.
             if (shown is RunnerView.Completed && last != null) {
@@ -185,9 +185,12 @@ private fun RunnerWindow(
                 view.performHapticFeedback(ADVANCE_HAPTIC)
             }
             val step = snapshot.step ?: return@collect
-            val sentence = view.resources.announcement(step)
-            if (sentence != spoken && view.context.screenReaderOn()) {
-                spoken = sentence
+            // Once per visit, not whenever the sentence changes: it carries the reps the set opened on,
+            // and keyed on the words, every −/+ tap would read the whole line again.
+            val visit = snapshot.sessionId to snapshot.visit
+            if (visit != spoken && view.context.screenReaderOn()) {
+                spoken = visit
+                val sentence = view.resources.announcement(step, snapshot.inputs.reps)
                 // Deprecated from API 36 for live regions, which speak a node's own changing text; this
                 // sentence is on no node, and a hidden one for it would be one more stop to swipe past.
                 @Suppress("DEPRECATION")

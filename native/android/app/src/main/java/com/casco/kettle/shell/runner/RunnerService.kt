@@ -21,10 +21,12 @@ import androidx.core.app.ServiceCompat
 import androidx.core.content.ContextCompat
 import com.casco.kettle.domain.ClockAnchor
 import com.casco.kettle.domain.Library
+import com.casco.kettle.domain.RunnerContext
 import com.casco.kettle.domain.RunnerPlan
 import com.casco.kettle.domain.RunnerRecovery
 import com.casco.kettle.domain.RunnerStart
 import com.casco.kettle.domain.RunnerTransition
+import com.casco.kettle.domain.preferencesOrDefault
 import com.casco.kettle.domain.recoveredStart
 import com.casco.kettle.domain.resolveRunnerPlan
 import com.casco.kettle.domain.resumeRunner
@@ -33,6 +35,7 @@ import com.casco.kettle.shell.MainActivity
 import com.casco.kettle.shell.R
 import com.casco.kettle.shell.files.DiskFiles
 import com.casco.kettle.shell.files.StoragePaths
+import com.casco.kettle.shell.i18n.deviceUnitSystem
 import com.casco.kettle.shell.nav.routeParams
 import com.casco.kettle.shell.nav.runnerStartFrom
 import com.casco.kettle.shell.settings.backUpFinishedSession
@@ -42,6 +45,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
+import java.util.Locale
 
 /**
  * The running session's host (#305): a `health` foreground service that holds the clock through
@@ -175,6 +179,7 @@ class RunnerService : Service() {
                 // Only while it's still the session: a finish backup answering after a new session began
                 // mustn't put the old completion back over it.
                 publish = RunnerHost.publisher({ current }) { main.post(::stop) },
+                context = opening.context,
             )
         current = created
         // Refused by the one thread that adopts while this service already holds a session: not this
@@ -337,6 +342,7 @@ class RunnerService : Service() {
 private class Opening(
     val plan: RunnerPlan.Runnable,
     val start: RunnerStart?,
+    val context: RunnerContext,
     val rebuilt: RunnerTransition? = null,
 )
 
@@ -351,7 +357,7 @@ private fun DiskFiles.startOpening(
             is RunnerPlan.TooLong -> resolved.plan.takeIf { anyway }
             else -> null
         }
-    return plan?.let { Opening(it, start) }
+    return plan?.let { Opening(it, start, runnerContext(it)) }
 }
 
 /**
@@ -363,8 +369,20 @@ private fun DiskFiles.resumeOpening(now: Long): Opening? {
     val resuming = LaunchRecovery.state.value as? RecoveryState.Resuming
     val prompt = resuming?.found?.recovery as? RunnerRecovery.Prompt ?: return null
     val plan = resumedPlan(prompt.session, prompt.snapshot, library() ?: NO_LIBRARY)
-    return Opening(plan, recoveredStart(prompt.session), resumeRunner(prompt, now))
+    val context = runnerContext(plan)
+    return Opening(plan, recoveredStart(prompt.session), context, resumeRunner(prompt, now, context))
 }
+
+/**
+ * What [plan]'s sets open from: the log as it is now, which can't hold the session being run since it
+ * has no end yet, and the units as the screen reads them.
+ */
+private fun DiskFiles.runnerContext(plan: RunnerPlan.Runnable): RunnerContext =
+    RunnerContext(
+        sessionLog().logged,
+        preferencesOrDefault(preferences(), deviceUnitSystem(Locale.getDefault())).unitSystem,
+        plan.loadsSetByProgram,
+    )
 
 /** What the launch's prompt would find now, for one put back up after a resume failed (#307). */
 private fun Context.recoveryNow(): FoundRecovery? =

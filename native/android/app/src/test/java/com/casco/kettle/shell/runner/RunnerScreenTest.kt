@@ -205,8 +205,8 @@ class RunnerScreenTest : RunnerScreenHarness() {
         compose.onNodeWithText("Da última vez · 50 kg × 5 repetições").assertExists()
         // The target of 60 kg beats a best of 50.
         compose.onNodeWithText("Recorde").assertExists()
-        button("Usar a carga da última vez, 50 quilogramas, e salvar como novo alvo").performClick()
-        assertEquals(RunnerCommand.SetWeight(50.0), sent.last())
+        button("Usar a série da última vez, 50 quilogramas, e salvar a carga como novo alvo").performClick()
+        assertEquals(listOf(RunnerCommand.SetWeight(50.0), RunnerCommand.SetReps(5)), sent.takeLast(2))
         // The library takes it only once the set is logged with it (#410), not on the tap.
         assertEquals(emptyList<Pair<String, Double>>(), adopted)
         show(running(plan(block(squat)), started(plan(block(squat))).after(RunnerCommand.SetWeight(50.0))))
@@ -705,6 +705,9 @@ class RunnerScreenTest : RunnerScreenHarness() {
         assertEquals("Prancha, série 1 de 2, segure 30 segundos", resources.announcement(hold))
         val resting = started(plan(block(squat))).advanced().after(RunnerCommand.AddRestSeconds(30.0))
         assertEquals("Descanso, 90 segundos", resources.announcement(resting.snapshot.step!!))
+        // A reps set says the reps it opened on, from last time, rather than the bottom of the range.
+        val set = buildSteps(Workout("w", "W", listOf(block(bench))), exercises).first() as RunnerStep.Reps
+        assertEquals("Supino, série 1 de 2, alvo 10 repetições", resources.announcement(set, 10))
     }
 
     private fun finished(

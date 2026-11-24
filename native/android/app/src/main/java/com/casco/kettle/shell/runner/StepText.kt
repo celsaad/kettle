@@ -34,8 +34,12 @@ fun repsTargetText(target: RepsTarget): String = target.max?.let { "${target.min
 /**
  * What a screen reader hears as a step comes up (§3.10): one sentence per step. A hold announces its
  * end, which is when it will actually stop, and a rest its configured seconds, not the +30s-moved end.
+ * A reps set says the [reps] it opened on, from last time, which is what the counter shows.
  */
-fun Resources.announcement(step: RunnerStep): String =
+fun Resources.announcement(
+    step: RunnerStep,
+    reps: Long? = null,
+): String =
     when (step) {
         is RunnerStep.Hold -> {
             step.holdEndSec?.let {
@@ -60,7 +64,7 @@ fun Resources.announcement(step: RunnerStep): String =
                 R.string.session_announce_reps,
                 "${step.setIndex}",
                 step.exerciseName,
-                "${step.targetReps}",
+                "${reps ?: step.targetReps}",
                 "${step.setTotal}",
             )
         }

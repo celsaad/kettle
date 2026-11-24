@@ -65,7 +65,8 @@ class StepControls(
     val open: (Overlay) -> Unit,
     val openPad: (PadRequest) -> Unit,
     val confirmFinish: () -> Unit,
-    val adopt: (exerciseId: String, weightKg: Double) -> Unit,
+    /** Sets the set's load and reps at once: Try's or last time's, whose load the library takes on log. */
+    val adopt: (exerciseId: String, weightKg: Double, reps: Long) -> Unit,
     val minute: MinuteRest,
 )
 
@@ -143,7 +144,7 @@ internal fun stepContext(
             beatsBest = beatsPersonalBest(state, prior, now),
             next = upcomingPreview(snapshot.steps, snapshot.stepIndex),
             lastRoundReps = (snapshot.step as? RunnerStep.Reps)?.let { state.lastRoundReps(it) },
-            nextLoadKg = (upcoming as? RunnerStep.Reps)?.let { state.openingLoadKg(it) },
+            nextLoadKg = (upcoming as? RunnerStep.Reps)?.let { state.openingLoadKg(it, view.context) },
             nextCircuit = upcoming?.circuit,
             canAddSet = canAddSet(snapshot),
             canDropSet = canDropSet(state),

@@ -51,6 +51,18 @@ class RunnerWritesTest {
         }
 
         @Test
+        fun `names a circuit member's exercise with its round, which a plain set leaves to the screen before`() {
+            val runner = Runner(workoutOf(circuitOf("pullups", "lsit", between = 15.0, betweenRounds = 60.0)))
+            runner.advance()
+            assertEquals(LoggedUnit.Set(1, PreviousSet.Reps(6, 20.0), "Pull-ups"), lastLogged(runner.state))
+
+            runner.advance() // the rest between members
+            runner.tick(5)
+            runner.advance()
+            assertEquals(LoggedUnit.Set(1, PreviousSet.Hold(5.0), "L-Sit"), lastLogged(runner.state))
+        }
+
+        @Test
         fun `has nothing to name once an edit clears the record`() {
             val runner = Runner(workoutOf(single("pullups")))
             runner.advance()

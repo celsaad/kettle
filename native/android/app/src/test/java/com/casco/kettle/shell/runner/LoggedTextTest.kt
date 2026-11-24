@@ -30,6 +30,19 @@ class LoggedTextTest {
     }
 
     @Test
+    fun `a circuit member's set is its round, after the exercise's name as written`() {
+        assertEquals(
+            "Pull-ups · rodada 2 · 6 × 20 kg",
+            text(LoggedUnit.Set(2, PreviousSet.Reps(6, 20.0), "Pull-ups")),
+        )
+        assertEquals(
+            "Pull-ups · rodada 1 · 6 repetições",
+            text(LoggedUnit.Set(1, PreviousSet.Reps(6, null), "Pull-ups")),
+        )
+        assertEquals("L-Sit · rodada 3 · 20 s", text(LoggedUnit.Set(3, PreviousSet.Hold(20.0), "L-Sit")))
+    }
+
+    @Test
     fun `a round and a minute say their number`() {
         assertEquals("rodada 4", text(LoggedUnit.Round(4)))
         assertEquals("minuto 7", text(LoggedUnit.Minute(7)))

@@ -34,7 +34,8 @@ internal fun Resources.seconds(value: Double): String = getString(R.string.forma
 
 /**
  * What Undo would take back, after "Logged": "set 1 · 10 × 48.5 lb", "round 3", or the entry's name. A
- * circuit's member logs a round, which "set 2" read as a second set of the same move (#473).
+ * circuit's member logs a round, which "set 2" read as a second set of the same move (#473), and says
+ * whose round, "Pull-ups · round 2 · 6 × 20 kg", since the rest it shows on is between two moves.
  */
 fun Resources.loggedText(
     logged: LoggedUnit,
@@ -42,7 +43,7 @@ fun Resources.loggedText(
 ): String =
     when (logged) {
         is LoggedUnit.Set -> {
-            setText(logged.number, logged.set, units, if (logged.inCircuit) ROUND_KEYS else SET_KEYS)
+            setText(logged.number, logged.circuitExercise, logged.set, units)
         }
 
         is LoggedUnit.Round -> {
@@ -58,45 +59,47 @@ fun Resources.loggedText(
         }
     }
 
-/** One logged set after its number, with [keys] saying "set" or, in a circuit, "round". */
+/**
+ * One logged set after its number, "set 2 · 8 × 60 kg", or a circuit member's, which is its round, after
+ * its [circuitExercise] name verbatim: "Pull-ups · round 2 · 6 × 20 kg". The name sorts between the
+ * index and the rest of the placeholders, so it slots in second whichever key is said.
+ */
 private fun Resources.setText(
     number: Int,
+    circuitExercise: String?,
     set: PreviousSet,
     units: UnitSystem,
-    keys: SetKeys,
 ): String {
-    val index = "$number"
+    val lead = listOfNotNull("$number", circuitExercise)
+
+    // getString only takes varargs, and the copy the spread makes is of two to four strings, once a rest.
+    @Suppress("SpreadOperator")
+    fun say(
+        setKey: Int,
+        roundKey: Int,
+        vararg rest: String,
+    ) = getString(if (circuitExercise == null) setKey else roundKey, *(lead + rest).toTypedArray())
+
     return when (set) {
         is PreviousSet.Hold -> {
-            getString(keys.hold, index, seconds(set.holdSec))
+            say(R.string.session_logged_setHold, R.string.session_logged_roundHold, seconds(set.holdSec))
         }
 
         is PreviousSet.Reps -> {
             val kg = set.weightKg?.takeIf { it > 0 }
             if (kg == null) {
-                getString(keys.bodyweight, index, reps(set.reps))
+                say(R.string.session_logged_setBodyweight, R.string.session_logged_roundBodyweight, reps(set.reps))
             } else {
-                getString(keys.loaded, index, "${set.reps}", weightText(kg, units))
+                say(
+                    R.string.session_logged_setLoaded,
+                    R.string.session_logged_roundLoaded,
+                    "${set.reps}",
+                    weightText(kg, units),
+                )
             }
         }
     }
 }
-
-/** The three ways a logged set is said: held, at bodyweight, loaded. */
-private class SetKeys(
-    val hold: Int,
-    val bodyweight: Int,
-    val loaded: Int,
-)
-
-private val SET_KEYS =
-    SetKeys(R.string.session_logged_setHold, R.string.session_logged_setBodyweight, R.string.session_logged_setLoaded)
-private val ROUND_KEYS =
-    SetKeys(
-        R.string.session_logged_roundHold,
-        R.string.session_logged_roundBodyweight,
-        R.string.session_logged_roundLoaded,
-    )
 
 /**
  * A rest's line under "Next: Squat" (#473), as the board writes it: "Set 2 of 4 · 48.5 lb · 8–12 reps".

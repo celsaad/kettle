@@ -446,9 +446,9 @@
       "setLoaded": "série {{index}} · {{reps}} × {{weight}}",
       "setBodyweight": "série {{index}} · {{reps}}",
       "setHold": "série {{index}} · {{seconds}}",
-      "roundLoaded": "rodada {{index}} · {{reps}} × {{weight}}",
-      "roundBodyweight": "rodada {{index}} · {{reps}}",
-      "roundHold": "rodada {{index}} · {{seconds}}",
+      "roundLoaded": "{{name}} · rodada {{index}} · {{reps}} × {{weight}}",
+      "roundBodyweight": "{{name}} · rodada {{index}} · {{reps}}",
+      "roundHold": "{{name}} · rodada {{index}} · {{seconds}}",
       "round": "rodada {{index}}",
       "minute": "minuto {{index}}",
       "rest": "descanso"

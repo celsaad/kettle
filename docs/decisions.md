@@ -1160,8 +1160,9 @@ decision assembled across several commits. Open work belongs in the sections at 
     goldens say what a file means; prose (the README's rules, `site/format.html`) explains them and
     loses to them. Kotlin took the corpus over unchanged, so nothing TS pinned was lost, and a golden
     diff is a change to what users' files mean, reviewed as one.
-  - **`library-schema.json` becomes hand-maintained** (#349, generated from `schema.ts` until then),
-    the format statement the assistant brief carries. A declarative Kotlin schema with a JSON Schema
+  - **`library-schema.json` is hand-maintained** (#349; zod generated it until then), the format
+    statement the assistant brief carries, held to the corpus by `:shared`'s `LibrarySchemaFileTest`.
+    The cross-field rules it can't state are listed there, each with its reason. A declarative Kotlin schema with a JSON Schema
     emitter was costed and **deferred**: it means rewriting `SchemaReader` and the `*Schema.kt`
     readers as data, plus an interpreter for zod 4's fatal and non-fatal rules, to generate one file
     that changes when the format does. **Publishing a Kotlin zod-alike library was refused**: Kettle

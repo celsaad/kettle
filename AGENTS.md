@@ -266,17 +266,27 @@ after any delegated change, and skim the diff.
 This one stays inline rather than moving to `docs/`, because the failure mode is not realising you're
 in it: a renamed key looks like a local change and silently breaks three copies you didn't open.
 
-**`schema.ts` has three hand-maintained mirrors, and the public one is outside `docs/`.** Any change
-to the format — a new field, a renamed key, a changed requirement, a new exercise type — has to land
-in all of them in the same PR:
+A change to the format — a new field, a renamed key, a changed requirement, a new exercise type —
+lands in one PR, in all of these:
 
-1. `docs/authoring-exercises-yaml.md` — the authoring reference.
-2. `docs/product-plan.md` — its file-format section.
-3. **`site/format.html`** — the published reference on the landing site, which is the copy an outside
-   author or an assistant actually reads. It is the easiest to forget precisely because it doesn't
-   look like a doc and nothing in `src/` imports it.
+- **`:shared`'s schema readers** (`SchemaReader.kt` and the `*Schema.kt` beside it), the format's
+  behaviour, with a `conformance/` case for it: regenerate with
+  `./gradlew :shared:jvmTest -PupdateConformance` (then `pnpm run format`) and read the golden diff.
+- **`src/content/library-schema.json`**, the JSON Schema the assistant brief carries. It is
+  hand-maintained, the declarative statement of the format. `LibrarySchemaFileTest` in `:shared`
+  holds it to the corpus: every `ok` case validates, and every `schemaMismatch` case is refused at
+  its golden's paths, except the refinements it names, which the file doesn't state.
+- **`schema.ts`, until the TS domain goes (#353)**, since the mirror and sample tests below still
+  read it.
+- **The three hand-maintained mirrors, and the public one is outside `docs/`:**
 
-Three tests cover most of this, and it's worth knowing exactly where they stop:
+  1. `docs/authoring-exercises-yaml.md` — the authoring reference.
+  2. `docs/product-plan.md` — its file-format section.
+  3. **`site/format.html`** — the published reference on the landing site, which is the copy an
+     outside author or an assistant actually reads. It is the easiest to forget precisely because it
+     doesn't look like a doc and nothing in `src/` imports it.
+
+The mirrors have tests of their own, and it's worth knowing exactly where they stop:
 
 - `site-samples.test.ts` runs every `<pre data-validate="library">` block on the site through the real
   `parseLibraryYaml`, and `docs-samples.test.ts` does the same for the complete samples in
@@ -294,15 +304,6 @@ published page shipped with five of seven type tables wrong (`emom` taking `roun
 `overrides` as a mapping), all of it plausible enough to read as correct and every bit of it refused
 on import. The first two of those are now regression-tested — reintroducing either one fails
 `format-mirrors.test.ts`, which is how it was verified.
-
-A format change also moves `conformance/` and the Kotlin parser in `:shared`, which writes the
-goldens: add a case for the new behaviour, make the change in `:shared`, regenerate with
-`./gradlew :shared:jvmTest -PupdateConformance`, and read the diff. Until the TS domain goes (#353),
-`schema.ts` moves in the same PR too, since the mirror tests and `library-schema.json` still read it.
-
-It also moves `src/content/library-schema.json`, the JSON Schema native's assistant brief carries,
-generated from `schema.ts` because Kotlin can't run zod. `library-schema-file.test.ts` fails until
-`pnpm run schema:update` (then `format`) regenerates it.
 
 If you add a complete library sample to any page, mark it `data-validate="library"` so it joins the
 checked set. Deliberate fragments — a bare `workouts:` list, a shape sketch with `{ ... }` — stay

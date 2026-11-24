@@ -411,14 +411,14 @@ class Case(
  * `site/examples/` libraries and the shipped `src/content/` ones), read in place like the corpus
  * itself so there is still one copy.
  */
-private fun libraryText(
+internal fun libraryText(
     case: Case,
     key: String = "input",
 ): String = case.string("source")?.let { File(conformanceDir.parentFile, it).readText() } ?: case.string(key)!!
 
 // Lazy so a missing property fails the test with this message, not as the ExceptionInInitializerError
 // a top-level initialiser would throw.
-private val conformanceDir: File by lazy {
+internal val conformanceDir: File by lazy {
     File(
         requireNotNull(System.getProperty("kettle.conformanceDir")) {
             "kettle.conformanceDir is unset; run this through Gradle, which points it at the repo's conformance/"
@@ -613,13 +613,13 @@ private fun entryJson(entry: SessionEntry): Map<String, Any?> =
     }
 
 @Suppress("UNCHECKED_CAST")
-private fun readSuite(suite: String): List<Case> {
+internal fun readSuite(suite: String): List<Case> {
     val document = load(File(conformanceDir, "$suite.yaml")) as Map<String, Any?>
     return (document["cases"] as List<Map<String, Any?>>).map(::Case)
 }
 
 @Suppress("UNCHECKED_CAST")
-private fun readGoldens(suite: String): Map<String, Any?> =
+internal fun readGoldens(suite: String): Map<String, Any?> =
     load(File(conformanceDir, "$suite.expected.json")) as Map<String, Any?>
 
 /**

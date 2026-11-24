@@ -24,7 +24,6 @@
     "typecheck": "tsc --noEmit",
     "test": "jest",
     "test:watch": "jest --watch",
-    "schema:update": "node scripts/update-library-schema.mjs",
     "format": "oxfmt",
     "format:check": "oxfmt --check",
     "knip": "knip"

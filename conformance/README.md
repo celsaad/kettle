@@ -18,6 +18,8 @@ Each suite is two files:
 `native/android/shared/src/jvmTest/.../ConformanceTest.kt` checks `:shared` against these files, read
 in place, and writes them. It finds suites by listing this directory, and one with no runner is
 reported as skipped under its own name, never as passing. Adding a suite is adding its runner there.
+`LibrarySchemaFileTest.kt` beside it holds `src/content/library-schema.json`, the hand-maintained
+JSON Schema the assistant brief carries, to the `library` suite's goldens.
 
 When a change to `:shared` is meant to change behaviour, run
 `./gradlew :shared:jvmTest -PupdateConformance` from `native/android`, then `pnpm run format`. The

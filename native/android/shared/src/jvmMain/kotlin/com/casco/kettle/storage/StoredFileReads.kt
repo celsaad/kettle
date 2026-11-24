@@ -16,14 +16,14 @@ import java.io.IOException
  * errors, and sessions that started together, come out the same on every read.
  */
 fun readSessionLog(dir: File): SessionLog {
-    val sessions = mutableListOf<Session>()
+    val read = mutableListOf<Pair<String, Session>>()
     val errors = mutableListOf<String>()
     val files = dir.listFiles().orEmpty().filter { it.isFile && it.name.endsWith(".yaml") }
     for (file in files.sortedBy { it.name }) {
         // Deleted since the listing: gone from the log, as the next read would find it.
         val text = file.readTextOrNull() ?: continue
         when (val result = parseSessionYaml(text)) {
-            is ParseResult.Ok -> sessions += result.value
+            is ParseResult.Ok -> read += file.name to result.value
 
             // The line `listSessions` writes, kinds spelled as RN spells them.
             is ParseResult.InvalidYaml -> errors += "${file.name} (invalidYaml): ${result.detail}"
@@ -31,7 +31,8 @@ fun readSessionLog(dir: File): SessionLog {
             is ParseResult.SchemaMismatch -> errors += "${file.name} (schemaMismatch): ${result.detail}"
         }
     }
-    return SessionLog(sessions.sortedByDescending { it.startedAt }, errors)
+    val sorted = read.sortedByDescending { it.second.startedAt }
+    return SessionLog(sorted.map { it.second }, errors, sorted.map { it.first })
 }
 
 /**

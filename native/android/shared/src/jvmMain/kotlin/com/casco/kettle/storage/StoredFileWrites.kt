@@ -5,6 +5,7 @@ import com.casco.kettle.domain.MAX_YAML_CODE_POINTS
 import com.casco.kettle.domain.Session
 import com.casco.kettle.domain.serializeLibraryYaml
 import com.casco.kettle.domain.serializeSessionYaml
+import com.casco.kettle.domain.sessionFileName
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
@@ -35,7 +36,7 @@ fun sessionFile(
     id: String,
 ): File {
     if (!isSessionFileId(id)) throw IOException("Not a session id: $id")
-    return dir.resolve("$id.yaml")
+    return dir.resolve(sessionFileName(id))
 }
 
 /** Whether [id] names a file inside the log, as [sessionFile] needs: no separator, and no NUL. */

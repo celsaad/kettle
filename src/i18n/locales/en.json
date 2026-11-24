@@ -421,9 +421,9 @@
       "setLoaded": "set {{index}} · {{reps}} × {{weight}}",
       "setBodyweight": "set {{index}} · {{reps}}",
       "setHold": "set {{index}} · {{seconds}}",
-      "roundLoaded": "round {{index}} · {{reps}} × {{weight}}",
-      "roundBodyweight": "round {{index}} · {{reps}}",
-      "roundHold": "round {{index}} · {{seconds}}",
+      "roundLoaded": "{{name}} · round {{index}} · {{reps}} × {{weight}}",
+      "roundBodyweight": "{{name}} · round {{index}} · {{reps}}",
+      "roundHold": "{{name}} · round {{index}} · {{seconds}}",
       "round": "round {{index}}",
       "minute": "minute {{index}}",
       "rest": "rest"

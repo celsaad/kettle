@@ -60,11 +60,11 @@ class RunnerRestLineTest : RunnerScreenHarness() {
         // The squat logged in round 1, then its rest, before the second member's round 1.
         show(running(circuit, started(circuit).advanced()))
         text("Rodada 1 de 2 · 8 repetições").assertExists()
-        text("Registrado rodada 1 · 5 × 60 kg").assertExists()
+        text("Registrado Agachamento · rodada 1 · 5 × 60 kg").assertExists()
         compose.onNodeWithText("Série", substring = true).assertDoesNotExist()
     }
 
-    /** After a circuit's last round no circuit rest follows; a Rest block's still says the round logged. */
+    /** After a circuit's last round no circuit rest follows; a Rest block's still says whose round was logged. */
     @Test
     fun `after a circuit, a Rest block still says the round just logged`() {
         val circuitThenRest =
@@ -74,7 +74,7 @@ class RunnerRestLineTest : RunnerScreenHarness() {
                 block(plank),
             )
         show(running(circuitThenRest, started(circuitThenRest).advanced()))
-        text("Registrado rodada 1 · 5 × 60 kg").assertExists()
+        text("Registrado Agachamento · rodada 1 · 5 × 60 kg").assertExists()
     }
 
     /** A single target is a count: "1 repetição", where a hard-coded noun said "1 repetições". */

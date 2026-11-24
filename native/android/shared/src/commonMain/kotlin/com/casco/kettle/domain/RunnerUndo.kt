@@ -74,14 +74,16 @@ internal fun undoableCommit(state: RunnerState): LastCommit? =
 /** What an undo would take back, for the runner to name beside its Undo. */
 sealed interface LoggedUnit {
     /**
-     * A reps or hold set: the member's [number]th, as logged. [inCircuit] where the member is a circuit's,
-     * whose set is its round (#473): said of the set logged, not of the step on screen, which after a
-     * circuit's last round can be a Rest block of its own.
+     * A reps or hold set: the member's [number]th, as logged. [circuitExercise] is the member's exercise
+     * name where it is a circuit's, whose set is its round (#473), and null outside one. Said of the set
+     * logged, not of the step on screen, which after a circuit's last round can be a Rest block of its
+     * own. A circuit names it because the rest between members is the only screen a set is confirmed
+     * on, and "round 2" alone didn't say whose; outside one, the screen just left already said it.
      */
     data class Set(
         val number: Int,
         val set: PreviousSet,
-        val inCircuit: Boolean = false,
+        val circuitExercise: String? = null,
     ) : LoggedUnit
 
     /** A HIIT round, the member's [number]th. */
@@ -117,26 +119,38 @@ fun lastLogged(state: RunnerState): LoggedUnit? {
         }
 
         else -> {
-            loggedUnit(state.memberEntry(commit.memberKey), inCircuit(state.snapshot.steps, commit.memberKey))
+            loggedUnit(state.memberEntry(commit.memberKey), circuitExercise(state.snapshot.steps, commit.memberKey))
         }
     }
 }
 
+/**
+ * [memberKey]'s exercise name when the member is a circuit's, else null. Any of its steps will do: a
+ * swap moves what's left to a key of its own (`swapped`), so one key is only ever one exercise.
+ */
+private fun circuitExercise(
+    steps: List<RunnerStep>,
+    memberKey: String,
+): String? =
+    steps.firstNotNullOfOrNull { step ->
+        (step as? WorkStep)?.takeIf { it.memberKey == memberKey && it.circuit != null }?.exerciseName
+    }
+
 /** The last unit of a member's [entry]; null for an entry Prev would leave as it is. */
 private fun loggedUnit(
     entry: SessionEntry?,
-    inCircuit: Boolean,
+    circuitExercise: String?,
 ): LoggedUnit? =
     when (entry) {
         is SessionEntry.Reps -> {
             entry.sets.lastOrNull()?.let {
-                LoggedUnit.Set(entry.sets.size, PreviousSet.Reps(it.reps, it.weightKg), inCircuit)
+                LoggedUnit.Set(entry.sets.size, PreviousSet.Reps(it.reps, it.weightKg), circuitExercise)
             }
         }
 
         is SessionEntry.TimedHold -> {
             entry.sets.lastOrNull()?.let {
-                LoggedUnit.Set(entry.sets.size, PreviousSet.Hold(it.holdSec), inCircuit)
+                LoggedUnit.Set(entry.sets.size, PreviousSet.Hold(it.holdSec), circuitExercise)
             }
         }
 

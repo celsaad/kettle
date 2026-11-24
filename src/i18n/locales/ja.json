@@ -396,9 +396,9 @@
       "setLoaded": "{{index}}セット目 · {{reps}} × {{weight}}",
       "setBodyweight": "{{index}}セット目 · {{reps}}",
       "setHold": "{{index}}セット目 · {{seconds}}",
-      "roundLoaded": "{{index}}ラウンド目 · {{reps}} × {{weight}}",
-      "roundBodyweight": "{{index}}ラウンド目 · {{reps}}",
-      "roundHold": "{{index}}ラウンド目 · {{seconds}}",
+      "roundLoaded": "{{name}} · {{index}}ラウンド目 · {{reps}} × {{weight}}",
+      "roundBodyweight": "{{name}} · {{index}}ラウンド目 · {{reps}}",
+      "roundHold": "{{name}} · {{index}}ラウンド目 · {{seconds}}",
       "round": "{{index}}ラウンド目",
       "minute": "{{index}}分目",
       "rest": "休憩"

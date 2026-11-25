@@ -158,7 +158,7 @@ internal fun RecentSessions(
 ) {
     val log = files.sessionLog ?: return
     val units = files.unitsOrDevice()
-    val history = remember(log, exerciseId, units) { exerciseHistory(log.logged, exerciseId, units) }
+    val history = remember(log, exerciseId) { exerciseHistory(log.logged, exerciseId) }
     if (history.isEmpty()) return
     val colors = KettleTheme.colors
     val resources = LocalResources.current

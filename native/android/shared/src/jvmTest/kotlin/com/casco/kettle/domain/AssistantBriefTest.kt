@@ -5,9 +5,9 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 /**
- * The brief an assistant sees before it writes a line of YAML (#244), from RN's
- * `assistant-brief.test.ts`. The words are the screen's, passed in, so what's pinned here is the
- * shape: the user's real ids, the schema carried whole, and nothing of the trainer's in it.
+ * The brief an assistant sees before it writes a line of YAML (#244). The words are the screen's,
+ * passed in, so what's pinned here is the shape: the user's real ids and the schema carried whole.
+ * That the words the app ships ask for nothing of the trainer's is `:app`'s `AssistantBriefWordsTest`.
  */
 class AssistantBriefTest {
     private val words =

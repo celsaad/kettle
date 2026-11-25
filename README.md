@@ -106,7 +106,7 @@ animation, real audio and file writes are verified by driving the running app in
 | [`AGENTS.md`](AGENTS.md) | How to work in this repo — conventions, house rules, and the traps worth knowing before you start |
 | [`CHANGELOG.md`](CHANGELOG.md) | What shipped per release, plus the Play release notes that went out with it |
 | [`docs/product-plan.md`](docs/product-plan.md) | The product model: data model, file formats, roadmap |
-| [`docs/authoring-exercises-yaml.md`](docs/authoring-exercises-yaml.md) | YAML reference, kept exact against `schema.ts` |
+| [`docs/authoring-exercises-yaml.md`](docs/authoring-exercises-yaml.md) | YAML reference, kept exact against `library-schema.json` |
 | [`docs/decisions.md`](docs/decisions.md) | The decision log — why things are the way they are |
 | [`docs/open-work.md`](docs/open-work.md) | What's genuinely still open |
 | [`docs/history.md`](docs/history.md) | Write-ups of shipped work, where the reasoning outlived the commit |

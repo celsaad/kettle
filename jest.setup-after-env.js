@@ -14,7 +14,7 @@ beforeEach(async () => {
   if (i18next.isInitialized && i18next.language !== 'en') await i18next.changeLanguage('en');
 });
 
-// `domain/format.ts` and `domain/assistant-brief.ts` render through i18next, so it needs an
+// `domain/format.ts` renders through i18next, so it needs an
 // initialised instance to return anything but raw key paths. This configures the singleton with
 // `@/i18n`'s bundles, in English, so assertions read as plain English.
 //

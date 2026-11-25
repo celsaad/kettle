@@ -20,4 +20,4 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "kettle"
-include(":shared", ":app", ":strings", ":theme", ":art", ":benchmark")
+include(":shared", ":app", ":strings", ":theme", ":art", ":benchmark", ":repo-checks")

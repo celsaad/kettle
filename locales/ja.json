@@ -152,7 +152,13 @@
     "workoutInProgram": "プログラムで使用中 · {{shape}}",
     "targetReps": "{{sets}} × {{reps}}{{weight}}",
     "targetHold": "{{sets}} × {{hold}}秒",
-    "targetHoldOpen": "{{sets}} × 最大ホールド"
+    "targetHoldOpen": "{{sets}} × 最大ホールド",
+    "badge": {
+      "hold": "ホールド",
+      "reps": "レップ",
+      "cardio": "カーディオ",
+      "rest": "休憩"
+    }
   },
   "programGuide": {
     "title": "プログラムを手で書く",
@@ -295,6 +301,7 @@
       "dayDone": "{{slot}} 完了",
       "time": "時間",
       "sets": "セット",
+      "rounds": "ラウンド",
       "exercises": "エクササイズ",
       "againstLastTime": "前回との比較",
       "firstTime": "初回",

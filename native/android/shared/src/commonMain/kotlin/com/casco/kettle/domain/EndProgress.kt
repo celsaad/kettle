@@ -28,9 +28,17 @@ data class EndRow(
  * exercise counts sets; a HIIT its rounds; an EMOM its minutes, or its intervals when they aren't
  * minutes; an AMRAP or a cardio is one go. Inside a circuit every member counts the circuit's rounds,
  * a round done once all of that visit's steps are behind the one on screen.
+ *
+ * An AMRAP on screen with a round or a rep entered counts as behind it too (#520): it is one step, so
+ * nothing else would ever count it, and Save and end commits the step on screen with what's entered.
  */
-fun endProgress(snapshot: RunnerSnapshot): List<EndRow> =
-    snapshot.steps
+fun endProgress(snapshot: RunnerSnapshot): List<EndRow> {
+    val inputs = snapshot.inputs
+    val amrapLogged =
+        (snapshot.step as? RunnerStep.Interval)?.variant == IntervalVariant.AMRAP &&
+            (inputs.roundsCompleted > 0 || inputs.extraReps > 0)
+    val doneIndex = if (amrapLogged) snapshot.stepIndex + 1 else snapshot.stepIndex
+    return snapshot.steps
         .withIndex()
         .filter { it.value is WorkStep }
         .groupBy { it.value.memberKey }
@@ -49,11 +57,12 @@ fun endProgress(snapshot: RunnerSnapshot): List<EndRow> =
                 }
             EndRow(
                 name = first.exerciseName,
-                done = units.count { unit -> unit.all { it.index < snapshot.stepIndex } },
+                done = units.count { unit -> unit.all { it.index < doneIndex } },
                 total = units.size,
                 unit = if (first.circuit != null) EndUnit.ROUNDS else progressUnit(first),
             )
         }
+}
 
 private fun progressUnit(step: WorkStep): EndUnit =
     when (step) {

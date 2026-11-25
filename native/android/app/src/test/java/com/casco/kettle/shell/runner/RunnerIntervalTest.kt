@@ -1,5 +1,6 @@
 package com.casco.kettle.shell.runner
 
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import com.casco.kettle.domain.Exercise
@@ -76,6 +77,32 @@ class RunnerIntervalTest : RunnerScreenHarness() {
         compose.onNodeWithText("Registrado rodada 2").assertExists()
         button("Desfazer").performClick()
         assertEquals(RunnerCommand.SetRounds(1), sent.last())
+    }
+
+    // A round logged is work Save and end writes, so the AMRAP on screen isn't "not started" (#520).
+    @Test
+    fun `End's sheet counts an AMRAP with a round logged as done`() {
+        val amrap = plan(block(grinder))
+        show(running(amrap, started(amrap).after(RunnerCommand.SetRounds(1))))
+        button("Encerrar").performClick()
+        compose.onNodeWithText("feito").assertExists()
+        compose.onNodeWithText("não iniciado").assertDoesNotExist()
+    }
+
+    @Test
+    fun `End's sheet still says an AMRAP with nothing logged is not started`() {
+        show(running(plan(block(grinder))))
+        button("Encerrar").performClick()
+        compose.onNodeWithText("não iniciado").assertExists()
+    }
+
+    // A session of intervals alone counts rounds, as Sessions' row says since #483 (#520).
+    @Test
+    fun `the receipt of an AMRAP-only session counts rounds`() {
+        val session = finished(SessionEntry.Amrap(grinder.id, 3, null))
+        show(RunnerEntry.Complete(RunnerView.Completed(plan(block(grinder)), session, FinishBackupState.OK)))
+        compose.onNode(hasText("3") and hasText("Rodadas")).assertExists()
+        compose.onNodeWithText("Séries").assertDoesNotExist()
     }
 
     @Test

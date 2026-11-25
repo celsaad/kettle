@@ -32,6 +32,10 @@ here, next to what it describes.
 - **Smoother with a long history**: logging a set, editing or deleting a session, and changing a
   setting no longer re-read every session you've ever logged. Kettle now reads them all only when
   you come back to the app, so a big history stops slowing down every tap (#324).
+- **Small fixes in Portuguese and Japanese, and for AMRAPs**: an exercise's type tag (Hold, Reps,
+  Cardio, Rest) is now in your language. Ending a session early no longer calls an AMRAP "not
+  started" once you've logged a round. The finish screen counts rounds, not sets, for a session of
+  intervals alone, as Sessions already does (#520).
 
 ---
 

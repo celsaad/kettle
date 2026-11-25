@@ -36,6 +36,7 @@ import com.casco.kettle.domain.Session
 import com.casco.kettle.domain.SessionRecord
 import com.casco.kettle.domain.againstLastTime
 import com.casco.kettle.domain.sessionDurationMinutes
+import com.casco.kettle.domain.sessionInRounds
 import com.casco.kettle.domain.sessionRecords
 import com.casco.kettle.domain.sessionSetCount
 import com.casco.kettle.domain.withoutZeroWork
@@ -117,9 +118,10 @@ private fun Heading(view: RunnerView.Completed) {
 }
 
 /**
- * Time, Sets and Exercises in a ruled row, as Overview's tiles. At 200% text a third of the row is
- * narrower than "Exercícios", which broke mid-word (#469), so the words are measured: in a row while the
- * widest fits its third, else one tile under another, each still a value over its label.
+ * Time, Sets (Rounds for a session of intervals alone, #520) and Exercises in a ruled row, as Overview's
+ * tiles. At 200% text a third of the row is narrower than "Exercícios", which broke mid-word (#469), so
+ * the words are measured: in a row while the widest fits its third, else one tile under another, each
+ * still a value over its label.
  */
 @Composable
 private fun Tiles(
@@ -130,7 +132,10 @@ private fun Tiles(
         listOf(
             stringResource(R.string.format_minutes, sessionDurationMinutes(session)) to
                 stringResource(R.string.session_complete_time),
-            sessionSetCount(session).toString() to stringResource(R.string.session_complete_sets),
+            sessionSetCount(session).toString() to
+                stringResource(
+                    if (sessionInRounds(session)) R.string.session_complete_rounds else R.string.session_complete_sets,
+                ),
             exercises.toString() to stringResource(R.string.session_complete_exercises),
         )
     val widest =

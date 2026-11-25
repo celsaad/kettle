@@ -224,16 +224,53 @@ class RunnerTimingTest {
             assertEquals(List(3) { EmomMinuteLog(10) }, runner.entry<SessionEntry.Emom>("swings")?.minutes)
         }
 
-        /** The user was away, so nothing a gap passed is announced; the file is written once, as it ends up. */
+        /**
+         * The steps a gap passed are silent, the user being away, and only the last end is announced,
+         * with the step it hands over to, as a live end would be: five HIIT steps and a row, two member
+         * changes, one alert and one exercise change. The file is written once, as it ends up.
+         */
         @Test
-        fun `plays no cue and posts no alert for the steps a gap passed`() {
-            val runner = Runner(workoutOf(single("burpees"), single("pullups")))
-            runner.clearEffects()
-            runner.away(300)
+        fun `announces only the last end a gap crossed`() {
+            val runner = Runner(workoutOf(single("burpees"), single("row"), single("pullups")))
+            val row = runner.snapshot.steps[5]
+            runner.now += 300 * MS
+            val effects = runner.send(RunnerCommand.TimeUpdate(runner.snapshot.visit)).effects
 
-            assertEquals(5, runner.index)
-            assertFalse(runner.effects.any { it is RunnerEffect.PlayCue || it is RunnerEffect.StepEnded })
-            assertEquals(2, runner.effects.count { it is RunnerEffect.WriteSession }) // clearEffects keeps one
+            assertEquals(6, runner.index)
+            assertEquals(
+                listOf(RunnerEffect.StepEnded(row, runner.step)),
+                effects.filterIsInstance<RunnerEffect.StepEnded>(),
+            )
+            assertEquals(
+                listOf(RunnerEffect.PlayCue(RunnerCue.EXERCISE_CHANGE)),
+                effects.filterIsInstance<RunnerEffect.PlayCue>(),
+            )
+            assertEquals(1, effects.count { it is RunnerEffect.WriteSession })
+        }
+
+        /** A wake that runs late still alerts: on Android the alert is the only one (#546's review). */
+        @Test
+        fun `still alerts for an end the service saw late`() {
+            val runner = Runner(workoutOf(single("pullups")))
+            runner.advance()
+            val rest = runner.step!!
+            runner.now += 91_200
+            val effects = runner.send(RunnerCommand.TimeUpdate(runner.snapshot.visit)).effects
+
+            assertEquals(2, runner.index)
+            assertTrue(RunnerEffect.StepEnded(rest, runner.step) in effects)
+        }
+
+        /** Landing 30 s into a 40 s round, its midpoint already passed while away, doesn't sound it late. */
+        @Test
+        fun `does not play a milestone the gap passed on the step it lands on`() {
+            val runner = Runner(workoutOf(single("burpees")))
+            runner.away(90)
+            runner.clearEffects()
+            runner.tick(1)
+
+            assertEquals(2, runner.index)
+            assertEquals(0, runner.cues(RunnerCue.MILESTONE))
         }
 
         @Test
@@ -555,13 +592,12 @@ class RunnerTimingTest {
         }
 
         @Test
-        fun `plays no cue when a step ends after a gap`() {
+        fun `cues only the exercise change when a step ends after a gap`() {
             val runner = Runner(workoutOf(single("plank"), single("pullups")))
             runner.clearEffects()
             runner.away(60)
 
             assertEquals(0, runner.cues(RunnerCue.MILESTONE) + runner.cues(RunnerCue.TICK))
-            assertEquals(0, runner.cues(RunnerCue.EXERCISE_CHANGE))
         }
     }
 

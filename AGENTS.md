@@ -428,5 +428,5 @@ The five default roles, each label named after its role (`needs-triage`, `needs-
 
 ### Domain docs
 
-Single-context: a root `GLOSSARY.md` (created lazily) and `docs/decisions.md` in place of `docs/adr/`.
+Single-context: a root `GLOSSARY.md` and `docs/decisions.md` in place of `docs/adr/`.
 See `docs/agents/domain.md`.

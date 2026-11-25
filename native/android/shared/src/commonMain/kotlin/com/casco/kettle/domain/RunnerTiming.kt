@@ -125,9 +125,12 @@ internal fun timeUpdate(
  * hold at its end or a rest at its planned length, and the next is seeded from there. Committing at the
  * end rather than at [now] is what keeps the time away out of a rest; the step it stops on owns it.
  *
- * A step whose end the update saw live, inside the second after it, keeps its alert and its exercise
- * change; one a gap passed plays nothing, since nobody was there to hear it. Only the last write is
- * kept, each being the whole file.
+ * Only the last end crossed is announced, with its alert and exercise change, as a live end is: on
+ * Android that alert is the only one, so a wake that ran late still says where the session is. The
+ * steps before it pass silently, nobody having been there to hear them. An iOS host, whose alerts
+ * were posted ahead from [upcomingStepEnds], drops it as [resumeRunner] does. The step it lands on is
+ * marked as cued up to now, so a milestone it passed during the gap doesn't sound late. Only the last
+ * write is kept, each being the whole file.
  */
 private fun replayed(
     state: RunnerState,
@@ -135,22 +138,32 @@ private fun replayed(
     context: RunnerContext,
 ): RunnerTransition {
     var current = state
-    val effects = mutableListOf<RunnerEffect>()
+    val crossed = mutableListOf<List<RunnerEffect>>()
     var endAt = stepEndAt(current.snapshot)?.takeIf { it <= now }
     while (endAt != null) {
         val snapshot = current.snapshot
         val moved = advance(current, endAt)
-        if (now < endAt + MS_PER_SECOND) {
-            val next = snapshot.steps.getOrNull(snapshot.stepIndex + 1)
-            effects += listOfNotNull(snapshot.step?.let { RunnerEffect.StepEnded(it, next) }) + moved.effects
-        } else {
-            effects += moved.effects.filterNot { it is RunnerEffect.PlayCue }
-        }
+        val next = snapshot.steps.getOrNull(snapshot.stepIndex + 1)
+        crossed += listOfNotNull(snapshot.step?.let { RunnerEffect.StepEnded(it, next) }) + moved.effects
         current = if (moved.state.finished) moved.state else seeded(moved.state, endAt, context)
         endAt = stepEndAt(current.snapshot)?.takeIf { it <= now && !current.finished }
     }
+    val passed = crossed.dropLast(1).flatten().filterNot { it is RunnerEffect.PlayCue || it is RunnerEffect.StepEnded }
+    val effects = passed + crossed.lastOrNull().orEmpty()
     val lastWrite = effects.lastOrNull { it is RunnerEffect.WriteSession }
-    return RunnerTransition(current, effects.filter { it !is RunnerEffect.WriteSession || it === lastWrite })
+    val landed = current.takeUnless { it.finished }?.let { markedUpTo(it, now) } ?: current
+    return RunnerTransition(landed, effects.filter { it !is RunnerEffect.WriteSession || it === lastWrite })
+}
+
+/** [state]'s step on screen with the cues its clock has already passed at [now] marked as had. */
+private fun markedUpTo(
+    state: RunnerState,
+    now: Long,
+): RunnerState? {
+    val step = state.snapshot.step ?: return null
+    val clock = state.snapshot.clock
+    val elapsed = elapsedSec(clock, now)
+    return state.copy(cues = CueMarks(elapsed, reading(step, clock.stepEndSec, elapsed).milestone))
 }
 
 private fun reading(

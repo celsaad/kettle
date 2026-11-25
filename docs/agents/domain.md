@@ -18,7 +18,7 @@ upfront. The `/domain-modeling` skill (reached via `/grill-with-docs` and
 
 ```
 /
-├── GLOSSARY.md          ← created lazily
+├── GLOSSARY.md
 ├── AGENTS.md
 ├── docs/
 │   └── decisions.md     ← the decision log (stands in for docs/adr/)

@@ -1,8 +1,8 @@
 package com.casco.kettle.domain
 
 /**
- * Everything an assistant needs to emit YAML this app will accept (#244), as RN's
- * `assistant-brief.ts`: the format, and the ids already in [library]. Handed out by the share sheet or
+ * Everything an assistant needs to emit YAML this app will accept (#244): the format, and the ids
+ * already in [library]. Handed out by the share sheet or
  * the clipboard; the app never talks to a model itself.
  *
  * **This carries format and never intent.** No goals, no prescriptions, nothing about the user's body:

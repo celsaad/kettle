@@ -70,8 +70,8 @@ wanting states and assignees, it wants GitHub issues instead.
     target_reps_min`, an override targeting exactly one of `exercise`/`block`, unique `(week, day)`),
     so the brief tells the model the importer checks more than the schema shows and leaves the rest to
     the repair loop rather than restating those rules and becoming the third copy; and the brief is
-    scoped to the *format* side of the ownership line (decision log), which is what a test in
-    `assistant-brief.test.ts` pins rather than a comment.
+    scoped to the *format* side of the ownership line (decision log), which `:app`'s
+    `AssistantBriefWordsTest` pins rather than a comment.
   - ~~**A repair loop from the errors we now return.**~~ ✅ Shipped. A refusal now carries a "Copy
     error" button that puts one framing line plus the refusal itself on the clipboard, so a rejected
     file goes straight back to the assistant that wrote it. Two calls worth not re-litigating: the

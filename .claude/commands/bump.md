@@ -77,8 +77,8 @@ Then check the release notes that go up with it:
 - **Recount if you touched them at all.** 500 characters per language block, and over-limit is a
   *rejected upload*, not a truncated one. Count programmatically — `node -e` reading the file — and
   update the "Counted at N (en-US) and N (pt-BR)" line to the real numbers. The numbers written beside
-  a block have been wrong before, which is why `store-copy.test.ts` asserts the limit; nothing asserts
-  the prose.
+  a block have been wrong before, which is why `:repo-checks`' `StoreCopyTest` asserts the limit;
+  nothing asserts the prose.
 - **Only include a `<pt-BR>` block if the listing carries that language.** An unsupported tag is
   rejected on upload.
 
@@ -101,8 +101,8 @@ Check what's in flight before deciding, and say which you're doing:
 2. Close out `CHANGELOG.md` as above.
 3. Run `pnpm test`, `pnpm run typecheck` and `pnpm run lint`. Typecheck and lint should be untouched by
    a version bump; if they aren't clean, something else is wrong and the bump isn't the thing to fix it
-   with. `pnpm test` earns its place here because `store-copy.test.ts` reads `CHANGELOG.md` and
-   fails on a release-note block over 500 characters. Nothing checks the version file: read the diff.
+   with. Also run `./gradlew :repo-checks:test` from `native/android`: its `StoreCopyTest` reads
+   `CHANGELOG.md` and fails on a release-note block over 500 characters. Nothing checks the version file: read the diff.
 4. Commit as **`Release <version> (versionCode <n>)`**, matching every previous release. The body says
    what's in it — the user-facing changes, by PR number where there is one — and why the level was
    patch/minor/major if that isn't obvious. Note anything deliberately excluded.

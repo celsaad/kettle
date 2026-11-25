@@ -85,9 +85,9 @@ mistake here that cannot be fixed for anyone who has already installed it.
   (week resolution + override application). Every editor is native's since the library flip (#245),
   so the form logic lives in `:shared` (`ExerciseForm.kt`, `SessionEntryForm.kt`) rather than here.
 - `src/storage/` — the readers for the content the app *ships*; every file the app writes is
-  native's since #308, and RN's own readers went with its stores (#309). What is left is
-  `seed-library.ts`, the seed `site-examples.test.ts` merges into; native writes the real seed on a
-  first launch (`PreparedLibrary.kt`). The content itself is data in `src/content/`, which native
+  native's since #308, RN's own readers went with its stores (#309), and the last TS one with the
+  guards that read it (#352); native writes the real seed on a first launch
+  (`PreparedLibrary.kt`). The content itself is data in `src/content/`, which native
   reads through `ShippedContent`: an English `library.yaml` plus a `<lang>.json` string table per
   language (`:shared`'s `LibraryTranslation.kt`), and `packs.json` for the pack order. `:app`'s
   `ShippedLibrariesTest`, `ShippedSeedTest` and `ContentPacksTest` hold what the content says, in
@@ -109,12 +109,16 @@ mistake here that cannot be fixed for anyone who has already installed it.
 - Routing is native's since #309 (`shell/nav/`: `Route.kt` is the route table, `Navigator.kt` the
   back stack and the runner's slot).
 - `site/` — the public landing site (GitHub Pages), plain static HTML with no build step. Not part of
-  the app build. `site/format.html` mirrors `schema.ts` — see "Changing the YAML format" below.
-  `site/examples/*.yaml` are complete libraries published for readers to import as they are;
-  `site-examples.test.ts` parses each one, merges it into the seed library the way the import screen
-  does (which is what catches a dangling `exercise:` reference), and holds the id-prefix promise the
-  examples page makes — every example prefixes its ids so importing one can't overwrite anything the
-  reader already has.
+  the app build. `site/format.html` mirrors `library-schema.json` — see "Changing the YAML format"
+  below. `site/examples/*.yaml` are complete libraries published for readers to import as they are;
+  the corpus parses each one (`source:` cases), and `:repo-checks`' `SiteExamplesTest` merges it into
+  the seed library the way the import screen does (which is what catches a dangling `exercise:`
+  reference) and holds the id-prefix promise the examples page makes — every example prefixes its ids
+  so importing one can't overwrite anything the reader already has.
+- `native/android/repo-checks/` — `:repo-checks`, tests only: the guards on the repo's own prose and
+  published files (the site's samples and examples, the docs' samples, the format mirrors' tables,
+  the Play copy), read in place with `:shared` doing the parsing. It runs in `gradlew build`, so a
+  docs-only change fails CI's native job, not jest.
 
 - `native/android/` — the app: a Kotlin Multiplatform `:shared` module (the domain port), a
   Compose `:app`, and `:strings`, which generates `:app`'s string resources from the locale bundles
@@ -278,8 +282,6 @@ lands in one PR, in all of these:
   holds it to the importer: every `ok` corpus case validates, every `schemaMismatch` case is refused
   at its golden's paths, and every one-edit variant of `every-shape` is refused where `:shared`
   refuses it, except for the refinements it names, which the file doesn't state.
-- **`schema.ts`, until the TS domain goes (#353)**, since the mirror and sample tests below still
-  read it.
 - **The three hand-maintained mirrors, and the public one is outside `docs/`:**
 
   1. `docs/authoring-exercises-yaml.md` — the authoring reference.
@@ -290,13 +292,13 @@ lands in one PR, in all of these:
 
 The mirrors have tests of their own, and it's worth knowing exactly where they stop:
 
-- `site-samples.test.ts` runs every `<pre data-validate="library">` block on the site through the real
-  `parseLibraryYaml`, and `docs-samples.test.ts` does the same for the complete samples in
-  `authoring-exercises-yaml.md` and `product-plan.md`. A sample teaching a shape the schema refuses
-  fails the suite.
-- `format-mirrors.test.ts` parses the **type tables** in the markdown reference and in
-  `site/format.html` and diffs the field names and optional flags against `schema.ts` itself. So a
-  renamed, invented or missing config field now fails the build in both mirrors.
+- `:repo-checks`' `SamplesTest` runs every `<pre data-validate="library">` block on the site, and
+  every complete sample in `authoring-exercises-yaml.md` and `product-plan.md`, through `:shared`'s
+  real `parseLibraryYaml`. A sample teaching a shape the importer refuses fails the build.
+- Its `FormatMirrorsTest` parses the **type tables** in the markdown reference and in
+  `site/format.html` and diffs the field names and optional flags against `library-schema.json`. So
+  a renamed, invented or missing config field fails the build in both mirrors. The product plan's
+  type table names fields in prose, so it is a mirror only by eye.
 - **Ranges, units and prose are still unchecked.** `(>0)` versus `(≥0)`, "in kilograms", and every
   sentence around the tables are on you.
 
@@ -304,15 +306,15 @@ That split exists because the eyeball pass failed the first time it mattered: th
 published page shipped with five of seven type tables wrong (`emom` taking `rounds` instead of
 `total_minutes`, `amrap` missing the required `time_cap_sec`, program weeks as `days[]` with
 `overrides` as a mapping), all of it plausible enough to read as correct and every bit of it refused
-on import. The first two of those are now regression-tested — reintroducing either one fails
-`format-mirrors.test.ts`, which is how it was verified.
+on import. The first two of those are regression-tested — reintroducing either one fails
+`FormatMirrorsTest`, which is how it was verified.
 
 If you add a complete library sample to any page, mark it `data-validate="library"` so it joins the
 checked set. Deliberate fragments — a bare `workouts:` list, a shape sketch with `{ ... }` — stay
 unmarked, since they can't parse standalone.
 
 The four `site/examples/*.yaml` libraries are a fourth copy of the format, but the only one that is
-checked end to end rather than by eye (`site-examples.test.ts`) — a renamed key breaks them loudly.
+checked end to end rather than by eye (`SiteExamplesTest`) — a renamed key breaks them loudly.
 Their prose is on `site/examples.html`, which isn't checked, same as the tables above.
 
 ## Docs
@@ -328,10 +330,10 @@ are the index, the banner is the contract.
 - `CHANGELOG.md` — **at the repo root**, not in `docs/`. What shipped per release, plus the Play
   release notes that went out with it. The `## Unreleased` section is where a shipped feature is
   written up for *users*; the copy lives beside what it describes rather than in `store/README.md`,
-  which keeps only Play's rules. `store-copy.test.ts` asserts every block against its character
-  limit, so an over-length note fails the suite rather than the upload.
+  which keeps only Play's rules. `:repo-checks`' `StoreCopyTest` asserts every block against its
+  character limit, so an over-length note fails the build rather than the upload.
 - `docs/product-plan.md` — the data model, file formats and roadmap.
-- `docs/authoring-exercises-yaml.md` — the YAML reference, kept exact against `schema.ts`.
+- `docs/authoring-exercises-yaml.md` — the YAML reference, kept exact against `library-schema.json`.
 - `docs/adding-a-language.md` — the procedure for shipping a new UI language.
 - `docs/agents/` — per-repo setup the engineering skills read: issue tracker, triage labels, and
   where the glossary and decision log live. Indexed by the "Agent skills" section at the end.
@@ -404,8 +406,8 @@ Three rules about keeping the plan files honest, in the order they get broken:
 - **Verify against the code before believing any of them.** They have drifted before, in both
   directions: an audit found the README claiming no tests when there were 230, three "open bugs"
   already fixed, and this file asserting an a11y pass was complete when seven files had no a11y props
-  at all. The YAML samples no longer rely on this: `docs-samples.test.ts` runs every complete library
-  sample in `authoring-exercises-yaml.md` and the product plan through the real `parseLibraryYaml`, so
+  at all. The YAML samples no longer rely on this: `:repo-checks`' `SamplesTest` runs every complete
+  library sample in `authoring-exercises-yaml.md` and the product plan through the real `parseLibraryYaml`, so
   a doc that teaches a shape the schema refuses fails the suite. Prose is still on you.
 
 And two about what doesn't get written down at all:

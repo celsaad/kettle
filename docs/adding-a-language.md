@@ -28,9 +28,9 @@ M8 note below now, and the jest setup's own list of bundles, which reads `resour
    every UI language, and holds each table to its library in both directions.
 4. **`README.md`** — the sentence naming which languages the UI and the seed library ship in.
 5. **The Play listing.** The *copy* is in this repo — `store/README.md` carries a short and a full
-   description per language, and `store-copy.test.ts` checks each block against Play's limit and
-   against the length its own heading declares, so a new language has to be named in that test or
-   its copy is unchecked. The listing copy also names which languages the app ships in, and the tip
+   description per language, and `:repo-checks`' `StoreCopyTest` checks each block against Play's
+   limit and against the length its own heading declares, so a new language has to be named in that
+   test or its copy is unchecked. The listing copy also names which languages the app ships in, and the tip
    jar products need the new language too, keyed to the same tier labels the app renders. **Adding
    the language in the Play Console is a separate act**, and until it is done a release note tagged
    with the new locale is rejected on upload rather than ignored.

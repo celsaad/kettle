@@ -182,8 +182,8 @@ the rep/hold *range* fields appear there and only in passing here.
 version: 1
 id: 2026-07-22T18-30-00
 workout: calisthenics-a       # nullable — supports ad-hoc sessions
-started_at: '2026-07-22T18:30:00Z'   # quoted, or js-yaml resolves it to a Date and the schema rejects it
-ended_at: '2026-07-22T19:05:12Z'
+started_at: 2026-07-22T18:30:00Z     # a string: YAML 1.2's core schema has no timestamp type
+ended_at: 2026-07-22T19:05:12Z
 entries:
   - exercise: l-sit
     type: timed_hold          # embedded — session is self-describing

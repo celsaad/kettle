@@ -66,6 +66,8 @@ import com.casco.kettle.shell.theme.KettleType
 import com.casco.kettle.shell.theme.RunnerPalette
 import com.casco.kettle.shell.theme.Spacing
 import com.casco.kettle.shell.theme.TypeIcon
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
 /**
@@ -90,7 +92,7 @@ internal fun OverlaySheet(
         Box(
             Modifier
                 .fillMaxSize()
-                .background(Color.Black.copy(alpha = BACKDROP_ALPHA))
+                .background(Backdrop)
                 .clickable(role = Role.Button, onClick = onDismiss)
                 .then(
                     if (dismissLabel == null) {
@@ -152,6 +154,8 @@ private fun Grabber(
         onDismiss()
         true
     }
+    // Cancelled by the next grab: left running, it wrote over the finger's moves, and the sheet jittered.
+    var springBack by remember { mutableStateOf<Job?>(null) }
     Box(
         Modifier
             .fillMaxWidth()
@@ -165,11 +169,12 @@ private fun Grabber(
             }.draggable(
                 rememberDraggableState { delta -> drag.floatValue = maxOf(0f, drag.floatValue + delta) },
                 Orientation.Vertical,
+                onDragStarted = { springBack?.cancel() },
                 onDragStopped = { velocity ->
                     if (drag.floatValue > dismissAt || velocity > flingAt) {
                         onDismiss()
                     } else {
-                        animate(drag.floatValue, 0f) { value, _ -> drag.floatValue = value }
+                        springBack = launch { animate(drag.floatValue, 0f) { value, _ -> drag.floatValue = value } }
                     }
                 },
             ),
@@ -318,7 +323,9 @@ private sealed interface PadKeyKind {
 
 private val DIGITS = ('1'..'9').map(PadKeyKind::Character)
 private const val KEYS_PER_ROW = 3
-private const val BACKDROP_ALPHA = 0.55f
+
+/** Over the whole screen, the system bars included, so [RunnerField.darkBarIcons] reads through it. */
+internal val Backdrop = Color.Black.copy(alpha = 0.55f)
 private val GRABBER_WIDTH = 40.dp
 private val GRABBER_HEIGHT = 4.dp
 

@@ -246,7 +246,7 @@ writes `ios.infoPlist.CFBundleLocalizations` when it is passed `supportedLocales
 mechanism). So an iOS build declares **no** localizations.
 
 That matters because of where the language comes from. `deviceLanguage()`
-(in RN's locale registry, deleted with the TS in #353) walked `getLocales()` for the first language it ships a
+(RN's `src/i18n/index.ts`, deleted with the TS in #353) walked `getLocales()` for the first language it ships a
 bundle for, and on iOS `getLocales()` is built from `Locale.preferredLanguages`
 (`node_modules/expo-localization/ios/LocalizationModule.swift:149`) — which iOS filters against the
 app bundle's declared localizations. With none declared, a Portuguese or Japanese iPhone very likely

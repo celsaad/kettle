@@ -8,7 +8,7 @@ code rather than recalled, and re-checked when `ja` went in as the third. Change
 parity is now machine-checked rather than eyeballed, and step 2 fails the build too since #351; step
 4 turned out to be both wrong and skipped (the listing copy does live in this repo, and `ja` shipped
 in the app without it); at M7 (#357) `app.json`'s iOS locale list went, an M8 note below now; and
-with the TS (#353), so did the TS `i18n/index.ts`'s `resources` map, which only jest read.
+with the TS (#353), so did the TS locale registry's `resources` map, which only jest read.
 
 1. **`locales/<code>.json`** — the new bundle, at full parity with `en.json`.
    `:strings` (`BundleCoverage.kt`) holds that parity in both directions, each plural against the

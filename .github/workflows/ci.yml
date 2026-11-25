@@ -40,7 +40,7 @@ jobs:
   # The native app (docs/native-migration-plan.md): `./gradlew build` over every project, which is
   # each one's tests, ktlint, detekt, Android lint and compiler warnings, all failing on any finding,
   # the zero-warning rule AGENTS.md sets. No Node: the build reads the repo's plain files
-  # (the locale bundles, theme.json, content, the sounds) and nothing a JS install provides, so
+  # (locales/, theme.json, content/, the sounds) and nothing a JS install provides, so
   # this job is the fresh-clone check that it stays that way. The conformance tests read the repo's own
   # conformance/, whose goldens :shared writes, so a behaviour change without its golden fails here.
   native:

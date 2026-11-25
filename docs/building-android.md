@@ -12,7 +12,7 @@ One job and one Gradle build. It sets up JDK 17, which Gradle runs on, and JDK 2
 names as its test toolchain, restores the Gradle cache, then runs `native/android`'s
 `:app:bundleRelease` (or `:app:assembleRelease` for an `.apk`), signed with the upload key from the
 repo's secrets. No Node: the build reads the repo's plain files (the locale bundles, `theme.json`,
-`content`, the sounds, the committed fonts) and nothing a JS install provides. The application
+`content/`, the sounds, the committed fonts) and nothing a JS install provides. The application
 id is `com.casco.kettle` and the version is `native/android/gradle.properties`', so the bundle
 installs over a Play copy in place.
 

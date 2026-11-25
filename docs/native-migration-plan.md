@@ -242,7 +242,7 @@ Nothing user-visible ships in M1. It builds the pieces every later milestone dep
     against, and it gets a test. *(Landed: `:strings`, run by `:app`'s build into a build directory,
     so nothing generated is committed. Call sites use `pluralText`, never `pluralStringResource`.)*
   - `constants/theme.ts` → a Compose theme (colors, `Spacing`, the always-dark `RunnerColors`).
-    *(Landed: the values moved to `theme.json`, which `:theme` reads the way `:strings`
+    *(Landed: the values moved to `constants/theme.json`, which `:theme` reads the way `:strings`
     reads the bundles; `theme.ts` re-exports it. Why a data file rather than parsing the TS is in the
     decision log, along with the M5 content it applies to next.)*
 - **CI**: a Gradle job for `native/android` and `:shared`, with ktlint and detekt at zero warnings
@@ -379,7 +379,7 @@ routes until the runner is native (see M6).
   (exercise, workout, program, session), import and Settings, together with `validateConfig`-style
   form validation, content packs, the seed library, `library-translation`, export/share, the SAF
   backup folder (`storage/backup.ts`) and the rest-day reminder (#221, pulled forward from M7).
-- **Shared artifacts, not ports.** The packs and the seed move into `content/` as library YAML
+- **Shared artifacts, not ports.** The packs and the seed move into `src/content/` as library YAML
   plus translation JSON that both sides read (#224, #230; the decision log's single-source entry).
   The exercise drawings become `.svg` files there too, drawn by RN and generated into
   VectorDrawables by a `:art` module (#225, #228), so iOS reuses them in M8.
@@ -415,7 +415,7 @@ warns about) at the preferences flip. Both go with the RN runner in M6.
   native.
 - **Weight handling carries over unchanged**: kilograms are stored, and `previousWeightKg` is passed
   through every edit path.
-- **No RN fallback for unhosted builds.** Web browsed an in-memory seed read from `content/`,
+- **No RN fallback for unhosted builds.** Web browsed an in-memory seed read from `src/content/`,
   with no writes, until the web build ended in M6 (#298). The iOS RN build loses the reminder until
   iOS goes native.
 
@@ -514,8 +514,8 @@ toolchain moves ride the same release as removal rather than following it.
 - **Native builds with no Node.** No `node_modules`, no `app.json`: the version moves to
   `native/android/gradle.properties` (starting from Play's 0.15.0 / 21, not `app.json`'s), the label
   and brand colours become resources, and the six font faces are committed with their OFL licences.
-  The locale bundles, `theme.json`, `content/` and `conformance/` keep their paths until the TS
-  domain is retired.
+  The locale bundles, `theme.json` and `src/content/` kept their `src/` paths until the TS domain
+  was retired, then moved to the top level beside `conformance/` (#354).
 - **The whole Expo layer goes**: the AAR, expo-brownfield, Hermes, `index.ts`, `app.json`,
   `eas.json`, the metro files, `patches/`, the prebuild and every `expo-*`/`react*` dependency. **The
   RN iOS route closes for good**; `app.json`'s iOS facts move into `ios-plan.md` for M8.

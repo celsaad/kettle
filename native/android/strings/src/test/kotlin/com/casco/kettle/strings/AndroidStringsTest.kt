@@ -22,7 +22,7 @@ class AndroidStringsTest {
         assertEquals(
             """
             <?xml version="1.0" encoding="utf-8"?>
-            <!-- Generated from locales by :strings. Edit the JSON bundles, not this file. -->
+            <!-- Generated from locales/ by :strings. Edit the JSON bundles, not this file. -->
             <resources>
                 <string name="common_save">Save</string>
             </resources>

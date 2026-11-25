@@ -150,8 +150,9 @@ configuration cache on, and with it a configuration that read the passwords is w
 Everywhere else — a local `:app:build`, `ci.yml`'s `gradlew build` — release builds come out
 unsigned, which is harmless: an unsigned file installs nowhere and Play refuses it.
 
-The debug build type signs with Expo's public template debug key. It signs nothing that leaves a
-developer's machine.
+The debug build type signs with the committed `app/debug.keystore`, the public template key every
+`.dev` build has carried since the RN app's, kept so a new `.dev` installs over an old one with its
+data. It signs nothing that leaves a developer's machine.
 
 **The trap is a build that looks signed and isn't, or is signed with the wrong key.** Both produce a
 valid-looking `.aab` that Play rejects on upload, half an hour after the mistake; the prebuilt app's

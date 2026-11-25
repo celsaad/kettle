@@ -350,16 +350,17 @@ Why these, and what not to change casually:
 - **Every description says nothing is unlocked**, which is both true and defensive: Play reviews IAP
   descriptions for misrepresentation, and a tip that sounds like it buys something is what gets
   flagged. It also matches `site/support.html` and the store listing.
-- **Prices must stay ascending.** `TIP_TIERS` in `domain/tip.ts` fixes the display order small →
+- **Prices must stay ascending.** `TipTier` in `:shared`'s `Tip.kt` fixes the display order small →
   medium → large and deliberately does *not* sort by price — Android reports price as optional, so
   sorting by it would scramble the list exactly when the store returns partial data. Price medium
   above large and the UI shows them out of order with no warning.
 - **Product IDs are permanent.** They cannot be renamed, and cannot be reused after deletion.
   Everything else in these tables is editable in the Console at any time.
 - **There is no "consumable" setting in the Console.** Consumability is entirely app-side:
-  `finishTransaction({ purchase, isConsumable: true })` in `app/support.tsx`. Without it Play treats
-  the SKU as owned and refuses every later purchase of that tier — so "buy the same tier twice" is
-  the test that actually proves the tip jar works, not "buy one".
+  `TipBilling.kt`'s `consume`, which `TipJar.kt` calls on every paid tip (never on a pending one,
+  which consuming would close unpaid). Without it Play treats the SKU as owned and refuses every
+  later purchase of that tier — so "buy the same tier twice" is the test that actually proves the
+  tip jar works, not "buy one".
 - Play auto-converts to other currencies and its rounding is occasionally odd. Worth checking the
   BRL and JPY figures by hand, Portuguese and Japanese being two of the three shipped languages. The
   app renders

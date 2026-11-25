@@ -1,20 +1,47 @@
 # Watch as a step controller — plan
 
-> **Not executed.** This is a forward-looking plan; nothing below has shipped. Written against the
-> tree at `59a9663`.
+> **Not executed, and to be re-planned against the native runner when its work starts.** Nothing
+> below has shipped. It was written against the tree at `59a9663`, when the runner was React
+> Native's and its notifications were `expo-notifications`'. That runner went in the flip release
+> (#308) and React Native and Expo left the app at M7 (#357), so the body is left as written and
+> reads as reasoning, not as steps.
 >
-> **Rebase this onto M6 before executing it.** The seam, the rest notification and the i18n section
-> below are written against the RN runner, which M6 deletes. Once M6 ships, the native runner's
-> foreground service owns the clock, and its ongoing notification is the card this plan wants. It has
-> a countdown chronometer, which undercuts the "no live ticking timer" item in the out-of-scope list
-> if Wear bridges it. Pause, Resume and Next on that notification are **deliberately absent from M6**
-> (#296), which kept the builder a function of live state so actions can be added later. Adding them
-> is the first piece of this plan, and it is planned work for after the migration rather than a
-> parked idea.
+> **What that superseded, by section:**
 >
-> **Since M7 (#357) there is no `app.json` and no Expo module**, so the evidence tables below that cite
-> `app.json`, `expo-notifications` or `expo-file-system` describe the RN app this plan was costed
-> against. The native service's `RunnerNotifications.kt` is what to re-read them against.
+> - **"What the remote can and cannot do"** cites RN's `use-session-runner.ts` for the command
+>   surface. The commands are the engine's now (`RunnerEngine.kt` in `:shared`); the choice of three
+>   buttons, and what stays off the wrist, is the part that carries.
+> - **"Platform facts, verified against the installed source"** is a reading of
+>   `node_modules/expo-notifications` and `app.json`, neither of which exists. The native service
+>   builds its own notifications (`RunnerNotifications.kt`), so each row wants checking against
+>   that. Two are already different: the ongoing notification has a chronometer, which undercuts
+>   the "no live ticking timer" rows here and in the out-of-scope list if Wear bridges it, and the
+>   runner has channels of its own. `opensAppToForeground` is expo-notifications' name; the fact
+>   under it, that an action must arrive as a broadcast and not open an activity, still decides the
+>   feature. Its closing paragraph's "no JS runtime" and "don't build a foreground service" are
+>   moot: a foreground service owns the session.
+> - **"The seam"**, and Phases 2 to 4 with it, design a module-level ref into a React hook
+>   (`src/hooks/session-remote.ts`, a zustand alternative). There is no hook to reach: the service
+>   owns the engine. The stale-tap guard is still wanted, in whatever shape that takes.
+> - **"Relationship to the existing rest notification"** and **"The i18n bug this work has to fix"**
+>   describe RN code. The step-end alert is the service's, and its copy is in the locale bundles;
+>   the hardcoded English went with the timed-hold auto-end.
+> - **"Why this shape rather than a real watch app"** stands, with one rewording: the storage is
+>   per-device files whether or not `expo-file-system` writes them. The media-session alternative
+>   it rejects was `expo-audio`'s service, which is gone.
+> - **"What the card shows"** starts from "no chronometer", which the native notification has, so
+>   its choice of a static rest line for v1 is reopened rather than settled.
+> - **Phase 0** keeps its third question (do the actions bridge to Wear, and does a tap reach the
+>   app without opening it). The first two were expo-notifications' and are known behaviour natively:
+>   `notify(id)` replaces in place, and `NotificationCompat` actions render. **Phase 1**'s channel
+>   exists already; only its importance and the copy want checking. The Settings toggle, "Testing"
+>   and "Out of scope" carry.
+>
+> **Every link in the body to a `src/...` file is dead**: those RN files are deleted.
+>
+> **The first piece is already named.** Pause, Resume and Next on the ongoing notification were
+> deliberately left out of M6 (#296), which kept its builder a function of live state so actions
+> can be added later. Adding them is where this work starts.
 
 The watch never holds data. It holds no library, writes no session files, and has nothing to merge —
 it only drives the step the phone is already running. That constraint is the entire reason this is a

@@ -280,10 +280,10 @@ The runner advances block by block through the workout, adapting to each block's
 
 ### 7.1 Timer reliability — the make-or-break issue
 
-React Native timers drift and get throttled when the app backgrounds — fatal for a HIIT app running with the screen off. Address this from day one:
+A timer that counts its own ticks drifts, and gets throttled when the app backgrounds — fatal for a HIIT app running with the screen off. (The plan first met this as React Native's timers; it holds for any ticker.) Address this from day one:
 
-- **Track time via wall-clock deltas** (`Date.now()` diffs), never by accumulating `setInterval` ticks.
-- On background→foreground, **recompute elapsed from timestamps** rather than trusting the JS timer.
+- **Track time via wall-clock deltas**, never by accumulating ticks. The engine in `:shared` reads no clock: it is given the time, and `RunnerClock.kt` says how that time is anchored.
+- On background→foreground, **recompute elapsed from timestamps** rather than trusting a ticker.
 - Keep the session running and cueing with the screen off: since the flip release (#308) a foreground
   service owns the clock and plays the cues, and its ongoing notification brings you back.
 
@@ -318,12 +318,12 @@ Implemented as a write-through: an exercise's entry is appended when its first s
 ## 9. Data Flow
 
 ```
-Launch  → read exercises.yaml + sessions/ → validate (zod) → hydrate Zustand store
+Launch  → read exercises.yaml + sessions/ → validate (:shared's schema readers) → screens read them through StoredFiles
 Author  → edit in-app → serialize → write exercises.yaml
-Import  → pickFileAsync → parse → validate → MERGE by id → validate merged → write exercises.yaml
-Run     → session state machine → flush each entry → sessions/<id>.yaml
+Import  → pick a file or paste → parse → validate → MERGE by id → check merged references → write exercises.yaml
+Run     → runner engine → flush each set → sessions/<id>.yaml
 Finish  → write ended_at → finalize session file
-Export  → serialize library or a session → expo-sharing → user saves/syncs the file
+Export  → serialize library or a session → Android's share sheet → user saves/syncs the file
 ```
 
 ---
@@ -335,13 +335,13 @@ Get the **live session engine** right — it's the differentiator.
 1. **Exercise library** — load, view, and CRUD exercises with a type + default config; persist to `exercises.yaml`. ✅ full CRUD, including delete with an in-use-by-workout guard (mirrors the workout-delete pattern).
 2. **Workout builder** — order exercises + insert rest blocks; save as a template in `exercises.yaml`. ✅, plus a full workouts list (create/edit/**delete**, with an in-use-by-program guard) rather than a single hardcoded workout.
 3. **Live session runner** — timed types (hiit / emom / amrap / timed_hold) with audio + haptic cues and auto-advance; rep types with reps/weight input and rest timers; **mixed reps + timed within one workout**; pause/skip/previous. ✅ all types are runnable, plus a pre-session 3-2-1 countdown, tick/exercise-change audio cues, and finish-session-early (commits the in-progress set/round instead of discarding it). `goPrev()` un-flushes the most recent `advance()` (drops that set/round/minute and rewrites the exercise's entry, or retracts the entry outright when that was the only thing in it) — scoped to one level deep: a second `goPrev()` in a row without an intervening `advance()` just moves the step index, same as before.
-4. **Session history** — list past sessions from `sessions/` with basic stats. ✅, and per-exercise progression shipped after this was written: an exercise's edit screen has a "Recent" section listing the last few times it was logged, newest first (`exerciseHistory` in `selectors.ts`), above a per-exercise volume chart (`components/volume-chart.tsx`). See §11 phase 4 and the [decision log](decisions.md).
+4. **Session history** — list past sessions from `sessions/` with basic stats. ✅, and per-exercise progression shipped after this was written: Exercise detail has a "Recent sessions" section listing the last few times it was logged, newest first (`exerciseHistory` in `:shared`'s `ExerciseEditing.kt`), and a chart of the exercise's trend (`ExerciseDetailSections.kt`). See §11 phase 4 and the [decision log](decisions.md).
 5. **Import (merge) / export** — merge an imported library by `id`; export library or a single session. ✅
 
-**Beyond the original MVP scope**, already built: **multi-week programs** (periodized wrappers around workouts, with per-week per-exercise/per-circuit overrides, multi-session-per-week support via a `day` field, and scheduled rest days via `rest_day: true` on a week that names no workout — it runs nothing and logs nothing, but holds its place in the rotation and clears itself off the home screen a calendar day after the last session) and **circuits/supersets** (round-robin block grouping with configurable rest between exercises and between rounds) — both were explicitly deferred below and shipped anyway. The home screen derives "next up" from the actual week/day a session was started under (stored on the session itself), not a completed-session count — the count-based version looked "random" once you jumped to a non-sequential week or redid one, since `program-detail.tsx` lets you start any week, not just the suggested one. The home screen also shows a small stats row: current daily streak and this week's session count/time.
+**Beyond the original MVP scope**, already built: **multi-week programs** (periodized wrappers around workouts, with per-week per-exercise/per-circuit overrides, multi-session-per-week support via a `day` field, and scheduled rest days via `rest_day: true` on a week that names no workout — it runs nothing and logs nothing, but holds its place in the rotation and clears itself off the home screen a calendar day after the last session) and **circuits/supersets** (round-robin block grouping with configurable rest between exercises and between rounds) — both were explicitly deferred below and shipped anyway. The home screen derives "next up" from the actual week/day a session was started under (stored on the session itself), not a completed-session count — the count-based version looked "random" once you jumped to a non-sequential week or redid one, since Program detail lets you start any week, not just the suggested one. This week's session count and time are on the Progress tab's Overview (`thisWeekStats`); the daily streak went with #414.
 
 **Still deferred:** social, wearable sync, cloud backup. Charts were on this list and came off it — the
-per-exercise volume chart in item 4 is the one that shipped; nothing plots across exercises or over a
+per-exercise chart in item 4 is the one that shipped; nothing plots across exercises or over a
 whole program.
 
 ---
@@ -353,8 +353,8 @@ whole program.
 | **1** | Domain model + YAML load/validate/merge + exercise library + workout builder (no timers yet) | ✅ done |
 | **2** | Live session engine for one timed type (HIIT) end-to-end; nail timer reliability + incremental flush | ✅ done (shipped as part of the full interval runner below) |
 | **3** | Extend runner to `reps` and `timed_hold`; support mixed reps+timed workouts (calisthenics case) | ✅ done |
-| **4** | Add `emom` / `amrap`; session history + basic progression (last-time weights/holds, volume per session) | ✅ done — `emom`/`amrap`/`cardio` are runnable, session history exists, and an exercise's edit screen shows its recent history (last-time weight/reps/holds, newest first) |
-| **5** | Polish: import/export UX, cloud sync guidance, programs/plans, charts | ✅ done — programs have full in-app CRUD including per-week override editing (§10); a per-exercise volume chart shipped (§13); cloud sync guidance is on Your file, beside the backup folder (§13); import/export UX covers a file **or** paste path, a field-level merge diff, a copy-the-format brief for an assistant, a copy-the-error repair loop, and export from Your file (Library → exercises.yaml) and any session row |
+| **4** | Add `emom` / `amrap`; session history + basic progression (last-time weights/holds, volume per session) | ✅ done — `emom`/`amrap`/`cardio` are runnable, session history exists, and an exercise's detail shows its recent history (last-time weight/reps/holds, newest first) |
+| **5** | Polish: import/export UX, cloud sync guidance, programs/plans, charts | ✅ done — programs have full in-app CRUD including per-week override editing (§10); a per-exercise chart shipped (§13); cloud sync guidance is on Your file, beside the backup folder (§13); import/export UX covers a file **or** paste path, a field-level merge diff, a copy-the-format brief for an assistant, a copy-the-error repair loop, and export from Your file (Library → exercises.yaml) and any session row |
 
 See §13 for the concrete, current gap list.
 
@@ -374,10 +374,10 @@ See §13 for the concrete, current gap list.
 
 What's genuinely missing today, checked directly against the code:
 
-- ~~**No analytics screen.**~~ ✅ Shipped as `app/analytics.tsx`, a modal route off History rather than
-  a fifth tab. It collects the cross-cutting numbers that were scattered across History's header
-  (`currentStreak`, `thisWeekStats`), shows the last four weeks as a training calendar, and answers
-  the question none of them could — whether each exercise is *moving*, via `exerciseProgress`.
+- ~~**No analytics screen.**~~ ✅ Shipped, first as a sheet off History, then as a section of the
+  Progress tab (#411), its Overview since #414 (`shell/stats/StatsScreen.kt`). It collects this week's numbers
+  (`thisWeekStats`), shows the last four weeks as a training calendar, and answers the question
+  History's header never could — whether each exercise is *moving*, via `exerciseProgress`.
 
   Two limits worth keeping in view rather than reading as oversights. It covers **strength work and
   the holds that can grow**: `entryBest` excludes `hiit` and `emom` because their numbers are bounded
@@ -399,9 +399,8 @@ What's genuinely missing today, checked directly against the code:
 - ~~**Merge conflict view has no field-level diff**~~ ✅ Shipped — see open question 5 above.
 - ~~**Timed-hold display direction was never revisited**~~ ✅ Settled — see open question 2 above.
 - ~~**Web has no persistence**~~ — moot: the web build ended in M6 of the native migration (#298).
-- ~~**Known bug (web only): leaving the session screen crashes with a redbox.**~~ ✅ Fixed — see the
-  [decision log](decisions.md) for the details. `useKeepAwake` now passes
-  `suppressDeactivateWarnings`, the library's own flag for exactly this race.
+- ~~**Known bug (web only): leaving the session screen crashes with a redbox.**~~ — moot: fixed in
+  its day, and the web build ended in M6 of the native migration (#298).
 - ~~**No automated tests at all.**~~ ✅ Closed — jest until the TS domain went (#353), and Gradle's
   JVM and Robolectric tests since, running in CI in `./gradlew build`. (That build is the suite
   size; no doc quotes it, because every copy went stale —
@@ -416,21 +415,21 @@ What's genuinely missing today, checked directly against the code:
   narrows the stat tiles), and there's a Settings modal with three-way appearance (light/dark/system),
   export/import, and library counts.
 - ~~**The appearance preference doesn't persist across relaunches.**~~ ✅ Fixed — `themePreference`
-  joined `unitSystem` in `preferences.json`, and `theme-context.tsx` reads it from the preferences
-  store instead of holding its own `useState`.
+  joined `unitSystem` in `preferences.json` (`:shared`'s `Preferences.kt`).
 - ~~**`Alert.alert` is a no-op on web**~~ — moot: the web build ended in M6 of the native migration
   (#298).
 - ~~**No accessibility or i18n work has been done.**~~ ✅ Closed — both shipped and are now house
   rules for new work rather than workstreams (see AGENTS.md). Every control carries a role and label,
-  touch targets are 44px minimum, colors are contrast-measured, the runner survives large text sizes
-  and announces transitions, and the UI ships in English and Brazilian Portuguese with locale-aware
-  dates, numbers and first-day-of-week. ~~Still open within them: screen-reader reordering, the
-  `height`-based search bars, `program-guide.tsx`'s prose.~~ ✅ Closed 2026-07-29 — the reorder handle
-  now carries `adjustable` + move-up/move-down actions (see [`decisions.md`](decisions.md) for
-  why they sit on the handle rather than the row, and why a browser can't see them), and the search
-  bars are `minHeight`. Two corrections to what this list used to say: the **stat cards were never
-  `height`-based** — they size by padding, so there was nothing to fix — and `program-guide.tsx`'s
-  prose staying English is a **decision**, not an omission (the testing plan's out-of-scope list); its
-  one button is translated. ~~Unit conversion~~ ✅ shipped — Settings → Units
+  touch targets are 44dp minimum, colors are contrast-measured, the runner survives large text sizes
+  and announces transitions, and the UI ships in English, Brazilian Portuguese and Japanese with
+  locale-aware dates, numbers and first-day-of-week. ~~Still open within them: screen-reader
+  reordering, the `height`-based search bars, the program guide's prose.~~ ✅ Closed 2026-07-29 — the
+  reorder handle announces its position and carries move-up/move-down actions (`Grip` in
+  `WorkoutBlocks.kt`; see [`decisions.md`](decisions.md) for why they sit on the handle rather than
+  the row), and the search bar sizes by `heightIn(min = …)` (`SearchBar.kt`). Two corrections to
+  what this list used to say: the **stat cards were never `height`-based** — they size by padding,
+  so there was nothing to fix — and the program guide's prose, left in English by decision when this
+  closed (the testing plan's out-of-scope list), is in the bundles now (`programGuide.*`).
+  ~~Unit conversion~~ ✅ shipped — Settings → Units
   switches every weight between kg and lb, seeded from the device's measurement system; storage stays
   metric, so an exported library reads the same for everyone.

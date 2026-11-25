@@ -36,12 +36,13 @@ retrofit, so answer them out loud even when the answer is no.
       scope cut named up front is a decision, and the same cut discovered halfway is a rewrite. Small
       contained changes skip this.
 - [ ] **Implement the feature.**
-- [ ] **Does it need a11y and i18n?** For anything with UI, assume yes: `accessibilityRole` + a label on
-      every interactive element, `accessibilityState` where it's selected/expanded, 44px targets via
-      `minHeight`, new colors contrast-checked, and no user-facing string outside the locale bundles —
-      keys go into **all three** of `en.json`, `pt.json` and `ja.json`. User data is never
-      translated. See "Conventions and house rules"; these are cheap now and tedious later, which is
-      why they're a checklist item.
+- [ ] **Does it need a11y and i18n?** For anything with UI, assume yes: a `Role` on every
+      interactive element and a `contentDescription` where its own text doesn't name it, its state
+      where it's selected/expanded, 44dp targets via `heightIn(min = …)`, new colors
+      contrast-checked, and no user-facing string outside the locale bundles — keys go into
+      **all three** of `en.json`, `pt.json` and `ja.json`. User data is never translated. See
+      "Conventions and house rules"; these are cheap now and tedious later, which is why they're
+      a checklist item.
 - [ ] **Does it need error checks, an error boundary, or a graceful degrade?** Ask per layer: can a
       storage call fail without throwing into its caller; does an in-app form need `validateConfig`-style
       validation (the importer's schema readers do *not* run on that path); can a render throw here cost a workout in
@@ -114,14 +115,15 @@ mistake here that cannot be fixed for anyone who has already installed it.
   dev loop: build, install on a phone, launch. Each device script is a `.sh` with a step-for-step
   `.ps1` twin for Windows; a change to one goes into both. `:benchmark` is a Macrobenchmark of cold
   start to a drawn Home, run on a phone by `scripts/startup-benchmark.sh`; its end point is
-  native Home's `reportFullyDrawn` (`ReportDrawnWhen`), and today's app returns as a baseline
-  in M7. `scripts/route-check.sh` steers the running `.dev`
-  shell through every route by navigate message and fails on the first screen that isn't the
-  expected one. Run it after touching navigation, and update its matrix whenever a screen goes
-  native. `scripts/session-check.sh` runs a session's device checks unattended (timing with the screen
-  off, cues, the step-end alert, process death, the finish) and restores `.dev` after. Run it on the
-  `Medium_Phone_API_37.0` AVD after touching the runner, its service, cues or notifications; the PR
-  template lists the checks it can't do.
+  native Home's `reportFullyDrawn` (`ReportDrawnWhen`). It was first measured against the RN app,
+  which went at M7, so any baseline it is compared with now is the all-native app's own.
+  `scripts/route-check.sh` steers the running `.dev` shell through every route by navigate message
+  and fails on the first screen that isn't the expected one. Run it after touching navigation, and
+  update its matrix whenever a route is added or changes how it presents. `scripts/session-check.sh`
+  runs a session's device checks unattended (timing with the screen off, cues, the step-end alert,
+  process death, the finish) and restores `.dev` after. Run it on the `Medium_Phone_API_37.0` AVD
+  after touching the runner, its service, cues or notifications; the PR template lists the checks it
+  can't do.
 
 - `conformance/` — the format's behaviour as data, and its authority: hand-written YAML inputs and
   golden outputs, checked and written by the Kotlin runner in `:shared`; its README is the contract.
@@ -134,9 +136,9 @@ mistake here that cannot be fixed for anyone who has already installed it.
 
 ## Platform constraints that change how you work
 
-- **There is no web build.** It ended in M6 (#298), so `Platform.OS` is only ever `android` or
-  `ios`, and storage has no unsupported-platform guard. Don't add `react-native-web` back to check a
-  layout: drive the running app on a device instead.
+- **There is no web build.** It ended in M6 (#298), and with React Native gone at M7 (#357) there
+  is nothing to make one from: storage has no unsupported-platform guard, and a layout is checked by
+  driving the running app on a device, never in a browser.
 - **Nothing may phone home.** The Play listing declares zero data collected/shared, which is a product
   claim, not an accident (see the tip-jar entry in the decision log). Any SDK that transmits — Sentry,
   EAS Update, analytics, RevenueCat — breaks it and needs a Data Safety declaration. Don't add one
@@ -182,15 +184,25 @@ are house rules here rather than a backlog — cheap as you go, tedious to retro
 
 ### Accessibility and i18n
 
-- **Every interactive element needs `accessibilityRole`; it needs an explicit `accessibilityLabel`
-  only when its own children don't name it.** A `Pressable` wrapping a `Text` already takes its name
-  from that text, and adding a label that duplicates it will drift from what's on screen and break
-  Voice Control, which matches the visible words. Icon-only controls are the ones that genuinely need
-  a label, having nothing to fall back on — the runner's prev/next were CSS triangles announcing as an
-  unnamed "button". Selected/expanded/disabled controls need `accessibilityState`. Touch targets are
-  44px minimum, via `minHeight` (never `height`, which breaks at large accessibility text sizes) or
-  `hitSlop`. Decorative geometry — progress bars, CSS triangles, the grabber — keeps a fixed `height`;
-  the rule is about controls, not every box.
+- **Every interactive element needs a `Role`; it needs an explicit `contentDescription` only when
+  its own children don't name it.** The role goes on the modifier that makes it interactive —
+  `clickable(role = Role.Button)`, `selectable(…, role = Role.Tab)`, `toggleable(…, role =
+  Role.Switch)` — or in the `semantics` block that replaces its semantics (`EntryTable.kt`'s
+  `clearAndSetSemantics`). A `clickable` wrapping a `Text` already takes its name from that text, and adding a
+  description that duplicates it will drift from what's on screen and break Voice Control, which
+  matches the visible words. Symbol-only controls are the ones that genuinely need one, having
+  nothing to fall back on, which is why the runner's `SymbolButton` requires it: the RN runner's
+  prev/next were once CSS triangles announcing as an unnamed "button". Where the row's own
+  words say what it is but not what a double-tap does, that goes in `onClickLabel`. State is
+  announced, not only drawn: selected and checked come from `selectable`/`toggleable` (or `selected`
+  in a `semantics` block), a row that opens in place carries `expand`/`collapse` (`SessionRow.kt`),
+  anything else worth hearing is a `stateDescription`, and a control that can't act takes
+  `enabled = false`. Touch targets are 44dp minimum, and 48dp in the runner (`MinTarget`) and most
+  of the shell, via `heightIn(min = …)` or `sizeIn(minWidth = …, minHeight = …)`, never
+  `height(…)`, which breaks at large accessibility text sizes. A glyph smaller than its target sits
+  centred in a box sized that way; nothing reaches outside its own bounds for touches, since the
+  slop on the set row's −/+ overlapped (#263). Decorative geometry — progress tracks, hairlines,
+  drawn triangles — keeps a fixed size; the rule is about controls, not every box.
 - **Contrast-check new colors** against every surface they sit on, alpha-compositing where the
   background is translucent. `theme-notes.md` records the measured ratios. A control drawn with
   no fill takes `lineStrong` for its edge, held to 3:1; `border` is the decorative hairline.
@@ -317,18 +329,20 @@ are the index, the banner is the contract.
   the keystore setup it needs first.
 - `docs/testing-a11y-i18n-plan.md` — executed; kept for its rationale, not as a backlog.
 - `docs/watch-remote-plan.md` — **not executed.** Driving a running session from a Wear OS wrist via
-  the notification shade, with no watch app and no data on the watch.
+  the notification shade, with no watch app and no data on the watch. Costed against RN's runner and
+  `expo-notifications`, both gone since #308; its banner says which sections that leaves as history,
+  and it is re-planned against `RunnerNotifications.kt` when the work starts.
 - `docs/native-migration-plan.md` — **M0 executed (go); M1 landed; M2 shipped (0.11.2); M3 shipped
   (0.12.0); M4 shipped (0.13.0); M5 done (0.14.0); M6 done (0.15.0); M7 ticketed (map #335); M8's UI
   decided (Compose Multiplatform).** Moving to Kotlin/Compose (then iOS) inside the shipping
   app: the native shell hosted the not-yet-migrated RN screens via `expo-brownfield` until M7's
   first PR removed RN (#357), and each milestone ships to Play and deletes RN code. Its M0 spike
   report holds the brownfield build facts (AAR scopes, plugin resources, Windows CLI), history now.
-- `docs/ios-plan.md` — **partly executed.** Shipping to the App Store: what already works unchanged,
-  the six code changes that don't, and the background-cue and iCloud decisions. Five of those six
-  have landed, plus the notification half of the background cue; the sixth is a form in App Store
-  Connect. Everything gated on a Mac, a device or the $99 is untouched, and the banner in the file
-  says which is which. Names the claims in this file, the
+- `docs/ios-plan.md` — **superseded in its mechanics by M8's Compose Multiplatform decision; not
+  executed.** Shipping to the App Store, planned as an Expo build of the RN app: the code changes it
+  counts as shipped went with RN at M7 (#357), and iOS is re-planned as M8 when that starts. Its
+  banner says which sections are history and which reasoning carries: the background-cue, Files-app,
+  localization and store decisions. Names the claims in this file, the
   decision log and the README that stop being true the day it ships.
 - `docs/import-prominence-plan.md` — executed; kept for its rationale. Closing the gap between a
   listing that led with the file-you-own wedge and an app that reached it through a header link and a

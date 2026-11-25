@@ -29,8 +29,8 @@ wanting states and assignees, it wants GitHub issues instead.
 
 - **Lean into AI-generated workouts — the format is already the feature.** A hand-editable YAML
   library that merges by `id` is exactly what an assistant is good at emitting, and the pipeline it
-  would land in already exists and is already safe: zod validates on import, `mergeLibraries` replaces
-  whole objects by id rather than patching, and the summary names what changed before anything is
+  would land in already exists and is already safe: `:shared`'s schema readers validate on import,
+  `mergeLibraries` replaces whole objects by id rather than patching, and the summary names what changed before anything is
   written. Nothing in the data model needs to change for this, which is the whole argument for
   positioning the app this way (store listing and README, not a new SKU — see the tip-jar entry on why
   there's no paid tier to attach it to). **The plumbing is now complete** — all four pieces below
@@ -44,31 +44,30 @@ wanting states and assignees, it wants GitHub issues instead.
   the listing copy isn't in it:
 
   - ~~**A paste path into import.**~~ ✅ Shipped. Both input sources funnel through one
-    `review(text, source)`, so a paste is refused for the same reasons and in the same words as a
-    file, and the parse → merge → summary pipeline is untouched. Two things the commit can't tell
-    you: whitespace-only input is guarded **twice** (disabled button *and* an early return) because
-    unguarded it reaches js-yaml and comes back "expected a document, but the input is empty" — an
-    accusation aimed at someone who hasn't typed yet; and the hostile-YAML question was settled
-    empirically rather than assumed, so it doesn't need re-litigating each time this area grows:
-    js-yaml 5's default schema rejects `!!js/function` outright, a `__proto__` key never reaches
-    `Object.prototype`, and a name carrying `<script>` renders as inert text. ~~The one real residual
-    is that js-yaml applies no alias-expansion limit, so a crafted anchor bomb can hang the app.~~
-    ✅ Closed, and the measurement corrected the claim in two ways worth keeping: an alias bomb never
-    detonates on `load` at all (js-yaml resolves an alias to a *shared reference*, so 437 bytes
-    describing 387M leaves parses in 3ms as a DAG — it detonates only on something that walks that DAG
-    without tracking identity), and no placement of one survives `parseLibraryYaml`, because zod
-    refuses an element without recursing into it and this schema has no recursive types. So the hang
-    was unreachable rather than merely unexploited. `maxAliases: 1000` is set anyway, since that
-    immunity is a property of the current schema rather than a guarantee about the next one.
+    `review(text, source)` (`Importer.kt`), so a paste is refused for the same reasons and in the
+    same words as a file, and the parse → merge → summary pipeline is untouched. Two things the
+    commit can't tell you: whitespace-only input is guarded **twice** (disabled button *and* an
+    early return) because unguarded it reaches the parser and comes back "expected a document, but
+    the input is empty" — an accusation aimed at someone who hasn't typed yet; and the hostile-YAML
+    question is settled, so it doesn't need re-litigating each time this area grows. An alias loads
+    as a shared reference, so a bomb costs nothing until something walks it, and the schema readers
+    walk nothing they refuse or don't know (`SchemaReader.kt`). `YamlLoad.kt`'s `MAX_ALIASES` (1000,
+    counted on the parser's events) refuses only the bombs past that count; a classic one of about
+    ninety aliases loads. So **any new code that walks the whole loaded tree must guard itself**, as
+    `PreparedLibrary.kt`'s repair does by catching the `OutOfMemoryError`. The same immunity held for
+    js-yaml, the import's parser until the Compose Import port (#244), and the limit was set anyway
+    because that immunity is a property of the readers of the day rather than a guarantee about the
+    next one.
   - ~~**A machine-readable schema to hand the model.**~~ ~~**The user's existing ids, alongside
-    it.**~~ ✅ Both shipped, as one payload: RN's `assistant-brief.ts` (now `:shared`'s
-    `AssistantBrief.kt`) built a "Copy the format for an assistant" brief of `z.toJSONSchema(rawLibrarySchema)` plus every id/name/type currently in the
-    library, and the import screen copies it. Generated rather than written out, so it couldn't drift
-    from what the importer accepts (native's is the hand-maintained `library-schema.json` since #349,
-    held to the importer by `LibrarySchemaFileTest` instead) — which was the whole argument, given
-    `authoring-exercises-yaml.md` had already drifted. Two things worth knowing before extending it:
-    `toJSONSchema` **silently drops zod's cross-field refinements** (`target_reps_max >=
-    target_reps_min`, an override targeting exactly one of `exercise`/`block`, unique `(week, day)`),
+    it.**~~ ✅ Both shipped, as one payload: `:shared`'s `AssistantBrief.kt` builds a "Copy the
+    format for an assistant" brief of `content/library-schema.json` plus every id/name/type
+    currently in the library, and the import screen copies it. The schema was generated from the
+    importer's own zod schema until #349, so it couldn't drift from what the importer accepts —
+    which was the whole argument, given `authoring-exercises-yaml.md` had already drifted. It is
+    hand-maintained since, and `LibrarySchemaFileTest` holds it to the importer instead. Two things
+    worth knowing before extending it: the schema **doesn't state the importer's cross-field
+    refinements** (`target_reps_max >= target_reps_min`, an override targeting exactly one of
+    `exercise`/`block`, unique `(week, day)`),
     so the brief tells the model the importer checks more than the schema shows and leaves the rest to
     the repair loop rather than restating those rules and becoming the third copy; and the brief is
     scoped to the *format* side of the ownership line (decision log), which `:app`'s
@@ -89,8 +88,10 @@ wanting states and assignees, it wants GitHub issues instead.
   will carry format and nothing else — see the ownership entry in the decision log for where that line
   falls.
 
-- ~~**Audit for graceful degradation.**~~ ✅ Done, and it found what it predicted it would: the gap was
-  entirely in the throws no boundary covers. Three shapes, all now closed, and the reasoning behind the
+- ~~**Audit for graceful degradation.**~~ ✅ Done, on RN's store and runner, and it found what it
+  predicted it would: the gap was entirely in the throws no boundary covers. The names below are RN's;
+  the reasoning carried to native, where a refused session write is logged and the session goes on
+  (`RunnerEffects.kt`, #297). Three shapes, all now closed, and the reasoning behind the
   fixes is what's worth keeping:
 
   - **A workout must outlive the disk that's recording it.** Session writes are synchronous and happen
@@ -117,26 +118,20 @@ wanting states and assignees, it wants GitHub issues instead.
   each of these looks like an obvious cleanup until you check, and re-proposing them is the likelier
   failure than leaving them:
 
-  - **The parallel `switch` blocks stay.** There are five, not four — three over `SessionEntry`
-    (`entrySetCount`, `sessionEntryResult`, `entryVolume`) and two over `Exercise`
-    (`estimateExerciseSeconds`, `memberVisitSeconds`). Every one is exhaustive over a discriminated
-    union **with no `default`**, so adding a type is already a *compile error* in each place that
-    hasn't been updated. The drift they'd be consolidated to prevent cannot happen silently, and a
-    per-type record of lambdas would trade three separately-named, separately-documented functions
-    computing three different things for one table with worse narrowing.
-  - **The long files stay until something needs changing in them.** No defect tracks to any of them,
-    and the biggest are the riskiest to touch.
-    Two have since been split on their own merits — `state/selectors.ts` into one module per concern,
-    and `workout-editor.tsx` into its block and picker components (the picker panels were the seam
-    named here; the two block editors inside `renderItem` turned out to be the larger half).
-    `yaml-mapping.ts` stayed, since splitting it separates halves of a bijection that must be
-    edited together. All three went with the TS (#353).
+  - **The parallel per-type branches stay.** The survey was of the TS domain (gone in #353), where
+    exhaustive `switch` blocks over `SessionEntry` and `Exercise` looked like one table waiting to
+    be built. Why they stayed carries to the `when`s that replaced them in `:shared`
+    (`sessionEntryResult`, `entryVolume`): each is exhaustive over a sealed type with no `else`, so
+    adding a type is already a *compile error* in each place that hasn't been updated. The drift
+    they'd be consolidated to prevent cannot happen silently, and a per-type record of lambdas would
+    trade separately-named, separately-documented functions computing different things for one
+    table.
 
 - **Colour-code the session progress indicator — mostly settled against, kept for the one live
   constraint.** This entry used to argue about the runner's per-block dots: what a dot should be
   coloured *by*, given a block can be a single exercise, a circuit or a rest, and the middle one has
   no single type to colour with. The dots are gone — both indicators are proportional bars now
-  (`session-progress.tsx`), because one dash per member overflowed its track at 27 circuit members and
+  (`RunnerParts.kt`), because one dash per member overflowed its track at 27 circuit members and
   a single-block workout drew one permanently-full dash that read as finished. See the decision log.
 
   That change also answered the entry's own closing question. It ended "whether the useful thing to
@@ -195,11 +190,12 @@ wanting states and assignees, it wants GitHub issues instead.
   no second APK and no sync layer. Full write-up and the deliberate scope cuts in
   [`watch-remote-plan.md`](watch-remote-plan.md), which was written against RN's runner and
   expo-notifications: since the flip release (#308) the ongoing notification is the service's own
-  (`RunnerNotifications.kt`) and the commands are the engine's, so its mechanics want re-reading
+  (`RunnerNotifications.kt`) and the commands are the engine's, so its mechanics are re-planned
   against those before anything is built. Two things worth knowing before opening it: the
-  standalone Wear OS app was costed and rejected because per-device `expo-file-system` storage makes a
-  data-carrying watch a Bluetooth sync project, and `opensAppToForeground` defaults to `true`, which
-  would make every wrist tap yank the phone open. (The i18n break this used to carry a fix for — the
+  standalone Wear OS app was costed and rejected because the library and the log are per-device
+  files, which makes a data-carrying watch a Bluetooth sync project, and an action has to arrive as
+  a broadcast rather than open an activity (the plan's `opensAppToForeground: false`), or every
+  wrist tap yanks the phone open. (The i18n break this used to carry a fix for — the
   rest notification's hardcoded English — went with the timed-hold auto-end, which needed its own
   notification copy and wasn't going to add a second hardcoded string beside the first.)
 
@@ -243,7 +239,7 @@ wanting states and assignees, it wants GitHub issues instead.
   copy (`grep '→' locales/en.json` — getting those out of the strings is worth doing whether or not Arabic ever ships). Three that note
   doesn't carry: a language that changes while the app runs has to flip the layout direction too, which
   nothing tests today; Arabic has **six** plural categories against en/pt's
-  two, which i18next and Android's plurals both resolve but the bundles' key shape does not; and the runner is
+  two, which Android's plurals resolve but the bundles' key shape does not; and the runner is
   where a half-flipped layout costs a workout rather than just looking wrong. Half-implemented RTL is
   worse than none — the plan's words, still true.
 
@@ -268,14 +264,15 @@ Found while planning the tests/a11y/i18n work (see `testing-a11y-i18n-plan.md`),
 the code. Listed worst first.
 
 **Fixed since** (the runner fixes were RN's runner's, whose files went in the flip release, #308; the
-native port inherited the fixed behaviour, held by `conformance/steps` and `:shared`'s tests):
+native port inherited the fixed behaviour, held by `conformance/steps` and `:shared`'s tests; the
+streak itself went with #414):
 `historyStats`'s "1.5h 30m"; the EMOM interval count; weight never being captured;
 side effects inside `setState` updaters; `addRestSeconds` not rescheduling its notification;
 `currentStreak`'s DST stepping; the display-name chip comparison; circuit members writing one entry
 per round (below); `today`/`dateLabel` freezing at module scope (fixed with the I18n-3 locale work —
-it's per-render now); `programs.tsx`'s stale "overrides aren't editable in-app" copy; the four
-duplicate `slugify` copies, now one `domain/slug.ts` that all four call sites import; and
-`sessionSetCount`, `slugify`'s ASCII-only ids and `session-hold.tsx`'s `NaN%` (below); the milestone
+it's per-render now); the Programs screen's stale "overrides aren't editable in-app" copy; the four
+duplicate `slugify` copies, one function since (now `:shared`'s `Slug.kt`); and
+`sessionSetCount`, `slugify`'s ASCII-only ids and the hold screen's `NaN%` (below); the milestone
 chime not re-firing on a step redone with Prev; EMOM minutes seeding their reps to 0; and the fixed
 `height` that clipped `+ Adicionar bloco` in the workout editor, swept across every text-bearing
 control; and the share sheet's hardcoded English chooser title, now three keys with the session id
@@ -296,19 +293,6 @@ interpolated rather than translated. Notes on the structural ones:
   changing exercise right now?" for the audio cue, "is this member finished?" for the flush); the
   second question no longer exists, since each set now writes itself into its member's own entry.
 
-- The **`setState` updater** fix reads the step index from a ref instead of the updater's argument, so
-  every commit/flush/`logEntry` now runs once in the event handler. The ref is advanced eagerly so two
-  `advance()` calls in one tick (the ticking interval and the foreground catch-up can both fire) don't
-  repeat a step. Verified by driving a full session with a `goPrev` and redo mid-way: one entry per
-  exercise and exactly 8 sets, where a duplicated commit would inflate both. **The eager ref was only
-  half of it**, though, and the half it left open was the worse one: it stops the two calls repeating
-  each other's commit, not the second one committing and skipping the step the first had just moved
-  to. Both timing effects now also refuse to act on a step the runner has already left, and a
-  `finishedRef` covers the completion paths, where the index stops being a usable signal because
-  `advance()` returns without moving it.
-- The **`currentStreak`** fix steps with `setDate()`. Its regression tests are honest about their
-  limits: Node ignores `TZ` on Windows, so on a DST-free machine they pass whether or not the bug is
-  present. CI sets `TZ` explicitly, which is where they actually bite.
 - **`sessionSetCount`** now counts one set per interval actually performed — a HIIT/AMRAP round, an
   EMOM minute — instead of one per entry, which had made a 20-minute EMOM worth the same as a single
   hold in every History and Today tile. `cardio` stays 1, `rest` 0.
@@ -320,12 +304,15 @@ interpolated rather than translated. Notes on the structural ones:
   because Indic/Thai vowel signs are combining marks that must stay attached to their consonant
   while an emoji's U+FE0F is also a mark and must not become an id of its own.
 - **RN's hold screen's `NaN%`** was guarded the way its interval screen already was. Still worth
-  knowing for the next 0-config bug: nothing validates a program week's override config — the schema
-  types it as a free record of numbers and the override editor doesn't call `validateConfig` — so the
-  runner screens can't assume the constraints `validateConfig` and the schema readers enforce elsewhere.
+  knowing for the next 0-config bug: nothing validates a hand-written program week's override
+  config. The schema reads it as a free map of values, and only the in-app override editor checks it
+  (`OverrideEditing.kt`: `validateConfig` for an exercise's patch, `validateBlockConfig` for a
+  circuit's), so the runner screens can't assume the constraints
+  `validateConfig` and the schema readers enforce elsewhere.
 
-One of the three found in the runner audit that produced the resume-race fix above is still here. The
-other two are fixed (see the roll-up above); this one stayed because it is not a defect:
+One of the three found in the audit of RN's runner that produced its resume-race fix (the `setState`
+one in the roll-up above) is still here. The other two are fixed (see the roll-up); this one stayed
+because it is not a defect:
 
 - **Circuit rest is never recorded.** Its steps use `memberKey: '<block>:circuit-rest'`, which matches
   no member's accumulating log, so the commit (`RunnerCommit.kt`'s `commitRest`) finds nothing to

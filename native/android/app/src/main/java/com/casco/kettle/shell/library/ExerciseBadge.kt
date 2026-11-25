@@ -7,22 +7,25 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.casco.kettle.domain.ExerciseConfig
 import com.casco.kettle.domain.SessionEntry
+import com.casco.kettle.shell.R
 import com.casco.kettle.shell.theme.KettleTheme
 import com.casco.kettle.shell.theme.KettleType
 
 /**
- * An exercise's type as a tag, as RN's `ExerciseBadge`. The labels are the format's own abbreviations,
- * untranslated in every locale, as RN's are. HIIT and HOLD take the accent and the calm accent, so the
- * two timed types stand out from the counted ones.
+ * An exercise's type as a tag. HIIT, EMOM and AMRAP are acronyms, the same in
+ * every locale; the other words are translated, and the tag's capitals are drawn on the translated word
+ * (#520). HIIT and hold take the accent and the calm accent, so the two timed types stand out from the
+ * counted ones.
  */
 @Composable
 fun ExerciseBadge(
     config: ExerciseConfig,
     /**
-     * Shown in place of the type, in the accent, as RN's `overrideLabel`: the workout editor's mark on
+     * Shown in place of the type, in the accent: the workout editor's mark on
      * a rest block whose duration the workout sets for itself.
      */
     overrideLabel: String? = null,
@@ -54,17 +57,29 @@ fun ExerciseBadge(entry: SessionEntry) =
         },
     )
 
-private enum class BadgeKind(
-    val label: String,
-) {
-    Hiit("HIIT"),
-    Hold("HOLD"),
-    Reps("REPS"),
-    Cardio("CARDIO"),
-    Emom("EMOM"),
-    Amrap("AMRAP"),
-    Rest("REST"),
+private enum class BadgeKind {
+    Hiit,
+    Hold,
+    Reps,
+    Cardio,
+    Emom,
+    Amrap,
+    Rest,
 }
+
+// Upper-cased in Locale.ROOT, the bundles' casing, not the device's: a Turkish phone falls back to English and
+// would read "CARDİO".
+@Composable
+private fun label(kind: BadgeKind): String =
+    when (kind) {
+        BadgeKind.Hiit -> "HIIT"
+        BadgeKind.Emom -> "EMOM"
+        BadgeKind.Amrap -> "AMRAP"
+        BadgeKind.Hold -> stringResource(R.string.library_badge_hold)
+        BadgeKind.Reps -> stringResource(R.string.library_badge_reps)
+        BadgeKind.Cardio -> stringResource(R.string.library_badge_cardio)
+        BadgeKind.Rest -> stringResource(R.string.library_badge_rest)
+    }.uppercase()
 
 @Composable
 private fun Badge(
@@ -80,7 +95,7 @@ private fun Badge(
             else -> colors.backgroundSelected to colors.textSecondary
         }
     Text(
-        overrideLabel ?: kind.label,
+        overrideLabel ?: label(kind),
         Modifier
             .clip(BadgeShape)
             .background(background)

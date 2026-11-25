@@ -172,7 +172,13 @@
     "workoutInProgram": "No seu programa · {{shape}}",
     "targetReps": "{{sets}} × {{reps}}{{weight}}",
     "targetHold": "{{sets}} × {{hold}} s",
-    "targetHoldOpen": "{{sets}} × isometria máxima"
+    "targetHoldOpen": "{{sets}} × isometria máxima",
+    "badge": {
+      "hold": "Isometria",
+      "reps": "Reps",
+      "cardio": "Cardio",
+      "rest": "Descanso"
+    }
   },
   "programGuide": {
     "title": "Escrevendo um programa à mão",
@@ -343,6 +349,7 @@
       "dayDone": "Concluído: {{slot}}",
       "time": "Tempo",
       "sets": "Séries",
+      "rounds": "Rodadas",
       "exercises": "Exercícios",
       "againstLastTime": "Em relação à última vez",
       "firstTime": "Primeira vez",

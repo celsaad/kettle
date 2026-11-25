@@ -53,4 +53,15 @@ class EndProgressTest {
         runner.send(RunnerCommand.Swap(runner.exercise("dips")))
         assertEquals(listOf("Pull-ups 1/1 SETS", "Dips 0/3 SETS"), runner.progress())
     }
+
+    // Save and end commits the AMRAP on screen, so a round or a rep entered into it is a go (#520).
+    @Test
+    fun `an AMRAP on screen is done once a round or a rep is entered into it`() {
+        val runner = Runner(workoutOf(single("grinder")))
+        assertEquals(listOf("Grinder 0/1 ONCE"), runner.progress())
+        runner.send(RunnerCommand.SetExtraReps(4))
+        assertEquals(listOf("Grinder 1/1 ONCE"), runner.progress())
+        runner.send(RunnerCommand.SetRounds(1))
+        assertEquals(listOf("Grinder 1/1 ONCE"), runner.progress())
+    }
 }

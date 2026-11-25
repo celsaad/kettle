@@ -162,7 +162,13 @@
     "workoutInProgram": "In your program · {{shape}}",
     "targetReps": "{{sets}} × {{reps}}{{weight}}",
     "targetHold": "{{sets}} × {{hold}} s",
-    "targetHoldOpen": "{{sets}} × max hold"
+    "targetHoldOpen": "{{sets}} × max hold",
+    "badge": {
+      "hold": "Hold",
+      "reps": "Reps",
+      "cardio": "Cardio",
+      "rest": "Rest"
+    }
   },
   "programGuide": {
     "title": "Writing a program by hand",
@@ -319,6 +325,7 @@
       "dayDone": "{{slot}} done",
       "time": "Time",
       "sets": "Sets",
+      "rounds": "Rounds",
       "exercises": "Exercises",
       "againstLastTime": "Against last time",
       "firstTime": "First time",

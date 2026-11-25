@@ -19,6 +19,17 @@ fun sessionDurationMinutes(session: Session): Int {
 }
 
 /**
+ * Whether [session]'s [sessionSetCount] is rounds: a session of intervals alone, HIIT, AMRAP and EMOM, with
+ * rests not counted. Anything else in it keeps the count in sets, since a round of three moves and a set of
+ * eight reps would add up to nothing. History's rows (#483) and the finish receipt (#520) both say it.
+ */
+fun sessionInRounds(session: Session): Boolean {
+    val worked = session.entries.filter { it !is SessionEntry.Rest }
+    return worked.isNotEmpty() &&
+        worked.all { it is SessionEntry.Hiit || it is SessionEntry.Amrap || it is SessionEntry.Emom }
+}
+
+/**
  * How many sets [session] is worth: `sessionSetCount`,
  * held by `conformance/records.yaml`. The unit is one interval actually performed, so a HIIT or
  * AMRAP round and an EMOM minute each count one; cardio is one continuous effort, and rest is none.

@@ -16,14 +16,17 @@ import org.junit.jupiter.api.Test
  */
 class SamplesTest {
     /**
-     * Every fenced YAML block in a doc that is a complete library: `version: 1` at the top, and no
-     * `<placeholder>` angle brackets, which the shape sketches use and which aren't meant to parse.
+     * Every fenced YAML block in a doc that is a complete library: `version: 1` at the top, under any
+     * leading comments or blank lines, and no `<placeholder>` angle brackets, which the shape sketches
+     * use and which aren't meant to parse. A sample opening with a `# exercises.yaml` comment once fell
+     * outside the check while its doc's other samples kept the guard below green.
      */
     private fun docSamples(path: String): List<String> =
         Regex("```yaml\n([\\s\\S]*?)```")
             .findAll(repoText(path))
             .map { it.groupValues[1] }
-            .filter { it.startsWith("version: 1") && "exercises:" in it && '<' !in it }
+            .filter { block -> block.lines().firstOrNull { !it.isComment() }?.startsWith("version: 1") == true }
+            .filter { "exercises:" in it && '<' !in it }
             .toList()
 
     /**
@@ -95,4 +98,6 @@ class SamplesTest {
             }
         assertEquals(emptyList<String>(), failures)
     }
+
+    private fun String.isComment() = isBlank() || trimStart().startsWith("#")
 }

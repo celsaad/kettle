@@ -90,7 +90,8 @@ class StoreCopyTest {
                     "$language block ${index + 1}" to match.groupValues[1]
                 }
             }
-        // A renamed tag would otherwise make this pass by checking nothing.
+        // A renamed tag would otherwise make this pass by checking nothing. Global rather than per
+        // language: ja-JP has never carried a release note, since Play's listing doesn't (CHANGELOG.md).
         assertTrue(notes.isNotEmpty(), "found no tagged release notes in CHANGELOG.md")
         val failures =
             notes.mapNotNull { (label, text) -> "$label: ${text.length}".takeIf { text.length > RELEASE_NOTE_LIMIT } }

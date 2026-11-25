@@ -10,8 +10,8 @@ import kotlin.time.Clock
 
 /**
  * Where the program Today runs stands (#413), for Library's rows: the one its card would show, so
- * "Active, week 3" and "In your program" never disagree with Today. Worked out again on every read, as
- * Today's card is, since the day turning alone can move it. Null with no program running.
+ * "Active, week 3" and "In your program" never disagree with Today. Worked out again on every change and
+ * every full read, as Today's card is, since the day turning alone can move it. Null with no program running.
  */
 @Composable
 internal fun rememberProgramPosition(

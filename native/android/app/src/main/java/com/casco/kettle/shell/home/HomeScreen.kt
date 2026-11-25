@@ -83,8 +83,8 @@ fun HomeScreen(
     ReportDrawnWhen { library != null }
 
     // Logged, not raw: a session of nothing but zeros is a skipped workout, and mustn't move the
-    // program on. Worked out again on every read, the app's return included, changed files or not,
-    // since a turned day alone moves a rest day on. RN's card stayed put until a file changed.
+    // program on. Worked out again on every change and every full read, the app's return, changed
+    // files or not, since a turned day alone moves a rest day on. RN's card stayed put until a file changed.
     val sessions = log?.logged.orEmpty()
     val nextUp = remember(library, log, files.reads) { library?.let { nextUpView(it, sessions, clock) } }
     // Keyed on the card as well: the workout it offers can move with the day alone, and the list has to
@@ -109,7 +109,7 @@ fun HomeScreen(
                 ),
         ) {
             item(key = "header") {
-                TitleRow(remember(files.reads) { clock.now() }) { open(Route(Destination.Settings)) }
+                TitleRow(remember(library, log, files.reads) { clock.now() }) { open(Route(Destination.Settings)) }
                 // Nothing below the title before there is a library, so the screen never says "none"
                 // before it has looked.
                 if (library != null) {

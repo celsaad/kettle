@@ -63,8 +63,8 @@ internal fun Completion(
 ) {
     val session = view.session
     // Zero work out first, as every training view reads the log: logging 0 is how the runner skips, and
-    // a skipped 60 kg × 0 is no result, let alone a PR. The log is reread on every write, so the finished
-    // session is in it: both selectors skip it.
+    // a skipped 60 kg × 0 is no result, let alone a PR. Every write is in the log as it lands, so the
+    // finished session is in it: both selectors skip it.
     val logged = remember(session) { withoutZeroWork(session) }
     val records =
         remember(logged, environment.priorSessions) {

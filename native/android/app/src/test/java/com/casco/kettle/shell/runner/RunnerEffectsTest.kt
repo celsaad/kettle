@@ -9,6 +9,7 @@ import com.casco.kettle.domain.SnapshotRead
 import com.casco.kettle.domain.decodeRunnerSnapshot
 import com.casco.kettle.domain.reduceRunner
 import com.casco.kettle.shell.files.SessionWrites
+import com.casco.kettle.shell.files.Stamped
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -40,6 +41,7 @@ class RunnerEffectsTest {
     private val alerts = mutableListOf<Pair<StepEndAlert, Boolean>>()
     private var soundsOn = true
     private var failWrites = false
+    private val shown = mutableListOf<Stamped<Session>>()
     private val stateFile by lazy { RunnerStateFile(folder.root.resolve("runner"), loop) }
 
     private val effects by lazy {
@@ -49,7 +51,10 @@ class RunnerEffectsTest {
                 written += session
                 events += "write"
             },
-            onSessionWritten = { events += "reread" },
+            onSessionWritten = {
+                shown += it
+                events += "shown"
+            },
             stateFile = stateFile,
             sounds =
                 object : CueSounds {
@@ -78,12 +83,13 @@ class RunnerEffectsTest {
         }
 
     @Test
-    fun `writes the session, then has the screens read the log again`() {
+    fun `writes the session, then hands the screens what it wrote`() {
         val start = started(PULLUPS)
         effects.carryOut(start.effects, start.state.snapshot)
 
         assertEquals(listOf(start.state.session), written)
-        assertEquals(listOf("write", "reread"), events)
+        assertEquals(listOf("write", "shown"), events)
+        assertEquals(listOf(start.state.session), shown.map { it.value })
     }
 
     @Test
@@ -117,7 +123,7 @@ class RunnerEffectsTest {
         val start = started(PULLUPS)
         effects.carryOut(start.effects, start.state.snapshot)
 
-        assertFalse("reread" in events)
+        assertFalse("shown" in events)
         assertEquals(start.state.snapshot, saved())
     }
 

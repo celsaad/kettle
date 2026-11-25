@@ -10,6 +10,9 @@ import com.casco.kettle.domain.Preferences
 import com.casco.kettle.domain.Session
 import com.casco.kettle.domain.SessionLog
 import com.casco.kettle.domain.serializePreferences
+import com.casco.kettle.domain.sessionFileName
+import com.casco.kettle.domain.withSession
+import com.casco.kettle.domain.withoutSession
 import com.casco.kettle.storage.readLibrary
 import com.casco.kettle.storage.readPreferences
 import com.casco.kettle.storage.readSessionLog
@@ -21,12 +24,14 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.IOException
+import java.util.concurrent.atomic.AtomicLong
 
 /** The files native screens read and write, as a boundary a screen's test can fake. */
 interface StoredFiles {
@@ -105,22 +110,32 @@ class DiskFiles(
 }
 
 /**
- * The session log, the library and the preferences as native screens show them, read again by [reread].
+ * The session log, the library and the preferences as native screens show them.
  *
  * Native writes every file since the flip release (#308): its runner writes new sessions, its session
  * editor edits finished ones ([writeSession], #240), native Settings writes the preferences
  * ([writePreferences], #238), and native writes the library ([writeLibrary]), the runner's adopt
- * included. A screen's own write reads again as it lands; the runner's service and its adopt write
- * outside any screen, so the shell rereads as each lands (`RunnerHost.onSessionWritten`,
- * `LibraryAdopt.onLibraryWritten`), when the runner's slot pops, and whenever the app starts or stops
- * being seen (`MainActivity`).
+ * included. Each write is put into what's shown once it has landed, with no read of the folder (#324):
+ * a screen's own here, and the runner's service's and its adopt's as the shell hears of them
+ * ([sessionWritten], [libraryWritten]). The files are read in full ([reread]) when the app comes back
+ * into view (`MainActivity`), for whatever changed behind it: a restore, `adb run-as`, and on iOS the
+ * Files app.
+ *
+ * Every write is stamped ([StampedWrites]), and a write is only ever shown over an older one: the
+ * runner's arrive by a post after its lock is let go, so a screen's write can land on the disk after
+ * one of them and be shown before it. A read that lands applies again the session writes shown while
+ * it ran, which it may have listed the files before, rather than being made again for them.
  */
 class LatestFiles(
     private val files: StoredFiles,
     private val scope: CoroutineScope,
     private val io: CoroutineDispatcher = Dispatchers.IO,
-    /** Each read as it lands, on [scope]'s thread: the rest-day reminder reconciles from it (#236). */
-    private val onRead: (SessionLog, Preferences?) -> Unit = { _, _ -> },
+    /**
+     * The log and the preferences each time a read lands or a session write is shown, on [scope]'s
+     * thread, while [scope] is alive: the rest-day reminder reconciles from it (#236). A preferences
+     * write doesn't call it, since Settings' toggle reconciles the reminder itself.
+     */
+    private val onShown: (SessionLog, Preferences?) -> Unit = { _, _ -> },
     /**
      * What every read waits for first: the launch's seed and repair of the library (`LibraryGate`).
      * Without it a first launch's read could land before the seed did and show no library until the
@@ -149,9 +164,9 @@ class LatestFiles(
         private set
 
     /**
-     * How many reads have landed. A read of unchanged files sets nothing, since the files compare
+     * How many full reads have landed. A read of unchanged files sets nothing, since the files compare
      * equal, so this is what a screen keys on when its answer also depends on the clock: Home's card,
-     * which a turned day moves on (#235).
+     * which a turned day moves on (#235) once the app comes back into view.
      */
     var reads by mutableIntStateOf(0)
         private set
@@ -163,35 +178,74 @@ class LatestFiles(
     /** The newest choice whose write hasn't landed, held over what a read finds on the disk. */
     private var unsaved: Preferences? = null
 
+    /** The session writes the last read to land had already seen: none older is shown over it. */
+    private var sessionsReadAt = 0L
+
     /**
-     * Deletes session [id] and reads the log again, so the row goes as the file does. Throws
-     * [IOException] when the disk refuses, and the log is left as it was.
+     * Each session file's newest write shown that the last read to land hadn't counted, by file name. A
+     * read under way may have taken the files before it landed, so each is applied again over what that
+     * read found. Only the newest per file, since each replaces or removes that file's entry whole: one
+     * per file written since the last return to the app, not one per logged set.
+     */
+    private val sessionsShown = mutableMapOf<String, ShownSession>()
+
+    /** How many preferences writes have landed, which a read compares to tell whether one raced it. */
+    private var preferencesWrites = 0L
+
+    /** The newest library write shown, by a read or by the write itself. */
+    private var libraryShownAt = 0L
+
+    /**
+     * Deletes session [id], and the row goes as the file does. Throws [IOException] when the disk
+     * refuses, and the log is left as it was.
      */
     suspend fun deleteSession(id: String) {
-        SessionWrites.lock.withLock { withContext(io) { files.deleteSession(id) } }
-        reread()
+        val stamp = SessionWrites.write { withContext(io) { files.deleteSession(id) } }.stamp
+        everywhere { showSession(sessionFileName(id), stamp) { it.withoutSession(id) } }
     }
 
     /**
-     * Writes [session] over its file and reads the log again, so the edit shows as the file has it.
-     * Throws [IOException] when the disk refuses, and the log is left as it was.
+     * Writes [session] over its file, and the edit shows as the file has it. Throws [IOException] when
+     * the disk refuses, and the log is left as it was.
      */
     suspend fun writeSession(session: Session) {
-        SessionWrites.lock.withLock { withContext(io) { files.writeSession(session) } }
-        reread()
+        val written =
+            SessionWrites.write {
+                withContext(io) { files.writeSession(session) }
+                session
+            }
+        everywhere { sessionWritten(written) }
+    }
+
+    /** A session the runner's service wrote, on [scope]'s thread, shown unless a newer write is. */
+    fun sessionWritten(written: Stamped<Session>) =
+        showSession(sessionFileName(written.value.id), written.stamp) { it.withSession(written.value) }
+
+    /**
+     * Writes [library] over the file, and shows it once the write lands, before this returns: an editor
+     * writing again builds on the library from this write, not the one before it, which the workout
+     * editor's Save once dropped a quick-added exercise by (#242). Throws [IOException] when the disk
+     * refuses, and the library is left as it was.
+     */
+    suspend fun writeLibrary(library: Library) {
+        val written =
+            LibraryWrites.write {
+                withContext(io) { files.writeLibrary(library) }
+                library
+            }
+        everywhere { libraryWritten(written) }
     }
 
     /**
-     * Writes [library] over the file, shows it once the write lands, and reads the files again. Shown
-     * before the read, not after it: the read is launched, not awaited, and an editor writing again in
-     * between would otherwise build on the library from before this write and drop it, as the workout
-     * editor's Save did a quick-added exercise (#242). Throws [IOException] when the disk refuses, and
-     * the library is left as it was.
+     * A library written outside a screen, the runner's adopt's, on [scope]'s thread. Shown unless a
+     * newer write is: an editor saves the whole library it shows, so an older one shown last would be
+     * written back over the newer file by the next save. A read under way is left to land: it keeps its
+     * library only if it counted this write, and the log it carries is no older for it.
      */
-    suspend fun writeLibrary(library: Library) {
-        LibraryWrites.lock.withLock { withContext(io) { files.writeLibrary(library) } }
-        this.library = library
-        reread()
+    fun libraryWritten(written: Stamped<Library>) {
+        if (written.stamp <= libraryShownAt) return
+        libraryShownAt = written.stamp
+        library = written.value
     }
 
     /**
@@ -207,28 +261,134 @@ class LatestFiles(
         writingPreferences.withLock { withContext(io) { files.writePreferences(preferences) } }
         // Only this write's own: a newer tap waiting its turn holds its choice until it lands too.
         if (unsaved === preferences) unsaved = null
-        // A read that took the file before this landed would put the old one back; this one replaces it,
-        // and reads the library and the log again too, so nothing it carried is lost.
-        reread()
+        everywhere { preferencesLanded(preferences) }
     }
 
-    /** Reads all three files again. A read still under way is dropped, so an older one can't land last. */
+    /**
+     * A preferences write landed: shown unless a newer choice of this files' own is still held, and
+     * counted, so a read that took the file before it can tell.
+     */
+    private fun preferencesLanded(written: Preferences) {
+        preferencesWrites++
+        if (unsaved == null) preferences = written
+    }
+
+    /**
+     * Reads all three files again. A read still under way is dropped, so an older one can't land last.
+     * Only the return to the app asks for this: a write never does, since a cancelled read still parses
+     * the whole log to the end (its I/O never stops to check), and only its result is thrown away.
+     */
     fun reread() {
         reading?.cancel()
         reading =
             scope.launch {
                 prepared()
-                val (log, library, preferences) =
-                    withContext(io) { Triple(files.sessionLog(), files.library(), files.preferences()) }
-                // The held choice for the reminder too, so the alarm agrees with the toggle on screen.
-                val shown = unsaved ?: preferences
+                val preferencesAt = preferencesWrites
+                val read =
+                    withContext(io) {
+                        // Taken before the files are, so every write these count is in what's read.
+                        val sessionsAt = SessionWrites.landed
+                        val libraryAt = LibraryWrites.landed
+                        Read(files.sessionLog(), files.library(), files.preferences(), sessionsAt, libraryAt)
+                    }
+                // The held choice for the reminder too, so the alarm agrees with the toggle on screen. A
+                // write that landed while this read ran may not be in the file it took, and is the one shown.
+                val shown =
+                    unsaved ?: if (preferencesWrites == preferencesAt) read.preferences else preferences
+                // Writes shown while this read ran, which it may have listed the files before, go back on.
+                sessionsShown.values.removeAll { it.stamp <= read.sessionsAt }
+                val log = sessionsShown.values.fold(read.log) { log, write -> write.change(log) }
                 sessionLog = log
+                sessionsReadAt = read.sessionsAt
                 this@LatestFiles.preferences = shown
-                if (library != null) this@LatestFiles.library = library
+                if (read.library != null && read.libraryAt >= libraryShownAt) {
+                    this@LatestFiles.library = read.library
+                    libraryShownAt = read.libraryAt
+                }
                 reads++
-                onRead(log, shown)
+                if (scope.isActive) onShown(log, shown)
             }
     }
+
+    /**
+     * [change] to the log, for a write to [file] stamped [stamp], unless what's shown is newer, and
+     * kept for the next read to land to apply again ([sessionsShown]). Before the first read there is
+     * no log to change, and that read applies it. The reminder hears it only from live files: a write
+     * that outlived its activity is shown in the current one's too ([everywhere]), which reconciles
+     * from a log that has the runner's writes since.
+     */
+    private fun showSession(
+        file: String,
+        stamp: Long,
+        change: (SessionLog) -> SessionLog,
+    ) {
+        if (stamp <= sessionsReadAt || stamp <= (sessionsShown[file]?.stamp ?: 0L)) return
+        sessionsShown[file] = ShownSession(stamp, change)
+        sessionLog?.let { log ->
+            val next = change(log)
+            sessionLog = next
+            if (scope.isActive) onShown(next, unsaved ?: preferences)
+        }
+    }
+
+    /**
+     * [show] here, and in the current activity's files if they aren't these. A screen's write runs on
+     * past its screen, so one can land after its activity was recreated, and the new one's first read
+     * may have listed the files before it did: unheard, it would show the old file until the next return
+     * to the app, and an editor's next save would write the old library back over it.
+     */
+    private inline fun everywhere(show: LatestFiles.() -> Unit) {
+        show()
+        CurrentFiles.latest?.takeIf { it !== this }?.show()
+    }
+
+    /** A session write as shown: its stamp, and what it does to a log, which applies again unchanged. */
+    private class ShownSession(
+        val stamp: Long,
+        val change: (SessionLog) -> SessionLog,
+    )
+
+    private class Read(
+        val log: SessionLog,
+        val library: Library?,
+        val preferences: Preferences?,
+        val sessionsAt: Long,
+        val libraryAt: Long,
+    )
+}
+
+/**
+ * The current activity's [LatestFiles], on the main thread only: where a screen's write that outlived its
+ * activity is shown too. `MainActivity` sets it, and clears it as it goes.
+ */
+object CurrentFiles {
+    var latest: LatestFiles? = null
+}
+
+/** A write's [value] and its [stamp], the order it landed among its file's writes. */
+data class Stamped<out T>(
+    val value: T,
+    val stamp: Long,
+)
+
+/**
+ * One file's writes, taken one at a time under [lock] and stamped in the order they land, process-wide,
+ * so a [LatestFiles] can tell a late-arriving write from a newer one ([Stamped]).
+ */
+open class StampedWrites {
+    val lock = Mutex()
+
+    private val landedCount = AtomicLong()
+
+    /** How many writes have landed: a read begun after this sees every one of them. */
+    val landed: Long get() = landedCount.get()
+
+    /** [write] under [lock], stamped once it lands. One that throws lands nothing and takes no stamp. */
+    suspend fun <T> write(write: suspend () -> T): Stamped<T> =
+        lock.withLock {
+            val value = write()
+            Stamped(value, landedCount.incrementAndGet())
+        }
 }
 
 /**
@@ -236,18 +396,14 @@ class LatestFiles(
  * back (`adoptTargetWeight`), so an editor's or Import's save landing between the two would be lost,
  * or would lose the adopt. Every library write takes it, one after another.
  */
-object LibraryWrites {
-    val lock = Mutex()
-}
+object LibraryWrites : StampedWrites()
 
 /**
  * The process's one lock on writing the session log. The runner's service writes the running session
  * from its own thread (#305) while History's Delete and the session editor's Save write from the
  * screens', so every session write takes it, one after another, as [LibraryWrites] does the library's.
  */
-object SessionWrites {
-    val lock = Mutex()
-}
+object SessionWrites : StampedWrites()
 
 /** The shell's [LatestFiles], for a native screen to read. */
 val LocalLatestFiles = staticCompositionLocalOf<LatestFiles> { error("No LatestFiles provided") }

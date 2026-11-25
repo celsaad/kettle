@@ -214,7 +214,7 @@ class RunnerService : Service() {
         val notifications = NotificationManagerCompat.from(this)
         return RunnerEffects(
             writeSession = { writeSessionFile(paths.sessions, it) },
-            onSessionWritten = { main.post { RunnerHost.onSessionWritten?.invoke() } },
+            onSessionWritten = { written -> main.post { RunnerHost.onSessionWritten?.invoke(written) } },
             stateFile = RunnerStateFile(runnerStateDir(noBackupFilesDir), loop),
             sounds = cues,
             alerts =

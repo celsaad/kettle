@@ -6,8 +6,8 @@ import com.casco.kettle.domain.RunnerEffect
 import com.casco.kettle.domain.RunnerSnapshot
 import com.casco.kettle.domain.Session
 import com.casco.kettle.shell.files.SessionWrites
+import com.casco.kettle.shell.files.Stamped
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.sync.withLock
 
 /** The session's sounds, and whether the user has them on (`sessionSounds`), asked at each cue. */
 interface CueSounds {
@@ -21,7 +21,7 @@ interface CueSounds {
  * service is the running session's only writer, of its session file and its state file both (#295).
  *
  * - [writeSession] is `:shared`'s atomic write, taken under [SessionWrites] so a screen's session write
- *   can't interleave, then [onSessionWritten] has the screens read the log again.
+ *   can't interleave, then [onSessionWritten] hands the screens the session, stamped, to show (#324).
  * - [sounds]' preference is read at each cue, so a toggle mid-session applies on the next one (#296).
  * - [backUp] starts the finish backup, which the caller runs off this thread.
  *
@@ -30,7 +30,7 @@ interface CueSounds {
  */
 class RunnerEffects(
     private val writeSession: (Session) -> Unit,
-    private val onSessionWritten: () -> Unit,
+    private val onSessionWritten: (Stamped<Session>) -> Unit,
     private val stateFile: RunnerStateFile,
     private val sounds: CueSounds,
     val alerts: StepAlerts,
@@ -69,8 +69,14 @@ class RunnerEffects(
     ) {
         when (effect) {
             is RunnerEffect.WriteSession -> {
-                runBlocking { SessionWrites.lock.withLock { writeSession(effect.session) } }
-                onSessionWritten()
+                val written =
+                    runBlocking {
+                        SessionWrites.write {
+                            writeSession(effect.session)
+                            effect.session
+                        }
+                    }
+                onSessionWritten(written)
             }
 
             is RunnerEffect.PlayCue -> {

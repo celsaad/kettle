@@ -4,6 +4,7 @@ import com.casco.kettle.domain.Library
 import com.casco.kettle.domain.ParseResult
 import com.casco.kettle.domain.Preferences
 import com.casco.kettle.domain.Session
+import com.casco.kettle.domain.SessionFileError
 import com.casco.kettle.domain.SessionLog
 import com.casco.kettle.domain.parseLibraryYaml
 import com.casco.kettle.domain.parsePreferences
@@ -16,22 +17,20 @@ import java.io.IOException
  * errors, and sessions that started together, come out the same on every read.
  */
 fun readSessionLog(dir: File): SessionLog {
-    val sessions = mutableListOf<Session>()
+    val read = mutableListOf<Pair<String, Session>>()
     val errors = mutableListOf<String>()
     val files = dir.listFiles().orEmpty().filter { it.isFile && it.name.endsWith(".yaml") }
     for (file in files.sortedBy { it.name }) {
         // Deleted since the listing: gone from the log, as the next read would find it.
         val text = file.readTextOrNull() ?: continue
         when (val result = parseSessionYaml(text)) {
-            is ParseResult.Ok -> sessions += result.value
-
-            // The line `listSessions` writes, kinds spelled as RN spells them.
-            is ParseResult.InvalidYaml -> errors += "${file.name} (invalidYaml): ${result.detail}"
-
-            is ParseResult.SchemaMismatch -> errors += "${file.name} (schemaMismatch): ${result.detail}"
+            is ParseResult.Ok -> read += file.name to result.value
+            is ParseResult.InvalidYaml -> errors += SessionFileError.InvalidYaml.line(file.name, result.detail)
+            is ParseResult.SchemaMismatch -> errors += SessionFileError.SchemaMismatch.line(file.name, result.detail)
         }
     }
-    return SessionLog(sessions.sortedByDescending { it.startedAt }, errors)
+    val sorted = read.sortedByDescending { it.second.startedAt }
+    return SessionLog(sorted.map { it.second }, errors, sorted.map { it.first })
 }
 
 /**

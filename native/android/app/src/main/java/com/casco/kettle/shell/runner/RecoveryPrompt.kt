@@ -26,6 +26,7 @@ import com.casco.kettle.shell.theme.DialogAction
 import com.casco.kettle.shell.theme.KettleAlertDialog
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -147,17 +148,21 @@ private suspend fun finishFromPrompt(
     found: FoundRecovery,
 ): String? {
     val app = context.applicationContext
-    return LaunchRecovery.finish(
-        found,
-        write = files::writeSession,
-        // Off the prompt's scope: a backup the user's folder takes seconds over outlives it.
-        backUp = { background.launch { app.backUpFinishedSession() } },
-        next = {
-            withContext(Dispatchers.IO) {
-                findRunnerRecovery(runnerStateDir(app.noBackupFilesDir), StoragePaths(app.filesDir).sessions)
-            }
-        },
-    )
+    // Not cancelled with the prompt: a write that lands is shown only by the call that made it, so one
+    // cut off after the disk would leave the session running on screen until the app's next return.
+    return withContext(NonCancellable) {
+        LaunchRecovery.finish(
+            found,
+            write = files::writeSession,
+            // Off the prompt's scope: a backup the user's folder takes seconds over outlives it.
+            backUp = { background.launch { app.backUpFinishedSession() } },
+            next = {
+                withContext(Dispatchers.IO) {
+                    findRunnerRecovery(runnerStateDir(app.noBackupFilesDir), StoragePaths(app.filesDir).sessions)
+                }
+            },
+        )
+    }
 }
 
 private val background = CoroutineScope(SupervisorJob() + Dispatchers.IO)

@@ -4,8 +4,7 @@ import com.casco.kettle.domain.Exercise
 import com.casco.kettle.domain.ExerciseConfig
 import com.casco.kettle.domain.Library
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertTrue
+import org.junit.Assert.assertNull
 import org.junit.Test
 import java.io.IOException
 
@@ -38,10 +37,11 @@ class TargetWeightTest {
     fun `writes the adopted load over the file as it is`() {
         val files = Files(library(bench))
 
-        assertTrue(files.adoptTargetWeight("bench", 62.5))
+        val adopted = files.adoptTargetWeight("bench", 62.5)
 
         val config = bench.config as ExerciseConfig.Reps
         assertEquals(listOf(library(bench.copy(config = config.copy(targetWeightKg = 62.5)))), files.written)
+        assertEquals(files.written.single(), adopted)
     }
 
     @Test
@@ -50,13 +50,13 @@ class TargetWeightTest {
 
         val cases = listOf(Files(null) to "bench", Files(library(plank)) to "plank", Files(library(bench)) to "gone")
         for ((files, id) in cases) {
-            assertFalse(files.adoptTargetWeight(id, 62.5))
+            assertNull(files.adoptTargetWeight(id, 62.5))
             assertEquals(emptyList<Library>(), files.written)
         }
     }
 
     @Test
     fun `a disk that refuses is silent, and says nothing changed`() {
-        assertFalse(Files(library(bench), refuse = true).adoptTargetWeight("bench", 62.5))
+        assertNull(Files(library(bench), refuse = true).adoptTargetWeight("bench", 62.5))
     }
 }

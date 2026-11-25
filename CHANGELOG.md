@@ -29,6 +29,9 @@ here, next to what it describes.
   within the exercise's rep range, and its load on last time's (never below the target). Add weight,
   by Try or by hand, and the reps start again from the bottom of the range. Tapping last time's set
   takes its reps as well as its load.
+- **Smoother with a long history**: logging a set, editing or deleting a session, and changing a
+  setting no longer re-read every session you've ever logged. Kettle now reads them all only when
+  you come back to the app, so a big history stops slowing down every tap (#324).
 
 ---
 

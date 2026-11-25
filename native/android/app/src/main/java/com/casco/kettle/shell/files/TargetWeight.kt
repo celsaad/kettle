@@ -1,13 +1,14 @@
 package com.casco.kettle.shell.files
 
 import android.content.Context
+import com.casco.kettle.domain.Library
 import com.casco.kettle.domain.withTargetWeight
 import java.io.IOException
 
 /**
  * The runner's one-tap adopt (#220): kilograms straight off a logged set, set as that `reps` exercise's
- * target load in the library on disk. Whether it wrote, which is when the screens have a library to
- * read again. Nothing to set (no library, an unknown id, another type) writes nothing, as the RN
+ * target load in the library on disk. The library it wrote, which the screens then show, or null for
+ * none. Nothing to set (no library, an unknown id, another type) writes nothing, as the RN
  * store's `setTargetWeightKg` did, and neither does a disk that refuses: the adopt stays silent, as it
  * always was, and the set on screen keeps the load either way.
  *
@@ -17,13 +18,13 @@ import java.io.IOException
 fun StoredFiles.adoptTargetWeight(
     exerciseId: String,
     weightKg: Double,
-): Boolean {
-    val next = library()?.withTargetWeight(exerciseId, weightKg) ?: return false
+): Library? {
+    val next = library()?.withTargetWeight(exerciseId, weightKg) ?: return null
     return try {
         writeLibrary(next)
-        true
+        next
     } catch (_: IOException) {
-        false
+        null
     }
 }
 
@@ -31,4 +32,4 @@ fun StoredFiles.adoptTargetWeight(
 fun Context.adoptTargetWeight(
     exerciseId: String,
     weightKg: Double,
-): Boolean = DiskFiles(StoragePaths(filesDir)).adoptTargetWeight(exerciseId, weightKg)
+): Library? = DiskFiles(StoragePaths(filesDir)).adoptTargetWeight(exerciseId, weightKg)

@@ -177,12 +177,13 @@ wanting states and assignees, it wants GitHub issues instead.
   "parallel switches stay" entry was banking. `schema.ts`, `yaml-mapping.ts`, `TYPE_OPTIONS` and both
   locale bundles are the parts it can't catch for you.
 
-- **The Stats screen made `listSessions()`'s cost real, and nothing has been done about it.** The
-  scaling risk is in the decision log with the remedies; what changed is that it now has a consumer.
-  Stats is native since #201 (`StatsScreen.kt`), and works its numbers out once per opening rather
-  than per render, with the clock fixed when the sheet comes up. But the shell's re-read loads every
-  session file, and `exerciseProgress` still walks all of them rather than its window, because "best
-  ever" depends on everything before the window. That is
+- **The Stats screen made `listSessions()`'s cost real.** The scaling risk is in the decision log
+  with the remedies; what changed is that it now has a consumer. Stats is native since #201
+  (`StatsScreen.kt`), and works its numbers out once per opening rather than per render, with the
+  clock fixed when the sheet comes up. #324 took the re-read after every write: the shell now reads
+  every session file only when the app comes back into view. What's left is that read, at cold start
+  most of all, and `exerciseProgress`, which still walks every session rather than its window,
+  because "best ever" depends on everything before the window. That is
   the right call for a short-lived modal over a few hundred sessions and the wrong one over a few
   thousand. Nothing is slow yet; measure before changing anything, and the remedy named in the
   decision log (lazy or paginated loading, or a small index file) still stands — explicitly *not*

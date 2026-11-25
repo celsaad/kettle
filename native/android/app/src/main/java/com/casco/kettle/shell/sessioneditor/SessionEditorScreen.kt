@@ -110,9 +110,9 @@ fun SessionEditorScreen(
     val logged = files.sessionLog?.logged
     val scope = rememberCoroutineScope()
     // Worked out from the first read of the log and kept, as RN's editor copied its drafts once: the
-    // shell reads again while the sheet is up, and from then on what's typed is the user's. Once more
-    // when the session's end lands: the receipt's Edit log (#416) can open this before the reread with
-    // the finished copy, which would otherwise hold "still running" for good.
+    // log can change while the sheet is up, and from then on what's typed is the user's. Once more when
+    // the session's end lands: the receipt's Edit log (#416) can open this before the finished copy is
+    // in the log, which would otherwise hold "still running" for good.
     val shown = logged?.firstOrNull { it.id == id }
     val editing = logged?.let { remember(id, units, shown?.endedAt) { sessionEditing(it, id, units) } }
     val editor =
@@ -285,8 +285,9 @@ internal class Editor(
 
     /**
      * Checks every entry before writing anything, so a refusal leaves the file as it was rather than
-     * half-corrected. Not cancelled with the screen once the write starts: RN's stores must hear a
-     * file that changed, or they keep listing the session as it was.
+     * half-corrected. Not cancelled with the screen once the write starts: a write that lands is shown
+     * only by the call that made it, so one cut off after the disk would keep listing the session as
+     * it was.
      */
     fun save() {
         if (saving || closed) return

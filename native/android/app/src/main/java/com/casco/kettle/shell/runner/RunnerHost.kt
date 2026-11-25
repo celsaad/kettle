@@ -4,6 +4,8 @@ import android.content.Context
 import androidx.core.content.ContextCompat
 import com.casco.kettle.domain.RunnerCommand
 import com.casco.kettle.domain.RunnerStart
+import com.casco.kettle.domain.Session
+import com.casco.kettle.shell.files.Stamped
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -37,10 +39,11 @@ object RunnerHost {
     @Volatile private var runnerVisible = false
 
     /**
-     * The service wrote the running session, on the main thread: native screens read the log again,
-     * so Home's next-up and History follow (#297). The current activity's, like `LibraryAdopt.onLibraryWritten`.
+     * The service wrote the running session, on the main thread, handed over as written so native
+     * screens show it without reading the log again (#324): Home's next-up and History follow (#297).
+     * The current activity's, like `LibraryAdopt.onLibraryWritten`.
      */
-    var onSessionWritten: (() -> Unit)? = null
+    var onSessionWritten: ((Stamped<Session>) -> Unit)? = null
 
     val active: RunnerView.Active? get() = views.value as? RunnerView.Active
 

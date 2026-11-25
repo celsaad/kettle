@@ -310,7 +310,7 @@ private class Deleting(
         confirming = null
         failure = null
         scope.launch {
-            // Not cancelled with the screen: once the file is gone, the log must be read again, or it keeps
+            // Not cancelled with the screen: once the file is gone, the log must drop it too, or it keeps
             // listing a session that no longer exists.
             withContext(NonCancellable) {
                 val refused = writeOrRefusal { files.deleteSession(row.id) }

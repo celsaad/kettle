@@ -174,22 +174,103 @@ class RunnerTimingTest {
 
     @Nested
     inner class CatchUp {
+        /**
+         * A gap replays the timeline (#420): each self-ending step commits at its own end and the next
+         * starts there, so the rest logs 30 s and the standalone one 60 s, and the time away is the
+         * reps step's, the first step only the user ends. Against the one-step catch-up this landed on
+         * the first rest's successor, fresh at the moment of return.
+         */
         @Test
-        fun `advances exactly once when the countdown elapsed while away`() {
-            val runner = Runner(workoutOf(single("burpees")))
-            runner.away(120)
+        fun `replays a gap spanning rest, hold and rest, landing on the reps step`() {
+            val runner = Runner(workoutOf(single("plank"), single("rest"), single("pullups")))
+            runner.tick(25) // the first hold ends live, onto its 30 s rest
+            runner.away(400)
 
-            assertEquals(1, runner.index)
+            assertEquals(4, runner.index)
+            assertEquals(T0 + 140 * MS, runner.snapshot.clock.phaseStartedAt)
+            assertEquals(
+                listOf(TimedHoldSetLog(25.0, 30.0), TimedHoldSetLog(25.0, 0.0)),
+                runner.entry<SessionEntry.TimedHold>("plank")?.sets,
+            )
+            assertEquals(SessionEntry.Rest("rest", 60.0), runner.entry<SessionEntry.Rest>("rest"))
         }
 
-        /** The next step starts at the moment of return, so the time away isn't carried into it. */
         @Test
-        fun `starts the next step fresh at the moment of return`() {
+        fun `lands mid-step with the time left that the replay leaves it`() {
             val runner = Runner(workoutOf(single("burpees")))
-            runner.away(120)
+            runner.away(70) // 40 s of work, 20 s of rest, then 10 s into round 2
 
-            assertEquals(20.0, runner.remaining())
-            assertEquals(runner.now, runner.snapshot.clock.phaseStartedAt)
+            assertEquals(2, runner.index)
+            assertEquals(30.0, runner.remaining())
+            assertEquals(1L, runner.entry<SessionEntry.Hiit>("burpees")?.roundsCompleted)
+        }
+
+        @Test
+        fun `finishes at the last step's end when the gap runs past the workout`() {
+            val runner = Runner(workoutOf(single("burpees")))
+            runner.away(1_000)
+
+            assertTrue(runner.state.finished)
+            assertEquals(isoInstant(T0 + 160 * MS), runner.written.endedAt)
+            assertEquals(3L, runner.entry<SessionEntry.Hiit>("burpees")?.roundsCompleted)
+        }
+
+        @Test
+        fun `logs every EMOM minute a gap passed, each with its target`() {
+            val runner = Runner(workoutOf(single("swings"), single("pullups")))
+            runner.away(200)
+
+            assertEquals(3, runner.index)
+            assertEquals(List(3) { EmomMinuteLog(10) }, runner.entry<SessionEntry.Emom>("swings")?.minutes)
+        }
+
+        /**
+         * The steps a gap passed are silent, the user being away, and only the last end is announced,
+         * with the step it hands over to, as a live end would be: five HIIT steps and a row, two member
+         * changes, one alert and one exercise change. The file is written once, as it ends up.
+         */
+        @Test
+        fun `announces only the last end a gap crossed`() {
+            val runner = Runner(workoutOf(single("burpees"), single("row"), single("pullups")))
+            val row = runner.snapshot.steps[5]
+            runner.now += 300 * MS
+            val effects = runner.send(RunnerCommand.TimeUpdate(runner.snapshot.visit)).effects
+
+            assertEquals(6, runner.index)
+            assertEquals(
+                listOf(RunnerEffect.StepEnded(row, runner.step)),
+                effects.filterIsInstance<RunnerEffect.StepEnded>(),
+            )
+            assertEquals(
+                listOf(RunnerEffect.PlayCue(RunnerCue.EXERCISE_CHANGE)),
+                effects.filterIsInstance<RunnerEffect.PlayCue>(),
+            )
+            assertEquals(1, effects.count { it is RunnerEffect.WriteSession })
+        }
+
+        /** A wake that runs late still alerts: on Android the alert is the only one (#546's review). */
+        @Test
+        fun `still alerts for an end the service saw late`() {
+            val runner = Runner(workoutOf(single("pullups")))
+            runner.advance()
+            val rest = runner.step!!
+            runner.now += 91_200
+            val effects = runner.send(RunnerCommand.TimeUpdate(runner.snapshot.visit)).effects
+
+            assertEquals(2, runner.index)
+            assertTrue(RunnerEffect.StepEnded(rest, runner.step) in effects)
+        }
+
+        /** Landing 30 s into a 40 s round, its midpoint already passed while away, doesn't sound it late. */
+        @Test
+        fun `does not play a milestone the gap passed on the step it lands on`() {
+            val runner = Runner(workoutOf(single("burpees")))
+            runner.away(90)
+            runner.clearEffects()
+            runner.tick(1)
+
+            assertEquals(2, runner.index)
+            assertEquals(0, runner.cues(RunnerCue.MILESTONE))
         }
 
         @Test
@@ -197,14 +278,13 @@ class RunnerTimingTest {
             val runner = Runner(workoutOf(single("plank")))
             runner.away(60)
 
-            assertEquals(1, runner.index)
+            assertEquals(2, runner.index)
             assertEquals(
-                25.0,
+                TimedHoldSetLog(25.0, 30.0),
                 runner
                     .entry<SessionEntry.TimedHold>("plank")
                     ?.sets
-                    ?.single()
-                    ?.holdSec,
+                    ?.first(),
             )
         }
 
@@ -292,8 +372,8 @@ class RunnerTimingTest {
         fun `ignores a time update aimed at a step already left`() {
             val runner = Runner(workoutOf(single("burpees")))
             val work = runner.snapshot.visit
-            runner.now += 300 * MS
-            runner.send(RunnerCommand.TimeUpdate(work))
+            runner.now += 50 * MS
+            runner.send(RunnerCommand.TimeUpdate(work)) // onto the rest, 10 s in
             runner.now += 30 * MS
             runner.send(RunnerCommand.TimeUpdate(work))
 
@@ -579,6 +659,43 @@ class RunnerTimingTest {
             runner.tick(1)
             assertEquals(1, runner.index)
         }
+
+        /**
+         * −15s with 2 s of rest left ends the rest now, not 13 s ago (#546): a cut past the time run
+         * put the end in the past, and the catch-up then started the next round 13 s in.
+         */
+        @Test
+        fun `ends a rest cut past the time already run now, and starts the next step whole`() {
+            val runner = Runner(workoutOf(single("burpees")))
+            runner.tick(40)
+            runner.tick(18)
+            runner.send(RunnerCommand.AddRestSeconds(-15.0))
+            runner.send(RunnerCommand.TimeUpdate(runner.snapshot.visit)) // the wake that comes at once
+
+            assertEquals(2, runner.index)
+            assertEquals(40.0, runner.remaining())
+        }
+
+        /** Two cuts late in a rest logged it as 0 s and the hold after it as done, finishing the session. */
+        @Test
+        fun `logs a rest cut short as the time taken, and replays nothing after it`() {
+            val runner = Runner(workoutOf(single("plank")))
+            runner.tick(25)
+            runner.tick(28)
+            repeat(2) { runner.send(RunnerCommand.AddRestSeconds(-15.0)) }
+            runner.send(RunnerCommand.TimeUpdate(runner.snapshot.visit))
+
+            assertFalse(runner.state.finished)
+            assertEquals(2, runner.index)
+            assertEquals(
+                28.0,
+                runner
+                    .entry<SessionEntry.TimedHold>("plank")
+                    ?.sets
+                    ?.single()
+                    ?.restTakenSec,
+            )
+        }
     }
 
     @Nested
@@ -740,6 +857,65 @@ class RunnerTimingTest {
         }
     }
 
+    /**
+     * [upcomingStepEnds] is the schedule an iOS host posts its alerts from (#420), so it has to be the
+     * replay's own: a gap to any second crosses exactly the ends it listed by then, and starts the step
+     * it lands on at the last of them.
+     */
+    @Nested
+    inner class UpcomingEnds {
+        private fun assertAgreesWithTheReplay(
+            workout: Workout,
+            seconds: Int,
+        ) {
+            val ends = upcomingStepEnds(Runner(workout).snapshot)
+            for (t in 0..seconds) {
+                val runner = Runner(workout)
+                runner.away(t)
+                val crossed = ends.count { it <= runner.now }
+                assertEquals(crossed == runner.snapshot.steps.size, runner.state.finished, "at $t s")
+                if (!runner.state.finished) {
+                    assertEquals(crossed, runner.index, "at $t s")
+                    assertEquals(ends.getOrNull(crossed - 1) ?: T0, runner.snapshot.clock.phaseStartedAt, "at $t s")
+                }
+            }
+        }
+
+        @Test
+        fun `agrees with the replay across a HIIT block`() {
+            val workout = workoutOf(single("burpees"))
+
+            assertEquals(
+                listOf(40L, 60, 100, 120, 160).map { T0 + it * MS },
+                upcomingStepEnds(Runner(workout).snapshot),
+            )
+            assertAgreesWithTheReplay(workout, 200)
+        }
+
+        /** Hold, rest, standalone rest, EMOM and timed cardio, stopping at the reps step nothing ends. */
+        @Test
+        fun `agrees with the replay across a mixed workout, and stops at the reps step`() {
+            val workout = workoutOf(single("plank"), single("rest"), single("swings"), single("row"), single("pullups"))
+            val ends = upcomingStepEnds(Runner(workout).snapshot)
+
+            assertEquals(listOf(25L, 55, 80, 140, 200, 260, 320, 380).map { T0 + it * MS }, ends)
+            assertAgreesWithTheReplay(workout, 420)
+        }
+
+        @Test
+        fun `counts from the step on screen's own clock, its pause and +30s included`() {
+            val runner = Runner(workoutOf(single("burpees")))
+            runner.tick(10)
+            runner.send(RunnerCommand.TogglePause)
+            assertEquals(emptyList<Long>(), upcomingStepEnds(runner.snapshot))
+            runner.now += 5 * MS
+            runner.send(RunnerCommand.TogglePause)
+            runner.send(RunnerCommand.AddRestSeconds(30.0))
+
+            assertEquals(T0 + 75 * MS, upcomingStepEnds(runner.snapshot).first())
+        }
+    }
+
     @Nested
     inner class Clock {
         @Test
@@ -766,8 +942,9 @@ class RunnerTimingTest {
             runner.send(RunnerCommand.TimeUpdate(runner.snapshot.visit))
 
             assertEquals(2, runner.index)
+            // Its planned 90 s: the rest ended at its own moment, and the reps step owns the rest of the gap.
             assertEquals(
-                600.0,
+                90.0,
                 runner
                     .entry<SessionEntry.Reps>("pullups")
                     ?.sets

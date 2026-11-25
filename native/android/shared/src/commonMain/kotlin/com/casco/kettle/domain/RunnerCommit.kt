@@ -138,8 +138,9 @@ private fun commitInterval(
 
 /**
  * A standalone rest is its own entry. A rest between sets writes the time taken onto the member's
- * last logged set and rewrites the entry, and writes nothing after a dropped set. Rest is never
- * clamped: the time that passed is how long you rested.
+ * last logged set and rewrites the entry, and writes nothing after a dropped set. A rest ended by
+ * hand is never clamped: the time that passed is how long you rested. One that ends itself is
+ * committed at its own end, live or by a catch-up, so it logs its length.
  */
 private fun commitRest(
     state: RunnerState,

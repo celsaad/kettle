@@ -1,7 +1,5 @@
 package com.casco.kettle.domain
 
-import kotlin.math.ceil
-
 // Surviving process death (#295): a state file left behind means the service died with a session
 // running. The next launch reads it and the session file it names, and either offers Resume or Finish,
 // offers Finish only, or deletes the state file with nobody told. Launch never crashes on either file.
@@ -126,12 +124,9 @@ private fun fits(
 
 /**
  * Resume: the session rebuilt from [prompt], with the same catch-up a return from the background gets
- * at [now], so a countdown that ran out during the kill commits and advances one step. It then lands
- * paused, whatever it was, so the user picks it up rather than finding a clock already running.
- *
- * One difference from a live return: a rest that ran out during the kill logs its planned length, not
- * the hours the app was dead, which nobody spent resting. A live return logs the real time, since
- * there the user was away from the screen, not gone.
+ * at [now]: every self-ending step that ran out during the kill commits at its own end, a rest at its
+ * planned length, through to the step the user is back on. It then lands paused, whatever it was, so
+ * the user picks it up rather than finding a clock already running.
  *
  * That includes a rest or a reps step, whose RN screens have no Resume control: every step kind
  * pauses and resumes through [RunnerCommand.TogglePause], so the screen that lands paused offers it.
@@ -145,7 +140,8 @@ fun resumeRunner(
     now: Long,
     context: RunnerContext = RunnerContext(),
 ): RunnerTransition {
-    val caught = caughtUp(RunnerState(prompt.snapshot, prompt.session), now, context)
+    val state = RunnerState(prompt.snapshot, prompt.session)
+    val caught = reduceRunner(state, RunnerCommand.TimeUpdate(state.snapshot.visit), now, context)
     val paused =
         if (caught.state.finished || caught.state.snapshot.clock.paused) {
             caught
@@ -155,25 +151,6 @@ fun resumeRunner(
         }
     val quiet = paused.effects.filterNot { it is RunnerEffect.PlayCue || it is RunnerEffect.StepEnded }
     return RunnerTransition(paused.state, quiet)
-}
-
-/**
- * The catch-up, with a rest that ended during the kill committed at its own end, so it logs its
- * length, and the step after it started fresh at [now], as a live catch-up starts it.
- */
-private fun caughtUp(
-    state: RunnerState,
-    now: Long,
-    context: RunnerContext,
-): RunnerTransition {
-    val snapshot = state.snapshot
-    val clock = snapshot.clock
-    val restEnd = clock.phaseStartedAt + clock.pausedMs + ceil(clock.stepEndSec).toLong() * MS_PER_SECOND
-    val update = RunnerCommand.TimeUpdate(snapshot.visit)
-    val ranOut = snapshot.step is RunnerStep.Rest && !clock.paused && restEnd < now
-    if (!ranOut) return reduceRunner(state, update, now, context)
-    val ended = reduceRunner(state, update, restEnd, context)
-    return if (ended.state.finished) ended else RunnerTransition(seeded(ended.state, now, context), ended.effects)
 }
 
 /**

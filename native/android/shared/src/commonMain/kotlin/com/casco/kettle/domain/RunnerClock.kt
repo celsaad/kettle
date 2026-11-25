@@ -72,18 +72,30 @@ internal fun togglePause(
 }
 
 /**
- * The rest screen's +30s, by [seconds]: moves the end, and nothing else. Only where the clock's end
- * is the step's end, a rest or a countdown interval, so [StepClock.stepEndSec] never says a hold ends
- * later than it does. RN's moved its end ref on any step, which only its rest screen ever asked for.
+ * The rest screen's +30s and −15s, by [seconds]: moves the end, and nothing else. Only where the
+ * clock's end is the step's end, a rest or a countdown interval, so [StepClock.stepEndSec] never says
+ * a hold ends later than it does. RN's moved its end ref on any step, which only its rest screen ever
+ * asked for.
+ *
+ * A cut never puts the end before the time already run, which ends the step [now] instead: an end in
+ * the past would be replayed there, backdating the next step and logging work nobody did (#546).
  */
 internal fun addRestSeconds(
     state: RunnerState,
     seconds: Double,
+    now: Long,
 ): RunnerTransition {
     val snapshot = state.snapshot
     val step = snapshot.step
     val countsDown = step is RunnerStep.Rest || (step is RunnerStep.Interval && !step.countUp)
     if (!countsDown) return unchanged(state)
-    val clock = snapshot.clock.copy(stepEndSec = max(0.0, snapshot.clock.stepEndSec + seconds))
+    val clock =
+        snapshot.clock.copy(
+            stepEndSec =
+                max(
+                    elapsedSec(snapshot.clock, now).toDouble(),
+                    snapshot.clock.stepEndSec + seconds,
+                ),
+        )
     return RunnerTransition(state.copy(snapshot = snapshot.copy(clock = clock)), emptyList())
 }

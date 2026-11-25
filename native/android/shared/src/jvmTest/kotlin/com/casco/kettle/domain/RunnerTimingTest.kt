@@ -659,6 +659,43 @@ class RunnerTimingTest {
             runner.tick(1)
             assertEquals(1, runner.index)
         }
+
+        /**
+         * −15s with 2 s of rest left ends the rest now, not 13 s ago (#546): a cut past the time run
+         * put the end in the past, and the catch-up then started the next round 13 s in.
+         */
+        @Test
+        fun `ends a rest cut past the time already run now, and starts the next step whole`() {
+            val runner = Runner(workoutOf(single("burpees")))
+            runner.tick(40)
+            runner.tick(18)
+            runner.send(RunnerCommand.AddRestSeconds(-15.0))
+            runner.send(RunnerCommand.TimeUpdate(runner.snapshot.visit)) // the wake that comes at once
+
+            assertEquals(2, runner.index)
+            assertEquals(40.0, runner.remaining())
+        }
+
+        /** Two cuts late in a rest logged it as 0 s and the hold after it as done, finishing the session. */
+        @Test
+        fun `logs a rest cut short as the time taken, and replays nothing after it`() {
+            val runner = Runner(workoutOf(single("plank")))
+            runner.tick(25)
+            runner.tick(28)
+            repeat(2) { runner.send(RunnerCommand.AddRestSeconds(-15.0)) }
+            runner.send(RunnerCommand.TimeUpdate(runner.snapshot.visit))
+
+            assertFalse(runner.state.finished)
+            assertEquals(2, runner.index)
+            assertEquals(
+                28.0,
+                runner
+                    .entry<SessionEntry.TimedHold>("plank")
+                    ?.sets
+                    ?.single()
+                    ?.restTakenSec,
+            )
+        }
     }
 
     @Nested

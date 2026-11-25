@@ -279,7 +279,7 @@ fun reduceRunner(
             }
 
             is RunnerCommand.AddRestSeconds -> {
-                addRestSeconds(state, command.seconds)
+                addRestSeconds(state, command.seconds, now)
             }
 
             is RunnerCommand.Finish -> {

@@ -24,9 +24,19 @@ import org.robolectric.RobolectricTestRunner
 class ShippedLibrariesTest {
     private val shipped = ShippedLibraries()
 
-    /** Each library in each UI language, the way the app reads it. */
-    private fun everyReading(): List<Triple<String, String, Library>> =
-        shipped.all.flatMap { library -> shipped.languages.map { Triple(library.name, it, library.read(it)) } }
+    /** One library in one UI language, the way the app reads it, beside its English structure. */
+    private data class Reading(
+        val name: String,
+        val language: String,
+        val library: Library,
+        val english: Library,
+    )
+
+    private fun everyReading(): List<Reading> =
+        shipped.all.flatMap { library ->
+            val english = library.read("en")
+            shipped.languages.map { Reading(library.name, it, library.read(it), english) }
+        }
 
     @Test
     fun readsEveryLibraryInEveryLanguage() {
@@ -130,7 +140,8 @@ class ShippedLibrariesTest {
 
     @Test
     fun translatesEveryNameNoteAndDayLabel() {
-        // A content edit nobody translated, named here rather than shipped as a half-English library.
+        // A content edit nobody translated, named here rather than shipped as a half-English library. A
+        // blank string counts as missing: localize applies it as it is, so the reader sees nothing.
         val failures =
             shipped.all.flatMap { library ->
                 val english = library.read("en")
@@ -140,16 +151,20 @@ class ShippedLibrariesTest {
                             english.workouts.filter { it.id !in table.workouts }.map { "workout ${it.id}" } +
                             english.programs.filter { it.id !in table.programs }.map { "program ${it.id}" } +
                             english.exercises
-                                .filter { it.notes != null && table.exercises[it.id]?.notes == null }
+                                .filter { it.notes != null && table.exercises[it.id]?.notes.isNullOrBlank() }
                                 .map { "notes of ${it.id}" } +
                             english.programs.flatMap { program ->
                                 program.weeks
                                     .filter { week ->
                                         val key = libraryWeekKey(week.week, week.day)
-                                        week.notes != null && table.programs[program.id]?.weekNotes?.get(key) == null
+                                        week.notes != null &&
+                                            table.programs[program.id]
+                                                ?.weekNotes
+                                                ?.get(key)
+                                                .isNullOrBlank()
                                     }.map { "notes of ${program.id} ${libraryWeekKey(it.week, it.day)}" }
                             } +
-                            english.days().filter { it !in table.days }.map { "day $it" }
+                            english.days().filter { table.days[it].isNullOrBlank() }.map { "day $it" }
                     missing.map { "${library.name} $language: $it" }
                 }
             }
@@ -194,10 +209,23 @@ class ShippedLibrariesTest {
         // Structure stays single-sourced in library.yaml; a table that could move a config, a block or a
         // rest day would make each language a different program.
         val failures =
-            everyReading().mapNotNull { (name, language, library) ->
-                val english = shipped.all.first { it.name == name }.read("en")
-                if (library.structure() == english.structure()) null else "$name $language"
+            everyReading().mapNotNull { reading ->
+                reading.takeIf { it.library.structure() != it.english.structure() }?.let { "${it.name} ${it.language}" }
             }
+        assertEquals(emptyList<String>(), failures)
+    }
+
+    @Test
+    fun readsEveryTableItShipsInItsOwnLanguage() {
+        // The other half of the test above: that the table is applied at all. A reader that ignored the
+        // language would pass every structure, parity and fallback test, and ship English everywhere.
+        val failures =
+            everyReading()
+                .filter { it.language != "en" }
+                .filter { reading ->
+                    reading.library.exercises.map { it.name } ==
+                        reading.english.exercises.map { it.name }
+                }.map { "${it.name} ${it.language}" }
         assertEquals(emptyList<String>(), failures)
     }
 

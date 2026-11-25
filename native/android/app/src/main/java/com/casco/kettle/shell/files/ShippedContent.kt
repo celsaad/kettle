@@ -52,7 +52,10 @@ class ShippedContent(
      */
     fun librarySchema(): String = read("library-schema.json")
 
-    /** The tables are whatever `<language>.json` files the directory holds, as RN imports them. */
+    /**
+     * The tables are whatever `<language>.json` files the directory holds; `ShippedLibrariesTest`
+     * holds that to one per UI language.
+     */
     private fun localized(
         dir: String,
         language: String?,

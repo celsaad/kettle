@@ -5,6 +5,7 @@ import com.casco.kettle.domain.MergeResult
 import com.casco.kettle.domain.MergeSummary
 import com.casco.kettle.domain.mergeLibraries
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -70,13 +71,12 @@ class ContentPacksTest {
     fun mergesAllTogetherWithNoPackReplacingAnother() {
         // Nothing stops somebody taking every pack, and two sharing an id would only show up then.
         var library = shipped.seed.read("en")
-        val failures =
-            shipped.packs.mapNotNull { pack ->
-                val incoming = pack.read("en")
-                replaced(library, incoming)?.let { "${pack.name}: $it" }.also {
-                    library = (mergeLibraries(library, incoming) as? MergeResult.Ok)?.library ?: library
-                }
-            }
+        val failures = mutableListOf<String>()
+        for (pack in shipped.packs) {
+            val incoming = pack.read("en")
+            replaced(library, incoming)?.let { failures += "${pack.name}: $it" }
+            library = (mergeLibraries(library, incoming) as? MergeResult.Ok)?.library ?: library
+        }
         assertEquals(emptyList<String>(), failures)
     }
 
@@ -92,6 +92,7 @@ class ContentPacksTest {
         // not the other is either never offered or offered and unreadable.
         // Robolectric lists the files under each directory where a device lists the directories.
         val directories = shipped.files("packs").map { it.substringBefore('/') }.distinct()
+        assertTrue("packs.json lists no pack", entries.isNotEmpty())
         assertEquals(directories, entries.map { it.id }.sorted())
     }
 

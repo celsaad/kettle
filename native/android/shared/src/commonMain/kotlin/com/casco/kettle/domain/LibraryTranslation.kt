@@ -83,7 +83,8 @@ fun translationFor(
 /**
  * A shipped `<language>.json` table. Read with the YAML loader, since JSON is YAML 1.2, so `:shared`
  * needs no JSON library. **Throws** on a table that isn't one: it is a file the app ships, so a bad one
- * is a build defect with nothing honest to degrade to, and the RN tests read every one.
+ * is a build defect with nothing honest to degrade to, and `:app`'s `ShippedLibrariesTest` reads every
+ * one.
  */
 fun parseLibraryTranslation(text: String): LibraryTranslation {
     val loaded = loadYaml(text)

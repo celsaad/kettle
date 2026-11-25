@@ -706,7 +706,9 @@ decision assembled across several commits. Open work belongs in the sections at 
   so every exercise added to it enlarges what a recovery hands back.
 
   So `src/content/packs/` holds curated libraries the app ships **without seeding**, listed on
-  the import screen and merged in on a tap. Three today: a low-impact one (chair and wall support,
+  the import screen and merged in on a tap. `packs.json`'s order is display order and nothing else:
+  unlike the seed's first program, no pack is anybody's default, since a pack only exists once
+  somebody has chosen it. Three today: a low-impact one (chair and wall support,
   nothing on the floor), a barbell one, and a kettlebell one. Four rules any new pack has to respect:
 
   - **Every id carries the pack's prefix**, declared on the pack as `idPrefix` rather than inferred

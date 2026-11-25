@@ -24,14 +24,17 @@ class ShippedSeedTest {
                 ExerciseConfig.Cardio::class,
                 ExerciseConfig.Rest::class,
             )
-        assertEquals(
-            types,
-            shipped.seed
-                .read("en")
-                .exercises
-                .map { it.config::class }
-                .toSet(),
-        )
+        for (language in shipped.languages) {
+            assertEquals(
+                language,
+                types,
+                shipped.seed
+                    .read(language)
+                    .exercises
+                    .map { it.config::class }
+                    .toSet(),
+            )
+        }
     }
 
     @Test

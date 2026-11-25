@@ -320,7 +320,7 @@ Implemented as a write-through: an exercise's entry is appended when its first s
 ```
 Launch  → read exercises.yaml + sessions/ → validate (:shared's schema readers) → screens read them through StoredFiles
 Author  → edit in-app → serialize → write exercises.yaml
-Import  → pick a file or paste → parse → validate → MERGE by id → validate merged → write exercises.yaml
+Import  → pick a file or paste → parse → validate → MERGE by id → check merged references → write exercises.yaml
 Run     → runner engine → flush each set → sessions/<id>.yaml
 Finish  → write ended_at → finalize session file
 Export  → serialize library or a session → Android's share sheet → user saves/syncs the file
@@ -338,10 +338,10 @@ Get the **live session engine** right — it's the differentiator.
 4. **Session history** — list past sessions from `sessions/` with basic stats. ✅, and per-exercise progression shipped after this was written: Exercise detail has a "Recent sessions" section listing the last few times it was logged, newest first (`exerciseHistory` in `:shared`'s `ExerciseEditing.kt`), and a chart of the exercise's trend (`ExerciseDetailSections.kt`). See §11 phase 4 and the [decision log](decisions.md).
 5. **Import (merge) / export** — merge an imported library by `id`; export library or a single session. ✅
 
-**Beyond the original MVP scope**, already built: **multi-week programs** (periodized wrappers around workouts, with per-week per-exercise/per-circuit overrides, multi-session-per-week support via a `day` field, and scheduled rest days via `rest_day: true` on a week that names no workout — it runs nothing and logs nothing, but holds its place in the rotation and clears itself off the home screen a calendar day after the last session) and **circuits/supersets** (round-robin block grouping with configurable rest between exercises and between rounds) — both were explicitly deferred below and shipped anyway. The home screen derives "next up" from the actual week/day a session was started under (stored on the session itself), not a completed-session count — the count-based version looked "random" once you jumped to a non-sequential week or redid one, since Program detail lets you start any week, not just the suggested one. The home screen also shows a small stats row: current daily streak and this week's session count/time.
+**Beyond the original MVP scope**, already built: **multi-week programs** (periodized wrappers around workouts, with per-week per-exercise/per-circuit overrides, multi-session-per-week support via a `day` field, and scheduled rest days via `rest_day: true` on a week that names no workout — it runs nothing and logs nothing, but holds its place in the rotation and clears itself off the home screen a calendar day after the last session) and **circuits/supersets** (round-robin block grouping with configurable rest between exercises and between rounds) — both were explicitly deferred below and shipped anyway. The home screen derives "next up" from the actual week/day a session was started under (stored on the session itself), not a completed-session count — the count-based version looked "random" once you jumped to a non-sequential week or redid one, since Program detail lets you start any week, not just the suggested one. This week's session count and time are on the Progress tab's Overview (`thisWeekStats`); the daily streak went with #414.
 
 **Still deferred:** social, wearable sync, cloud backup. Charts were on this list and came off it — the
-per-exercise volume chart in item 4 is the one that shipped; nothing plots across exercises or over a
+per-exercise chart in item 4 is the one that shipped; nothing plots across exercises or over a
 whole program.
 
 ---
@@ -353,8 +353,8 @@ whole program.
 | **1** | Domain model + YAML load/validate/merge + exercise library + workout builder (no timers yet) | ✅ done |
 | **2** | Live session engine for one timed type (HIIT) end-to-end; nail timer reliability + incremental flush | ✅ done (shipped as part of the full interval runner below) |
 | **3** | Extend runner to `reps` and `timed_hold`; support mixed reps+timed workouts (calisthenics case) | ✅ done |
-| **4** | Add `emom` / `amrap`; session history + basic progression (last-time weights/holds, volume per session) | ✅ done — `emom`/`amrap`/`cardio` are runnable, session history exists, and an exercise's edit screen shows its recent history (last-time weight/reps/holds, newest first) |
-| **5** | Polish: import/export UX, cloud sync guidance, programs/plans, charts | ✅ done — programs have full in-app CRUD including per-week override editing (§10); a per-exercise volume chart shipped (§13); cloud sync guidance is on Your file, beside the backup folder (§13); import/export UX covers a file **or** paste path, a field-level merge diff, a copy-the-format brief for an assistant, a copy-the-error repair loop, and export from Your file (Library → exercises.yaml) and any session row |
+| **4** | Add `emom` / `amrap`; session history + basic progression (last-time weights/holds, volume per session) | ✅ done — `emom`/`amrap`/`cardio` are runnable, session history exists, and an exercise's detail shows its recent history (last-time weight/reps/holds, newest first) |
+| **5** | Polish: import/export UX, cloud sync guidance, programs/plans, charts | ✅ done — programs have full in-app CRUD including per-week override editing (§10); a per-exercise chart shipped (§13); cloud sync guidance is on Your file, beside the backup folder (§13); import/export UX covers a file **or** paste path, a field-level merge diff, a copy-the-format brief for an assistant, a copy-the-error repair loop, and export from Your file (Library → exercises.yaml) and any session row |
 
 See §13 for the concrete, current gap list.
 
@@ -374,8 +374,8 @@ See §13 for the concrete, current gap list.
 
 What's genuinely missing today, checked directly against the code:
 
-- ~~**No analytics screen.**~~ ✅ Shipped, first as a sheet off History and, since #411, as the
-  Progress tab's Overview (`shell/stats/StatsScreen.kt`). It collects this week's numbers
+- ~~**No analytics screen.**~~ ✅ Shipped, first as a sheet off History, then as a section of the
+  Progress tab (#411), its Overview since #414 (`shell/stats/StatsScreen.kt`). It collects this week's numbers
   (`thisWeekStats`), shows the last four weeks as a training calendar, and answers the question
   History's header never could — whether each exercise is *moving*, via `exerciseProgress`.
 

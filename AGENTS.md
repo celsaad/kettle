@@ -115,8 +115,8 @@ mistake here that cannot be fixed for anyone who has already installed it.
   dev loop: build, install on a phone, launch. Each device script is a `.sh` with a step-for-step
   `.ps1` twin for Windows; a change to one goes into both. `:benchmark` is a Macrobenchmark of cold
   start to a drawn Home, run on a phone by `scripts/startup-benchmark.sh`; its end point is
-  native Home's `reportFullyDrawn` (`ReportDrawnWhen`), and today's app returns as a baseline
-  in M7. `scripts/route-check.sh` steers the running `.dev`
+  native Home's `reportFullyDrawn` (`ReportDrawnWhen`). It was first measured against the RN app,
+  which went at M7, so any baseline it is compared with now is the all-native app's own. `scripts/route-check.sh` steers the running `.dev`
   shell through every route by navigate message and fails on the first screen that isn't the
   expected one. Run it after touching navigation, and update its matrix whenever a route is
   added or changes how it presents. `scripts/session-check.sh` runs a session's device checks
@@ -184,9 +184,10 @@ are house rules here rather than a backlog — cheap as you go, tedious to retro
 ### Accessibility and i18n
 
 - **Every interactive element needs a `Role`; it needs an explicit `contentDescription` only when
-  its own children don't name it.** The role goes on the modifier that makes it interactive:
+  its own children don't name it.** The role goes on the modifier that makes it interactive —
   `clickable(role = Role.Button)`, `selectable(…, role = Role.Tab)`, `toggleable(…, role =
-  Role.Switch)`. A `clickable` wrapping a `Text` already takes its name from that text, and adding a
+  Role.Switch)` — or in the `semantics` block that replaces its semantics (`EntryTable.kt`'s
+  `clearAndSetSemantics`). A `clickable` wrapping a `Text` already takes its name from that text, and adding a
   description that duplicates it will drift from what's on screen and break Voice Control, which
   matches the visible words. Symbol-only controls are the ones that genuinely need one, having
   nothing to fall back on, which is why the runner's `SymbolButton` requires it: the RN runner's

@@ -59,8 +59,11 @@ internal sealed interface YamlLoad {
 
 internal fun loadYaml(text: String): YamlLoad =
     try {
-        // Separate passes before anything is built. The events: an alias bomb is refused while it is
-        // still a few hundred bytes, and depth is counted without the composer's recursion. The
+        // Separate passes before anything is built. The events: more than MAX_ALIASES aliases are
+        // refused, and depth is counted without the composer's recursion. A bomb under that count
+        // loads, as shared references; what keeps it harmless is that the schema readers never walk
+        // a value they refuse or don't know (SchemaReader), so a new whole-tree walk has to guard
+        // itself, as PreparedLibrary's repair does. The
         // tokens: they alone say where a `-` was, and how a line was indented (see [checkTokens]).
         (checkEvents(text) ?: checkTokens(text))?.let(YamlLoad::Invalid)
             ?: YamlLoad.Loaded(Load(loadSettings).loadOne(text))
@@ -162,8 +165,7 @@ private fun checkEvents(text: String): String? {
  * mapping as a key, written out or through an alias, where the engine builds one.
  *
  * Checked on the events rather than on the loaded tree, because an alias in the tree is a shared
- * reference: walking an alias bomb's tree is the expansion [checkEvents] exists to refuse, where its
- * events stay linear.
+ * reference: walking an alias bomb's tree is its expansion, where its events stay linear.
  */
 private class MappingKeys {
     private class OpenCollection(

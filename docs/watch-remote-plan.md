@@ -29,8 +29,13 @@
 > - **"Why this shape rather than a real watch app"** stands, with one rewording: the storage is
 >   per-device files whether or not `expo-file-system` writes them. The media-session alternative
 >   it rejects was `expo-audio`'s service, which is gone.
-> - **Phase 0's questions, the Settings toggle, "Testing" and "Out of scope"** carry, read against
->   Android's notification API in place of a JS-registered category.
+> - **"What the card shows"** starts from "no chronometer", which the native notification has, so
+>   its choice of a static rest line for v1 is reopened rather than settled.
+> - **Phase 0** keeps its third question (do the actions bridge to Wear, and does a tap reach the
+>   app without opening it). The first two were expo-notifications' and are known behaviour natively:
+>   `notify(id)` replaces in place, and `NotificationCompat` actions render. **Phase 1**'s channel
+>   exists already; only its importance and the copy want checking. The Settings toggle, "Testing"
+>   and "Out of scope" carry.
 >
 > **Every link in the body to a `src/...` file is dead**: those RN files are deleted.
 >

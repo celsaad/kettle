@@ -9,7 +9,9 @@
 > not as steps, section by section:
 >
 > - **Superseded outright:** the opening argument that there is "no `ios/` tree to write"; the "What
->   already works, unchanged" table, every row of which but the privacy one describes RN code;
+>   already works, unchanged" table, whose rows describe RN code but for the privacy one and the
+>   app icon (`assets/expo.icon` is still in the tree), and whose "VoiceOver reads the same props
+>   TalkBack does" is a claim about RN's props;
 >   Phase 1's `expo prebuild` bring-up, and the tab-bar and `ModalHeader` items in its checklist;
 >   and every fact read out of `node_modules` (`expo-iap` in 2.1, `expo-localization` in 2.5,
 >   `expo-sharing` in 2.6, `expo-file-system` in Phase 3, `expo-notifications` and `expo-audio` in
@@ -41,7 +43,8 @@
 > Nothing about the *decision* has changed with it. The two that mattered were bugs on the shipping
 > Android app rather than iOS work, and they were worth fixing either way. The decision log still says
 > iOS is deferred ([`decisions.md`](decisions.md), the tip-jar entry) and the README still says it
-> isn't planned — both remain accurate, and **Phase 6 is where they get changed**, not before.
+> isn't planned. Both were accurate when this was written; with M8 decided, whether they change now
+> or the day iOS ships is the owner's call, and **Phase 6 is where this plan changes them**.
 >
 > **Since M5's preferences flip (#238) the RN build has no Settings.** `settings.tsx` is an empty stub
 > the Android shell draws over, and RN's preferences writers, backup, export, tip-store read and

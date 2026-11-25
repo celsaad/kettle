@@ -49,13 +49,15 @@ wanting states and assignees, it wants GitHub issues instead.
     commit can't tell you: whitespace-only input is guarded **twice** (disabled button *and* an
     early return) because unguarded it reaches the parser and comes back "expected a document, but
     the input is empty" — an accusation aimed at someone who hasn't typed yet; and the hostile-YAML
-    question is settled, so it doesn't need re-litigating each time this area grows: `:shared`'s
-    `YamlLoad.kt` counts aliases on the parser's events and refuses past `MAX_ALIASES` before any
-    tree is built, so a crafted anchor bomb is refused while it is still a few hundred bytes. The
-    limit predates the need for it. Until #353 the parser was js-yaml, where a bomb measured as
-    unreachable (an alias loads as a shared reference, and the schema recursed into nothing that
-    walked it), and the limit was set anyway because that immunity was a property of the schema of
-    the day rather than a guarantee about the next one.
+    question is settled, so it doesn't need re-litigating each time this area grows. An alias loads
+    as a shared reference, so a bomb costs nothing until something walks it, and the schema readers
+    walk nothing they refuse or don't know (`SchemaReader.kt`). `YamlLoad.kt`'s `MAX_ALIASES` (1000,
+    counted on the parser's events) refuses only the bombs past that count; a classic one of about
+    ninety aliases loads. So **any new code that walks the whole loaded tree must guard itself**, as
+    `PreparedLibrary.kt`'s repair does by catching the `OutOfMemoryError`. The same immunity held for
+    js-yaml, the import's parser until the Compose Import port (#244), and the limit was set anyway
+    because that immunity is a property of the readers of the day rather than a guarantee about the
+    next one.
   - ~~**A machine-readable schema to hand the model.**~~ ~~**The user's existing ids, alongside
     it.**~~ ✅ Both shipped, as one payload: `:shared`'s `AssistantBrief.kt` builds a "Copy the
     format for an assistant" brief of `content/library-schema.json` plus every id/name/type
@@ -86,8 +88,10 @@ wanting states and assignees, it wants GitHub issues instead.
   will carry format and nothing else — see the ownership entry in the decision log for where that line
   falls.
 
-- ~~**Audit for graceful degradation.**~~ ✅ Done, and it found what it predicted it would: the gap was
-  entirely in the throws no boundary covers. Three shapes, all now closed, and the reasoning behind the
+- ~~**Audit for graceful degradation.**~~ ✅ Done, on RN's store and runner, and it found what it
+  predicted it would: the gap was entirely in the throws no boundary covers. The names below are RN's;
+  the reasoning carried to native, where a refused session write is logged and the session goes on
+  (`RunnerEffects.kt`, #297). Three shapes, all now closed, and the reasoning behind the
   fixes is what's worth keeping:
 
   - **A workout must outlive the disk that's recording it.** Session writes are synchronous and happen
@@ -260,7 +264,8 @@ Found while planning the tests/a11y/i18n work (see `testing-a11y-i18n-plan.md`),
 the code. Listed worst first.
 
 **Fixed since** (the runner fixes were RN's runner's, whose files went in the flip release, #308; the
-native port inherited the fixed behaviour, held by `conformance/steps` and `:shared`'s tests):
+native port inherited the fixed behaviour, held by `conformance/steps` and `:shared`'s tests; the
+streak itself went with #414):
 `historyStats`'s "1.5h 30m"; the EMOM interval count; weight never being captured;
 side effects inside `setState` updaters; `addRestSeconds` not rescheduling its notification;
 `currentStreak`'s DST stepping; the display-name chip comparison; circuit members writing one entry
@@ -300,8 +305,9 @@ interpolated rather than translated. Notes on the structural ones:
   while an emoji's U+FE0F is also a mark and must not become an id of its own.
 - **RN's hold screen's `NaN%`** was guarded the way its interval screen already was. Still worth
   knowing for the next 0-config bug: nothing validates a hand-written program week's override
-  config. The schema reads it as a free map of values, and only the in-app override editor calls
-  `validateConfig` (`OverrideEditing.kt`), so the runner screens can't assume the constraints
+  config. The schema reads it as a free map of values, and only the in-app override editor checks it
+  (`OverrideEditing.kt`: `validateConfig` for an exercise's patch, `validateBlockConfig` for a
+  circuit's), so the runner screens can't assume the constraints
   `validateConfig` and the schema readers enforce elsewhere.
 
 One of the three found in the audit of RN's runner that produced its resume-race fix (the `setState`

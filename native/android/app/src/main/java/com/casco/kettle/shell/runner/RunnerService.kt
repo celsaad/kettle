@@ -241,7 +241,10 @@ class RunnerService : Service() {
         if (session == null) return
         when (view) {
             is RunnerView.Active -> {
-                notifyIfAllowed(ONGOING_ID, ongoingNotification(this, ongoingContent(resources, view), openRunner()))
+                val content = ongoingContent(resources, view)
+                notifyIfAllowed(ONGOING_ID, ongoingNotification(this, content, openRunner(), view, "live"))
+                // Spike for #543: the second, ordinary card.
+                notifyIfAllowed(SPIKE_CARD_ID, ongoingNotification(this, content, openRunner(), view, "card"))
             }
 
             // The shade's notification and the wake lock go with the session; the service waits only for
@@ -283,6 +286,7 @@ class RunnerService : Service() {
     }
 
     private fun leaveForeground() {
+        NotificationManagerCompat.from(this).cancel(SPIKE_CARD_ID)
         if (!foreground) return
         ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE)
         foreground = false
@@ -447,3 +451,5 @@ private const val SOUNDS_TIMEOUT_MS = 1000L
 private val NO_LIBRARY = Library(1, emptyList(), emptyList(), emptyList())
 private const val WAKE_LOCK_CEILING_MS = 6 * 60 * 60 * 1000L
 private const val TAG = "RunnerService"
+
+private const val SPIKE_CARD_ID = 0x5b1e

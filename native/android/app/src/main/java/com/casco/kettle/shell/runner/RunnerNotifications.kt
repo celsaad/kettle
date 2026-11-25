@@ -110,21 +110,31 @@ fun ongoingNotification(
     context: Context,
     content: OngoingContent,
     open: PendingIntent,
+    // Spike for #543, never merged: the session controls on this notification, promoted to a Live Update
+    // ("live"), or on a second ordinary card beside it ("card").
+    spikeView: RunnerView.Active? = null,
+    spikeFrom: String = "live",
 ): Notification {
+    val card = spikeFrom == "card"
     val builder =
         NotificationCompat
             .Builder(context, ONGOING_CHANNEL)
             .setSmallIcon(R.drawable.notification_icon)
             .setColor(ContextCompat.getColor(context, R.color.notification_icon_color))
-            .setContentTitle(content.title)
+            .setContentTitle(if (spikeView == null) content.title else "[${spikeFrom.uppercase()}] ${content.title}")
             .setContentText(content.text)
             .setContentIntent(open)
-            .setOngoing(true)
+            .setOngoing(!card)
             .setOnlyAlertOnce(true)
             .setSilent(true)
             .setCategory(NotificationCompat.CATEGORY_WORKOUT)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
+    if (spikeView != null) spikeActions(context, builder, spikeView, spikeFrom)
+    if (spikeView != null && !card) {
+        builder.addExtras(android.os.Bundle().apply { putBoolean("android.requestPromotedOngoing", true) })
+    }
+    if (card) builder.extend(NotificationCompat.WearableExtender().setDismissalId("kettle-session"))
     val chronometer = content.chronometer
     if (chronometer == null) {
         builder.setShowWhen(false)
@@ -189,3 +199,42 @@ const val ONGOING_CHANNEL = "workout-in-progress"
  * scripts/session-check checks the step-end alert is on it, so a change here goes into both twins.
  */
 const val CUES_CHANNEL = "expo_notifications_fallback_notification_channel"
+
+// Spike for #543: Done/Back/+30s while running, Resume while paused, nothing in the count-in, as decided in #542.
+private fun spikeActions(
+    context: Context,
+    builder: NotificationCompat.Builder,
+    view: RunnerView.Active,
+    from: String,
+) {
+    val running = view as? RunnerView.Running ?: return
+    val visit = running.snapshot.visit
+    fun action(
+        label: String,
+        cmd: String,
+        code: Int,
+    ) {
+        val intent =
+            android.content.Intent()
+                .setClassName(context, "com.casco.kettle.shell.runner.SpikeActionReceiver")
+                .putExtra("cmd", cmd)
+                .putExtra("visit", visit)
+                .putExtra("from", from)
+                .putExtra("postedAt", System.currentTimeMillis())
+        val pending =
+            PendingIntent.getBroadcast(
+                context,
+                code + if (from == "card") 10 else 0,
+                intent,
+                PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+            )
+        builder.addAction(NotificationCompat.Action.Builder(null, label, pending).build())
+    }
+    if (running.snapshot.clock.paused) {
+        action("Resume", "pause", 4)
+    } else {
+        action("Done", "advance", 1)
+        action("Back", "prev", 2)
+        action("+30s", "add30", 3)
+    }
+}

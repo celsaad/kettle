@@ -15,5 +15,9 @@
             android:name="com.casco.kettle.shell.runner.RunnerCommandReceiver"
             android:exported="true"
             android:permission="android.permission.DUMP" />
+        <receiver
+            android:name="com.casco.kettle.shell.runner.SpikeActionReceiver"
+            android:exported="false" />
     </application>
+    <uses-permission android:name="android.permission.POST_PROMOTED_NOTIFICATIONS" />
 </manifest>

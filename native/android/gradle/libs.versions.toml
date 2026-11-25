@@ -40,6 +40,9 @@ reorderable = "3.1.0"
 # The JSON Schema validator `:shared`'s tests hold `library-schema.json` to the corpus with (#349).
 # Test-only: nothing that ships validates against the file, the brief only carries it.
 jsonSkema = "0.32.0"
+# CLDR's plural categories per language, for :strings to hold the bundles to (#350). The rule data
+# Android's own plural lookup reads; a build-time dependency of the generator, never shipped.
+icu4j = "78.3"
 
 [libraries]
 compose-bom = { module = "androidx.compose:compose-bom", version.ref = "composeBom" }
@@ -72,6 +75,7 @@ androidx-test-junit = { module = "androidx.test.ext:junit", version.ref = "andro
 billing = { module = "com.android.billingclient:billing-ktx", version.ref = "billing" }
 reorderable = { module = "sh.calvin.reorderable:reorderable", version.ref = "reorderable" }
 kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinxDatetime" }
+icu4j = { module = "com.ibm.icu:icu4j", version.ref = "icu4j" }
 json-skema = { module = "com.github.erosb:json-sKema", version.ref = "jsonSkema" }
 snakeyaml-engine-kmp = { module = "it.krzeminski:snakeyaml-engine-kmp", version.ref = "snakeyamlEngineKmp" }
 

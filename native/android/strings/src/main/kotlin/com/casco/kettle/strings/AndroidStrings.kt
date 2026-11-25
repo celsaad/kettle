@@ -89,7 +89,7 @@ private fun flatten(
  * The language in `values`, and the one every other is checked against. Not a parameter: it is
  * i18next's `fallbackLng`, so it is what a key missing from a translation renders as on both sides.
  */
-private const val ENGLISH = "en"
+internal const val ENGLISH = "en"
 
 /**
  * Every bundle as an Android `strings.xml`, keyed by its resource directory: English goes in `values`,
@@ -103,7 +103,11 @@ private const val ENGLISH = "en"
 fun generateResources(bundles: Map<String, String>): Map<String, String> {
     val parsed = bundles.mapValues { (_, json) -> parseBundle(json).also(::checkNames) }
     val english = parsed.getValue(ENGLISH).associateBy { it.key }
-    for ((language, entries) in parsed) checkShapes(language, entries, english)
+    for ((language, entries) in parsed) {
+        checkShapes(language, entries, english)
+        checkCoverage(language, entries, parsed.getValue(ENGLISH))
+        checkCasing(language, entries)
+    }
     val arguments = english.mapValues { (_, entry) -> entry.arguments }
     return parsed.entries.associate { (language, entries) ->
         val dir = if (language == ENGLISH) "values" else "values-$language"
@@ -194,7 +198,7 @@ private fun render(
  * `one`, which rendered "0 sessão". So `_zero` becomes a string of its own rather than a plural item, and
  * every plural gets one, empty where the bundle has none, so `pluralText` can always ask for it.
  */
-private const val ZERO = "zero"
+internal const val ZERO = "zero"
 
 // CLDR's order, `zero` left out for the reason above.
 private val CATEGORIES = listOf("one", "two", "few", "many", "other")

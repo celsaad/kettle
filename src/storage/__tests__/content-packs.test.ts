@@ -245,7 +245,7 @@ describe('the pack list', () => {
 
   it('gives every pack a row name and blurb in the locale bundles', () => {
     // The row's text is UI chrome, not pack data, so it lives in the bundles under `import.packs.<id>`.
-    // Checked in `en` alone: locale-bundles.test.ts holds pt and ja to en key for key.
+    // Checked in `en` alone: :strings holds pt and ja to en key for key.
     const rows = en.import.packs as Record<string, unknown>;
     for (const pack of contentPacks) {
       expect(rows[pack.id]).toEqual({ name: expect.any(String), detail: expect.any(String) });

@@ -11,12 +11,14 @@ two places went: `app.json`'s iOS locale list, which is an M8 note below now, an
 own list of bundles, which reads `resources` since.
 
 1. **`src/i18n/locales/<code>.json`** — the new bundle, at full parity with `en.json`.
-   `i18n/__tests__/locale-bundles.test.ts` holds that parity in both directions against every language
-   in `resources`, so a key you missed and a key you invented both fail the suite. What it can't check
+   `:strings` (`BundleCoverage.kt`) holds that parity in both directions, each plural against the
+   language's own CLDR categories, for every bundle in the directory, so a key you missed and a key
+   you invented both fail the build. If CLDR files 0 under `one` and that reads wrong in the
+   language, as it does in Portuguese, add it to `ZERO_READS_PLURAL` there. What it can't check
    is whether the *strings* are right, or whether a screen renders one at all — for that, drive the
    screen in the new locale (`AGENTS.md`, "Writing tests").
-2. **`src/i18n/index.ts`** — import it into `resources`. That map is the list the bundle test and the
-   jest setup read, so a bundle left out of it is checked by nothing and invisible to every test. Key
+2. **`src/i18n/index.ts`** — import it into `resources`. That map is the list the jest setup reads, so a
+   bundle left out of it is invisible to every jest test. Key
    it by language, not region (`pt` serves pt-BR and pt-PT); region still drives dates, numbers and
    first-weekday through Intl, independently of this.
 3. **`src/content/seed/<lang>.json`** — the starter library's string table, imported in

@@ -2,6 +2,8 @@ package com.casco.kettle.shell.art
 
 import android.graphics.Bitmap
 import android.graphics.Canvas
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.VectorGroup
 import androidx.compose.ui.graphics.vector.VectorNode
@@ -33,14 +35,19 @@ class ArtDrawablesTest {
 
     @Test
     fun everyDrawingKeepsTheSharedCanvasAndStroke() {
-        // Every shipped id with a drawing, from art.json: the coverage is jest's to hold.
+        // Every id with a drawing, from art.json; ArtCoverageTest holds what that covers. One weight and
+        // round ends are most of what makes separately drawn figures look drawn by one hand, and :art
+        // accepts any width, cap or join Android can draw, so the set's style is held here.
         assertTrue(artDrawables.size > 1)
         for ((id, drawable) in artDrawables) {
             val vector = ImageVector.vectorResource(null, resources, drawable)
             assertEquals(id, 120f to 96f, vector.viewportWidth to vector.viewportHeight)
             val paths = paths(vector.root)
             assertTrue(id, paths.isNotEmpty())
-            for (path in paths) assertTrue(id, path.pathData.isNotEmpty() && path.strokeLineWidth == 3f)
+            for (path in paths) {
+                assertTrue(id, path.pathData.isNotEmpty() && path.strokeLineWidth == 3f)
+                assertEquals(id, StrokeCap.Round to StrokeJoin.Round, path.strokeLineCap to path.strokeLineJoin)
+            }
         }
     }
 

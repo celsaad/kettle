@@ -23,7 +23,7 @@ turn into a VectorDrawable, and it **fails the Android build** on anything else,
 from an editor needs cleaning up before it lands.
 
 - **One colour, set once.** The root `<g>`'s `currentColor` is the only colour in a file, and nothing
-  else sets `stroke` or `fill` (`exercise-art.test.tsx` holds that). It is what lets one file serve the
+  else sets `stroke` or `fill` (`:art` refuses any other attribute on a child, so it holds that). It is what lets one file serve the
   light theme, the dark theme and the always-dark runner: RN passes `color`, Android tints, and iOS
   uses template rendering. A fixed colour anywhere vanishes on one of the three.
 - **One canvas.** The same viewBox for the whole set is what keeps separately drawn figures looking

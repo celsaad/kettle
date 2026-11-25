@@ -20,6 +20,7 @@ java {
 
 dependencies {
     implementation(libs.kotlinx.serialization.json)
+    implementation(libs.icu4j)
 
     testImplementation(platform(libs.junit.bom))
     testImplementation(libs.junit.jupiter)

@@ -72,7 +72,8 @@ private fun lookup(drawings: Map<String, String>) =
         appendLine("internal val artDescriptions: Map<String, Int> =")
         appendLine("    mapOf(")
         // :strings' naming, so a drawing whose description is missing fails to compile rather than
-        // drawing unannounced. The bundles' coverage of art.json is jest's to hold.
+        // drawing unannounced. :app's ArtCoverageTest holds the bundles and the shipped content to
+        // art.json, and :strings holds every bundle to English.
         for (id in drawings.keys) appendLine("        \"$id\" to R.string.exerciseArt_${id.replace('-', '_')},")
         appendLine("    )")
     }

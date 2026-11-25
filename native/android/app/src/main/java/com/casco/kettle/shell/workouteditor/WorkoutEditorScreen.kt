@@ -108,7 +108,7 @@ class WorkoutEditorActions(
 )
 
 /**
- * A workout (#242), as RN's `workout-editor.tsx`: its name and its blocks, plain exercises and
+ * A workout (#242), as RN's workout editor was: its name and its blocks, plain exercises and
  * circuits, in an order set by dragging a block's grip, or by its "Move up" and "Move down" under a
  * screen reader. New exercises can be made from the pickers without leaving the workout.
  *

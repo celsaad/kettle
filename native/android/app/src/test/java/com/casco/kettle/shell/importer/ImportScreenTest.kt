@@ -41,7 +41,7 @@ import java.io.IOException
 import java.util.Locale
 
 /**
- * Import (#244), case for case from RN's `import.test.tsx`: the sources, refusals, preview and merge.
+ * Import (#244): the sources, refusals, preview and merge.
  * The hand-offs to an assistant are `ImportHandoffTest`'s. Import is the only path outside data takes
  * into the library, so every refusal is asserted to write nothing.
  *

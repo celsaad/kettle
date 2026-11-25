@@ -3,31 +3,29 @@
 The standing a11y/i18n house rules live in `AGENTS.md`; this is the one-off procedure for shipping a
 new UI language.
 
-Five places on Android, and only the first three fail loudly if you miss them. Verified against the
+Four places on Android, and only the first two fail loudly if you miss them. Verified against the
 code rather than recalled, and re-checked when `ja` went in as the third. Changes since: step 1's
-parity is now machine-checked rather than eyeballed, and step 3 fails the build too since #351; step
-5 turned out to be both wrong and skipped (the listing copy does live in this repo, and `ja` shipped
-in the app without it); and at M7 (#357) two places went: `app.json`'s iOS locale list, which is an
-M8 note below now, and the jest setup's own list of bundles, which reads `resources` since.
+parity is now machine-checked rather than eyeballed, and step 2 fails the build too since #351; step
+4 turned out to be both wrong and skipped (the listing copy does live in this repo, and `ja` shipped
+in the app without it); at M7 (#357) `app.json`'s iOS locale list went, an M8 note below now; and
+with the TS (#353), so did `src/i18n/index.ts`'s `resources` map, which only jest read.
 
 1. **`src/i18n/locales/<code>.json`** — the new bundle, at full parity with `en.json`.
    `:strings` (`BundleCoverage.kt`) holds that parity in both directions, each plural against the
    language's own CLDR categories, for every bundle in the directory, so a key you missed and a key
    you invented both fail the build. If CLDR files 0 under `one` and that reads wrong in the
-   language, as it does in Portuguese, add it to `ZERO_READS_PLURAL` there. What it can't check
+   language, as it does in Portuguese, add it to `ZERO_READS_PLURAL` there. Name it by language,
+   not region (`pt` serves pt-BR and pt-PT); region still drives dates, numbers and first-weekday
+   through the device's locale, independently of this. What it can't check
    is whether the *strings* are right, or whether a screen renders one at all — for that, drive the
    screen in the new locale (`AGENTS.md`, "Writing tests").
-2. **`src/i18n/index.ts`** — import it into `resources`. That map is the list the jest setup reads,
-   so a bundle left out of it is invisible to every jest test. Key it by language, not region (`pt`
-   serves pt-BR and pt-PT); region still drives dates, numbers and first-weekday through Intl,
-   independently of this.
-3. **`src/content/seed/<lang>.json`** — the starter library's string table, plus one per pack in
+2. **`src/content/seed/<lang>.json`** — the starter library's string table, plus one per pack in
    `src/content/packs/<id>/`. A language with no table falls back to English per string, so a new
    user would get translated chrome around an English library. This used to be the one that got
    forgotten; `:app`'s `ShippedLibrariesTest` now fails until every shipped library has a table for
    every UI language, and holds each table to its library in both directions.
-4. **`README.md`** — the sentence naming which languages the UI and the seed library ship in.
-5. **The Play listing.** The *copy* is in this repo — `store/README.md` carries a short and a full
+3. **`README.md`** — the sentence naming which languages the UI and the seed library ship in.
+4. **The Play listing.** The *copy* is in this repo — `store/README.md` carries a short and a full
    description per language, and `:repo-checks`' `StoreCopyTest` checks each block against Play's
    limit and against the length its own heading declares, so a new language has to be named in that
    test or its copy is unchecked. The listing copy also names which languages the app ships in, and the tip
@@ -44,8 +42,8 @@ against `resources`; M8's build should hold the same check. `docs/ios-plan.md` �
 mechanism.
 
 One thing that is *not* on the list, checked rather than assumed: nothing about date, number,
-weekday or unit formatting needs touching — all of it reads the device locale through Intl in
-`i18n/format.ts`, and native's through the platform locale.
+weekday or unit formatting needs touching — all of it reads the device locale, through
+`shell/i18n/LocaleFormats.kt`.
 
 Nor is the native app's copy: `:strings` generates its `values-<code>/strings.xml` from whatever
 bundles step 1 left in `src/i18n/locales`, on every build, and `GeneratedStringsTest` round-trips

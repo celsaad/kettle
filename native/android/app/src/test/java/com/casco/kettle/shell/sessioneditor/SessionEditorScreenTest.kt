@@ -47,10 +47,10 @@ import org.robolectric.annotation.Config
 import java.io.IOException
 
 /**
- * The session editor (#239), case for case from RN's `session-editor.test.tsx`, on the harness recipe
+ * The session editor (#239), on the harness recipe
  * (#193): in `pt`, since an English assertion passes a hardcoded English string, with the files faked
  * behind [StoredFiles]. Each asserts on the one session written, which is what native's Save does.
- * Beyond jest's: a write the disk refuses, and the a11y.
+ * Also: a write the disk refuses, and the a11y.
  *
  * The arithmetic is `:shared`'s (`SessionEntryFormTest`); these cover the wiring.
  */
@@ -116,7 +116,7 @@ class SessionEditorScreenTest {
             .apply { if (label !in PINNED) performScrollTo() }
             .performClick()
 
-    /** jest's `pressAlertButton`: a button inside the dialog, never a same-named one on the screen under it. */
+    /** A button inside the dialog, never a same-named one on the screen under it. */
     private fun ComposeContentTestRule.pressDialogButton(label: String) =
         onNode(hasText(label) and hasAnyAncestor(isDialog())).performClick()
 

@@ -167,6 +167,18 @@ class LibraryTest {
     }
 
     @Test
+    fun `the writer leaves rest_day off a training week and writes it on a rest week`() {
+        // A round trip can't see this, since a missing rest_day and `rest_day: false` read the same:
+        // writing it on every training week would rewrite each program in a hand-edited file on save.
+        val program =
+            Program("p", "P", listOf(ProgramWeek.Training(week = 1, workoutId = "w"), ProgramWeek.RestDay(week = 2)))
+        val text =
+            serializeLibraryYaml(Library(1, emptyList(), listOf(Workout("w", "W", emptyList())), listOf(program)))
+        assertEquals(1, Regex("rest_day").findAll(text).count(), text)
+        assertEquals(true, "rest_day: true" in text, text)
+    }
+
+    @Test
     fun `a circuit's length is checked even past a refused member`() {
         val text = library(workouts = "[{ id: w, name: W, blocks: [{ type: circuit, rounds: 2, exercises: [5] }] }]")
         assertEquals(listOf("workouts.0.blocks.0.exercises", "workouts.0.blocks.0.exercises.0"), paths(text))

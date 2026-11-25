@@ -54,7 +54,7 @@ fun BackRow(
                 .semantics { contentDescription = label },
             contentAlignment = Alignment.Center,
         ) {
-            // An edge with no fill of its own, so lineStrong's 3:1 (theme.ts), as Today's round Start.
+            // An edge with no fill of its own, so lineStrong's 3:1 (theme-notes.md), as Today's round Start.
             Box(
                 Modifier.size(CIRCLE).border(1.dp, colors.lineStrong, CircleShape),
                 contentAlignment = Alignment.Center,

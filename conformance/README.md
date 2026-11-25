@@ -50,8 +50,8 @@ is how both apps translate that shipped content: a table only ever replaces name
 labels, and its header lists the rules.
 
 `search` isn't part of the file format, but it is the same problem: every platform must find the
-same workout for the same search. Its rules are in the header of `src/domain/search.ts` until that
-goes (#353), and in `:shared`'s `Search.kt`.
+same workout for the same search. Its rules are in `:shared`'s `Search.kt`, held by
+`search.yaml`.
 
 `preferences` is the same again, for `preferences.json`, and `supporter` for `supporter.json`: the
 app's own settings files, which a platform must read, and refuse, the same way. Both were suites
@@ -62,9 +62,8 @@ RN's runner and native Stats to one rule while both existed, and it still pins w
 more, and how long a session ran.
 
 `steps` isn't a file either: it is what a workout *runs*, step by step. It held the native runner to
-RN's while both existed (#303). The flip release (#308) deleted RN's, `src/hooks/session-steps.ts`
-with it, and kept the corpus: it is still the plainest statement of what each workout runs, and a
-change to it still shows up as a golden diff.
+RN's while both existed (#303). The flip release (#308) deleted RN's and kept the corpus: it is still the
+plainest statement of what each workout runs, and a change to it still shows up as a golden diff.
 
 ## Reading the goldens
 

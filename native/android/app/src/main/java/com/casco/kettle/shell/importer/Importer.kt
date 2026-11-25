@@ -156,7 +156,7 @@ data class ReadyMerge(
 )
 
 /**
- * One visit to Import (#244), as RN's `import.tsx` held it in hooks: the sources, the preview, the one
+ * One visit to Import (#244), as RN's Import screen held it in hooks: the sources, the preview, the one
  * write, and what landed. Every source reaches [review], so a pack or a paste is refused for exactly
  * the reasons and in the words a file is: there is no second path that could accept what this refuses.
  */

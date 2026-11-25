@@ -9,7 +9,7 @@ import org.junit.jupiter.api.Test
 /**
  * The step model's cases that `conformance/steps.yaml` can't hold, because the schema refuses the
  * input that reaches them: a count past the per-exercise ceiling, a 0-second hold end, zero work.
- * Built from domain values directly, as RN's `build-steps.test.ts` does, which these twin. The Next
+ * Built from domain values directly, as RN's step-builder tests did, which these twin. The Next
  * card's descriptors are here too, since TS renders them to strings and the goldens can't pin those.
  */
 class RunnerStepsTest {
@@ -147,8 +147,8 @@ class RunnerStepsTest {
         )
     }
 
-    // The Next card's lookahead. TS keeps it private to the runner, so conformance can't hold it; these
-    // are the values its preview cases pinned before #303 was held to leaving the TS unchanged.
+    // The Next card's lookahead, private to the runner, so conformance can't hold it; these are the
+    // values RN's preview cases pinned, kept since #303.
     @Test
     fun `looks past one rest to the next work, and says whether a rest follows`() {
         // reps 1, rest, reps 2, rest, reps 3.

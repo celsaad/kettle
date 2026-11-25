@@ -51,9 +51,9 @@ import kotlin.time.Clock
 import kotlin.time.Instant
 
 /**
- * Program detail (#233), case for case from RN's `program-detail.test.tsx`, on the harness recipe
+ * Program detail (#233), on the harness recipe
  * (#193): in `pt`, since an English assertion passes a hardcoded English string, with the library
- * faked behind [StoredFiles] and every route it opens heard through `open`. Beyond jest's: Edit and
+ * faked behind [StoredFiles] and every route it opens heard through `open`. Also: Edit and
  * Close, the targets' size, a program that's gone, and nothing said before the library is read.
  *
  * Which override keys apply is `:shared`'s (`OverrideNotesTest`); this covers its words.

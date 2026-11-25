@@ -91,7 +91,7 @@ class SettingsActions(
 )
 
 /**
- * Settings (#237), as RN's `settings.tsx`, which Play keeps until the preferences flip releases. Native
+ * Settings (#237), as RN's Settings, which Play keeps until the preferences flip releases. Native
  * is the only writer of `preferences.json` from then: every change rewrites the whole file through
  * [files], so one setting can't drop another.
  *

@@ -3,7 +3,7 @@ package com.casco.kettle.domain
 /** Settings → Appearance: pin a scheme, or follow the device. */
 enum class ThemePreference { LIGHT, DARK, SYSTEM }
 
-/** `preferences.json`, the app-owned settings file; `src/domain/preferences.ts` holds the reasoning. */
+/** `preferences.json`, the app-owned settings file. */
 data class Preferences(
     val unitSystem: UnitSystem,
     val themePreference: ThemePreference,
@@ -13,8 +13,7 @@ data class Preferences(
 )
 
 /**
- * What a `preferences.json` says, or null where it says nothing usable: `parsePreferences` in
- * `src/domain/preferences.ts`, held to it by `conformance/preferences.yaml`.
+ * What a `preferences.json` says, or null where it says nothing usable: held by `conformance/preferences.yaml`.
  *
  * Read with the YAML loader, since RN writes the file with `JSON.stringify` and that output is YAML
  * 1.2. One wrong field refuses the whole file, as zod's object does, and keys it doesn't know are

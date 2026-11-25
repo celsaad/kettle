@@ -21,14 +21,17 @@ import org.junit.jupiter.api.Test
  * format spells them, so it isn't a mirror this can read.
  */
 class FormatMirrorsTest {
-    /** A config field as a mirror states it. */
+    /**
+     * A config field as a mirror states it. Each type's fields are a list sorted by name, not a set, so
+     * a row pasted twice into a table is a difference rather than a duplicate the set swallows.
+     */
     private data class Field(
         val name: String,
         val optional: Boolean,
     )
 
     /** Each exercise type's config fields, from the schema file the assistant brief carries. */
-    private val expected: Map<String, Set<Field>> =
+    private val expected: Map<String, List<Field>> =
         Json
             .parseToJsonElement(repoText("src/content/library-schema.json"))
             .jsonObject
@@ -49,7 +52,7 @@ class FormatMirrorsTest {
                     .path("type")
                     .getValue("const")
                     .jsonPrimitive.content to
-                    fields.map { Field(it, it !in required) }.toSet()
+                    fields.map { Field(it, it !in required) }.sortedBy { it.name }.toList()
             }
 
     private fun JsonObject.path(vararg keys: String): JsonObject =
@@ -61,8 +64,8 @@ class FormatMirrorsTest {
      * field is `` `name` `` followed by its parenthesised constraints, which keeps the
      * `` ≥ `target_reps_min` `` inside another field's constraints from reading as a field.
      */
-    private fun markdown(): Map<String, Set<Field>> {
-        val found = LinkedHashMap<String, Set<Field>>()
+    private fun markdown(): Map<String, List<Field>> {
+        val found = LinkedHashMap<String, List<Field>>()
         for (line in repoText("docs/authoring-exercises-yaml.md").lines()) {
             val cells = line.split('|')
             val type = cells.getOrNull(1)?.trim()?.replace("`", "")
@@ -71,7 +74,8 @@ class FormatMirrorsTest {
                 Regex("""`([a-z_]+)`\s*\(([^)]*)\)""")
                     .findAll(cells[2])
                     .map { Field(it.groupValues[1], "optional" in it.groupValues[2]) }
-                    .toSet()
+                    .sortedBy { it.name }
+                    .toList()
         }
         return found
     }
@@ -83,7 +87,7 @@ class FormatMirrorsTest {
      * programs) and reports their columns as its own config, which is how the parser first failed, and
      * quietly enough to pass for a documentation bug.
      */
-    private fun site(): Map<String, Set<Field>> =
+    private fun site(): Map<String, List<Field>> =
         repoText("site/format.html")
             .split("<h3>")
             .drop(1)
@@ -96,14 +100,15 @@ class FormatMirrorsTest {
             .associate { (type, table) -> type to configFields(table) }
 
     /** A row's field is its first cell's `<code>`, optional when its second cell says so. */
-    private fun configFields(table: String): Set<Field> =
+    private fun configFields(table: String): List<Field> =
         TABLE_ROW
             .findAll(table)
             .mapNotNull { row ->
                 val cells = TABLE_CELL.findAll(row.groupValues[1]).map { it.groupValues[1] }.toList()
                 val name = cells.firstOrNull()?.let { FIELD_CODE.find(it)?.groupValues?.get(1) }
                 name?.let { Field(it, "optional" in cells.getOrElse(1) { "" }) }
-            }.toSet()
+            }.sortedBy { it.name }
+            .toList()
 
     @Test
     fun `reads every exercise type from the schema file`() {

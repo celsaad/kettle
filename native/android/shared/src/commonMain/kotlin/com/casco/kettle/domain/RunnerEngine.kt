@@ -2,13 +2,13 @@ package com.casco.kettle.domain
 
 import kotlin.math.max
 
-// The session runner's engine: RN's `use-session-runner.ts` as a headless state machine (#304). The
+// The session runner's engine: RN's session-runner hook as a headless state machine (#304). The
 // service (#305) owns one, feeds it commands with the time, and carries out the effects it returns.
 // The UI (#306) observes the state and sends commands. No Android, no I/O and no clock of its own, so
 // the tests drive the time. The reasoning behind each rule is in the RN file's comments, which the
 // flip release deleted (#308): `git log -S` on a rule's name finds them.
 
-/** The three sounds a session plays, as RN's `use-session-sounds.ts` loaded them. */
+/** The three sounds a session plays, as RN's runner loaded them. */
 enum class RunnerCue { TICK, EXERCISE_CHANGE, MILESTONE }
 
 /**

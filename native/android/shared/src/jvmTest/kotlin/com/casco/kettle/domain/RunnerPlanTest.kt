@@ -5,8 +5,8 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 /**
- * `resolveRunnerPlan`, from RN `session.test.tsx`'s "before the first step" cases and the screen's
- * resolution in `session.tsx`: which of the five a start is, before any count-in.
+ * `resolveRunnerPlan`, from RN's session tests' "before the first step" cases and the screen's
+ * resolution in RN's session screen: which of the five a start is, before any count-in.
  */
 class RunnerPlanTest {
     private val bench = Exercise("bench", "Bench", ExerciseConfig.Reps(3, 5, targetWeightKg = 80.0, restSec = 120.0))

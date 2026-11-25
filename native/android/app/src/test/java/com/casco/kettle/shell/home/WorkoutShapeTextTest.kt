@@ -12,8 +12,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
 /**
- * [workoutShapeText], case for case from `formatWorkoutShape`'s in RN's `format.test.ts`, which went
- * with RN Home (#235). In `pt`, so a hardcoded English word fails.
+ * [workoutShapeText], from RN Home's formatter, which went (#235). In `pt`, so a hardcoded English word fails.
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(qualifiers = "pt")

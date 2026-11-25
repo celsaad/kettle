@@ -32,62 +32,14 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      - name: Type check
-        run: pnpm run typecheck
-
-      - name: Lint
-        run: pnpm run lint
-
+      # Node is here for oxfmt alone since the TS domain went (#353): it formats site/, the shipped
+      # JSON and the conformance corpus, which no Gradle task owns.
       - name: Format
         run: pnpm run format:check
 
-      # Unused files, dependencies and exports, plus imports package.json doesn't list — the one
-      # class oxlint and tsc both miss, since each looks at a file rather than the project graph.
-      - name: Unused code
-        run: pnpm run knip
-
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-
-      - uses: pnpm/action-setup@v4
-
-      - uses: actions/setup-node@v7
-        with:
-          node-version: 22
-          cache: pnpm
-
-      - run: pnpm install --frozen-lockfile
-
-      # Rolling key: a cache entry is immutable once written, so a fixed key would freeze whatever the
-      # first run happened to populate, and every src file touched since would miss forever. Each run
-      # restores the newest and writes back a superset. Restoring a stale one is safe: jest keys each
-      # cached transform by the file's own content and config hash, so a miss costs a transpile, never
-      # a wrong result. Small since M7 (#357), when the transform set shrank to the repo's own TS.
-      - name: Restore jest transform cache
-        uses: actions/cache@v4
-        with:
-          path: .jest-cache
-          key: jest-${{ hashFiles('pnpm-lock.yaml', 'package.json') }}-${{ github.run_id }}
-          restore-keys: |
-            jest-${{ hashFiles('pnpm-lock.yaml', 'package.json') }}-
-            jest-
-
-      # --ci fails rather than writes on a missing snapshot; the worker cap keeps jest from
-      # over-subscribing the 2-core runner, where spawning more workers is slower, not faster.
-      # TZ is set here as well as in jest.setup.js because that file's process.env assignment is a
-      # no-op on Windows; on this Linux runner the env var is what actually makes the DST-crossing
-      # streak tests exercise a real transition rather than passing vacuously.
-      # pnpm forwards trailing args to the script directly, so this needs no `--` separator.
-      - name: Test
-        env:
-          TZ: America/New_York
-        run: pnpm test --ci --maxWorkers=2
-
   # The native app (docs/native-migration-plan.md): `./gradlew build` over every project, which is
   # each one's tests, ktlint, detekt, Android lint and compiler warnings, all failing on any finding,
-  # the same zero-warning rule `pnpm run lint` holds. No Node: the build reads the repo's plain files
+  # the zero-warning rule AGENTS.md sets. No Node: the build reads the repo's plain files
   # (the locale bundles, theme.json, src/content, the sounds) and nothing a JS install provides, so
   # this job is the fresh-clone check that it stays that way. The conformance tests read the repo's own
   # conformance/, whose goldens :shared writes, so a behaviour change without its golden fails here.

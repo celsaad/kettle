@@ -27,7 +27,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
 /**
- * The program guide (#199), case for case from `program-guide.test.tsx`, on the harness recipe (#193):
+ * The program guide (#199), on the harness recipe (#193):
  * the class runs in `pt`, since an English assertion passes a hardcoded English string, and the
  * screen's two ways out are parameters, so the test hears which one it took.
  *

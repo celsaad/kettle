@@ -13,7 +13,7 @@ import java.time.Instant
 
 /**
  * Native's launch-time read of `exercises.yaml` (#220, #221), RN's `loadLibrary` recovery until the
- * library flip: `library-file-recovery.test.ts`' cases, ported. The repair's own arithmetic is the
+ * library flip: RN's recovery cases, ported. The repair's own arithmetic is the
  * conformance suite's.
  */
 class PrepareLibraryTest {

@@ -9,8 +9,8 @@ import kotlin.time.Instant
 
 /**
  * What the exercise editor (#241) does to the library, and what it shows of the log: RN's store's
- * `saveExercise`/`deleteExercise`, the delete guard `exercise-editor.tsx` ran inline, and
- * `history-views.ts`' `exerciseHistory`, whose two jest cases are the volume ones below.
+ * `saveExercise`/`deleteExercise`, the delete guard the screen ran inline, and `exerciseHistory`, whose
+ * two cases are the volume ones below.
  */
 class ExerciseEditingTest {
     private val pullUps =
@@ -191,7 +191,7 @@ class ExerciseEditingTest {
         }
     }
 
-    /** Where the Recent chart's bars go, as RN's `volume-chart.tsx` placed them. */
+    /** Where the Recent chart's bars go, as RN's volume chart placed them. */
     @Nested
     inner class Chart {
         @Test

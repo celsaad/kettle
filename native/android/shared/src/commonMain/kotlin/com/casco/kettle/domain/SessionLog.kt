@@ -1,7 +1,7 @@
 package com.casco.kettle.domain
 
 /**
- * Every session file, as `listSessions` in `src/storage/session-files.ts` reads them: the sessions,
+ * Every session file, as the log reads them: the sessions,
  * newest first, and a line per file that couldn't be read, which History shows rather than hides.
  *
  * [files] is the file each session was read from, in step with [sessions]. The reader takes any

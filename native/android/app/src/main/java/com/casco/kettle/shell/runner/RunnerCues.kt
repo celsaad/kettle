@@ -11,7 +11,7 @@ import com.casco.kettle.domain.RunnerCue
 import java.io.IOException
 
 /**
- * The session's three sounds (#296), the ones RN's `use-session-sounds.ts` played, read from the same
+ * The session's three sounds (#296), the ones RN's runner played, read from the same
  * files in the repo's `assets/sounds/` (packaged by `app/build.gradle.kts`).
  *
  * - `SoundPool`, preloaded when the service starts, on `USAGE_MEDIA`: they follow the media volume

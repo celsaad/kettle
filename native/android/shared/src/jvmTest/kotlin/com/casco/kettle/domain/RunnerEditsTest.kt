@@ -10,7 +10,7 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 
 /**
- * The engine's step-list edits, from RN `use-session-runner.test.tsx`'s restFollows, upcoming, adding
+ * The engine's step-list edits, from RN's runner-hook tests' restFollows, upcoming, adding
  * and dropping sets, swapping, ad-hoc and re-seeding sections. Edits take whatever step is on screen,
  * as RN's hook does; [canAddSet], [canDropSet] and [swapChoices] are the buttons' rules.
  */

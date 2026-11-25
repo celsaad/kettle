@@ -13,17 +13,15 @@ import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Instant
 
 /**
- * `src/state/selectors/__tests__/history-stats.test.ts`, case for case, which went with RN History (#202):
- * this suite is the spec now.
+ * The history stats; RN History went (#202), so this suite is the spec now.
  *
- * Where jest fakes the clock and mocks the device's first weekday, these pass both, with the zone:
- * local days in New York, the DST-observing zone jest's TZ pin names, so the DST cases bite here on
- * every machine rather than only where TZ is honoured.
+ * The clock and the device's first weekday are passed in, with the zone: local days in New York, a
+ * DST-observing zone, so the DST cases bite here on every machine rather than only where TZ is honoured.
  */
 class HistoryStatsTest {
     private val zone = TimeZone.of("America/New_York")
 
-    /** [year]-[month]-[day] at [hour] in [zone], as jest's `new Date(y, m - 1, d, h)`. */
+    /** [year]-[month]-[day] at [hour] in [zone]. */
     private fun local(
         year: Int,
         month: Int,
@@ -69,7 +67,7 @@ class HistoryStatsTest {
 
     /**
      * `sets` is the count behind History's summary line and each row's "N sets", asserted through
-     * [historyStats] as jest does. Regression: interval entries used to count as a flat 1 apiece, so a
+     * [historyStats]. Regression: interval entries used to count as a flat 1 apiece, so a
      * 16-round HIIT was worth the same as one hold.
      */
     @Nested

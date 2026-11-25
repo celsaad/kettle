@@ -15,9 +15,8 @@ import org.junit.jupiter.api.Test
 import kotlin.time.Instant
 
 /**
- * `nextWeekAfter` and `nextUpView`, case for case from RN's `next-up.test.ts`, which went with RN Home
- * (#235). Where jest builds its dates in the machine's zone, these pass New York, so the calendar-day
- * arithmetic runs in a real zone on every machine.
+ * `nextWeekAfter` and `nextUpView`, from RN Home, which went (#235). The dates are built in New York, so the
+ * calendar-day arithmetic runs in a real zone on every machine.
  */
 class NextUpTest {
     private val zone = TimeZone.of("America/New_York")
@@ -207,7 +206,7 @@ class NextUpTest {
         private fun withWeeks(vararg weeks: ProgramWeek) =
             library.copy(programs = listOf(Program("prog", "Prog", weeks.toList())))
 
-        /** July [day] 2026 at [hour] in [zone], as jest's `new Date(2026, 6, day, hour)`. */
+        /** July [day] 2026 at [hour] in [zone]. */
         private fun july(
             day: Int,
             hour: Int,
@@ -215,7 +214,7 @@ class NextUpTest {
 
         private val monday = july(27, 18)
 
-        /** 9:00 [days] calendar days after Monday, stepped by date as jest's `new Date` rolls July 57 over. */
+        /** 9:00 [days] calendar days after Monday, stepped by date. */
         private fun dayAfter(days: Int) =
             LocalDate(2026, 7, 27).plus(DatePeriod(days = days)).atTime(9, 0).toInstant(zone)
 

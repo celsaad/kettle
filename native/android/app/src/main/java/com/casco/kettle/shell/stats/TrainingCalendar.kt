@@ -55,7 +55,7 @@ import kotlin.math.ceil
 
 /**
  * The last few weeks, a row each and a cell a day, shaded by how long you trained: RN's
- * `training-calendar.tsx` (#201). It keeps the weekly bars' one reading, the week's count in the
+ * RN's training calendar (#201). It keeps the weekly bars' one reading, the week's count in the
  * right-hand column, and adds which days, how long, and where the gaps are. Where the cells go is
  * `calendarCells`' decision in `:shared`; each week's seven are one Canvas.
  *

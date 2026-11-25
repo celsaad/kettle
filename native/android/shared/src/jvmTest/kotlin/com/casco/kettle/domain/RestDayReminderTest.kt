@@ -12,13 +12,13 @@ import kotlin.time.Instant
  * The reminder's arithmetic and its reasons to schedule nothing, ported from RN's suite, which went
  * with RN's reminder in the preferences flip (#238): this suite is the spec now.
  *
- * Where jest fakes the clock in whatever zone the machine has, these pass both, in New York, so the
+ * The clock and the zone are passed in, in New York, so the
  * DST case crosses a real boundary on every machine.
  */
 class RestDayReminderTest {
     private val zone = TimeZone.of("America/New_York")
 
-    /** [month]/[day] 2026 at [hour]:[minute] in [zone], as jest's `new Date('2026-…T…')`. */
+    /** [month]/[day] 2026 at [hour]:[minute] in [zone]. */
     private fun local(
         month: Int,
         day: Int,

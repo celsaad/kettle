@@ -1,8 +1,8 @@
 package com.casco.kettle.domain
 
 /**
- * `rawProgramSchema` from `src/domain/schema.ts`, whose comments say why each rule exists. Every
- * refinement here is gated by [SchemaReader.refined], so which of them a document reports matches zod.
+ * A program, read, held by `conformance/library.yaml`. Every refinement here is gated by
+ * [SchemaReader.refined], so which of them a document reports matches the zod the format began in.
  */
 internal fun SchemaReader.program(
     value: Any?,

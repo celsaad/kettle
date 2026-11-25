@@ -97,7 +97,7 @@ these were missing:
 
 Two consequences worth stating: **the a11y and i18n work carries over free** (roles, labels and the
 three locale bundles are platform-neutral, and VoiceOver reads the same props TalkBack does), and
-**every domain test stays valid** — nothing in `src/domain/` knows what a platform is.
+**every domain test stays valid** — nothing in `:shared` knows what a platform is.
 
 ## Phase 1 — Simulator bring-up, before spending anything
 
@@ -113,7 +113,7 @@ The `ios` block in [`app.json`](#what-appjson-held-for-ios) is **shipped**, bar 
   entry has the rule).
 - **`supportsTablet`** — **decide this by looking, not by reasoning.** The tempting argument is that
   the layouts already cap themselves with `MaxContentWidth` so an iPad gets a centred column rather
-  than stretched rows. But `MaxContentWidth` is **480** ([`theme.ts:96`](../src/constants/theme.ts#L96)),
+  than stretched rows. But `MaxContentWidth` is **480** ([`theme.json`](../src/constants/theme.json)),
   and a 480pt column centred on a 13" iPad is mostly empty screen — which then becomes a *required
   screenshot* on the listing. Turning it on may cost more than the App Store filter it buys. Check it
   in the simulator, which is free, and while there confirm whether iPadOS 26's windowing still honours
@@ -159,7 +159,7 @@ await requestPurchase({ request: { google: { skus: [sku] } }, type: 'in-app' });
 `sku`, not a `skus` array. Everything wrapped around this call is already platform-neutral and does not
 move: `finishTransaction({ isConsumable: true })`, the `purchaseState === 'pending'` guard, the
 `ErrorCode.UserCancelled` branch, and `toTipTierOffers`. Both keys now go in the one request object
-so the store picks its own, built by `tipPurchaseRequest` in [`tip.ts`](../src/domain/tip.ts) — which
+so the store picks its own, built by RN's `tipPurchaseRequest` (in `tip.ts`, deleted with the TS in #353) — which
 puts it where typecheck can check it against expo-iap's `RequestPurchaseProps` and where a test can
 pin the shape without a React tree. This was the one line where a silent iOS-only failure lands on
 the screen that asks the user for money.
@@ -183,7 +183,7 @@ rather than $25 once, which is the strongest version of the argument that screen
 
 ### 2.3 App Store Connect products, same SKU ids
 
-[`tip.ts:23`](../src/domain/tip.ts#L23) fixes `tip_small` / `tip_medium` / `tip_large`. Create the same
+[`Tip.kt`](../native/android/shared/src/commonMain/kotlin/com/casco/kettle/domain/Tip.kt) fixes `tip_small` / `tip_medium` / `tip_large`. Create the same
 three ids in App Store Connect as **Consumable** in-app purchases. Same reasoning as Play: consumables
 are what make a repeat tip possible, and consumables aren't restorable from either store, so "has
 tipped" stays local in `supporter.json` and nothing about that design changes.
@@ -246,7 +246,7 @@ writes `ios.infoPlist.CFBundleLocalizations` when it is passed `supportedLocales
 mechanism). So an iOS build declares **no** localizations.
 
 That matters because of where the language comes from. `deviceLanguage()`
-([`i18n/index.ts:39`](../src/i18n/index.ts#L39)) walks `getLocales()` for the first language it ships a
+(RN's `src/i18n/index.ts`, deleted with the TS in #353) walked `getLocales()` for the first language it ships a
 bundle for, and on iOS `getLocales()` is built from `Locale.preferredLanguages`
 (`node_modules/expo-localization/ios/LocalizationModule.swift:149`) — which iOS filters against the
 app bundle's declared localizations. With none declared, a Portuguese or Japanese iPhone very likely
@@ -330,7 +330,7 @@ confused:
   container identifier in the entitlements, which is a Phase 4 signing concern.
 - **CloudKit key-value or record sync.** Structured, conflict-resolved, app-managed. This is a real
   sync layer, and it is a different product: it needs a merge strategy for sessions written on two
-  devices, which the app deliberately does not have — [`merge.ts`](../src/domain/merge.ts) merges the
+  devices, which the app deliberately does not have — [`Merge.kt`](../native/android/shared/src/commonMain/kotlin/com/casco/kettle/domain/Merge.kt) merges the
   *library* by id with whole-object replace, and the session log is append-only-in-fact and
   **export-only** (see the decision log). There is nothing today that reads a session log back in.
 
@@ -568,7 +568,7 @@ constraints that shape future work, and claims that become **false** the moment 
   replaced, at M7 (#357), the RN-era rule of one integer serving both stores, which held only while
   one `app.json` built both. The changelog heading (`## <version> — versionCode <n>, <date>`) names
   Android's build number, so M8 decides how a heading names iOS's.
-- **[`store-copy.test.ts`](../src/domain/__tests__/store-copy.test.ts)** — a bigger job than a changed
+- **[`StoreCopyTest.kt`](../native/android/repo-checks/src/test/kotlin/com/casco/kettle/repochecks/StoreCopyTest.kt)** — a bigger job than a changed
   constant. It asserts Play's whole shape: 80 characters for short, 4000 for full, 500 per release-note
   block, that each heading *declares its own real length*, and that full descriptions keep 30
   characters of headroom. The App Store's limits differ across the board — name 30, subtitle 30,

@@ -1,7 +1,7 @@
 package com.casco.kettle.domain
 
 // Where the exercise editor's Recent bars go (#241), as plain numbers, ported from RN's
-// `volume-chart.tsx`. Split from the drawing so a test reaches the arithmetic without a Canvas, as
+// RN's volume chart. Split from the drawing so a test reaches the arithmetic without a Canvas, as
 // `ProgressChartLayout.kt` is.
 
 /** The Recent chart's height, value labels and dates included. */

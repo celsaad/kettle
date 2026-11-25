@@ -37,7 +37,7 @@ internal fun EditorTitleBar(
     Row(Modifier.padding(vertical = Spacing.two), verticalAlignment = Alignment.CenterVertically) {
         Text(title, Modifier.weight(1f).semantics { heading() }, style = KettleType.subtitle, color = colors.text)
         if (onSave != null) {
-            // The heading's size, as the board draws Save; white on the accent is 4.99:1 (theme.ts).
+            // The heading's size, as the board draws Save; white on the accent is 4.99:1 (theme-notes.md).
             Box(
                 Modifier
                     .heightIn(min = 48.dp)

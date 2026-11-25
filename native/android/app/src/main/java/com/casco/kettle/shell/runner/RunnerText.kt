@@ -13,7 +13,7 @@ import com.casco.kettle.shell.R
 import com.casco.kettle.shell.i18n.pluralText
 import com.casco.kettle.shell.i18n.weightUnit
 
-// The runner's words, as RN's `domain/format.ts` and the session components assemble them. In one
+// The runner's words, as RN's formatter and the session components assembled them. In one
 // place because `:strings` numbers a key's placeholders in the alphabetical order of their names, not
 // in the order they read: `preview.interval` is (progress, variant). Every call here is in that
 // order, and the Compose tests in `pt` catch one that isn't. User data (names, notes) goes in verbatim.

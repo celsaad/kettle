@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 /**
- * The history export and backup's archive (#237): `yaml-mapping.test.ts`'s "session archive", case for
+ * The history export and backup's archive (#237): RN's "session archive" tests, case for
  * case, plus the oldest-first order `exportSessions` and `backUpNow` both sort into.
  */
 class SessionArchiveTest {

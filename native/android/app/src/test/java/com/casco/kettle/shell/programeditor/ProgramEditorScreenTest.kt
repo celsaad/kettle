@@ -24,8 +24,7 @@ import org.robolectric.annotation.Config
 import java.io.IOException
 
 /**
- * The program editor (#243), case for case from RN's `program-editor.test.tsx` and
- * `program-override-editor.test.tsx`, on the harness recipe (#193): in `pt`, so a hardcoded English
+ * The program editor (#243), on the harness recipe (#193): in `pt`, so a hardcoded English
  * string fails, with the files faked behind `StoredFiles`. Each asserts on the library written.
  *
  * The rules under the screen are `:shared`'s (`ProgramEditingTest`, `OverrideEditingTest`); these

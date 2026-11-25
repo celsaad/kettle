@@ -44,9 +44,9 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
 /**
- * Library (#234), case for case from RN's `library.test.tsx`, on the harness recipe (#193): in `pt`,
+ * Library (#234), on the harness recipe (#193): in `pt`,
  * since an English assertion passes a hardcoded English string, with the library faked behind
- * [StoredFiles] and every route and export heard through parameters. Beyond jest's: the filter chips'
+ * [StoredFiles] and every route and export heard through parameters. Also: the filter chips'
  * role and state, a target in pounds, what each control sends, the targets' size and re-tap-to-top.
  */
 @RunWith(RobolectricTestRunner::class)

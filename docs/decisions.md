@@ -320,7 +320,7 @@ decision assembled across several commits. Open work belongs in the sections at 
   **Storage stays metric, unconditionally.** `exercises.yaml` is a file users hand-edit, export and
   share, so `target_weight: 60` has to mean the same thing wherever it's opened — a library whose
   numbers changed meaning with the reader's settings would be unshareable, which is most of the
-  product's pitch. `domain/units.ts` is the only converter (`Units.kt` its `:shared` port), and the
+  product's pitch. `:shared`'s `Units.kt` is the only converter (`domain/units.ts` until #353), and the
   preference is read for display only. A pound value must never reach disk.
 
   **The lossy direction is solved by not converting, not by rounding.** Pounds display at 0.1 and
@@ -1098,20 +1098,21 @@ decision assembled across several commits. Open work belongs in the sections at 
   what falls on each side:
   - **Values go in data files.** Translations are the locale bundles (`src/i18n/locales/*.json`, read
     by `:strings`). Colors, spacing, the type scale and its fonts' names are `src/constants/theme.json`
-    (read by `:theme`), and `theme.ts` is a thin re-export that keeps the notes JSON can't. Native generates
+    (read by `:theme`), and `theme-notes.md` beside it keeps the notes JSON can't. Native generates
     its code from them on every build into a build directory, so nothing generated is committed and
     nothing can go stale. The Swift app in M8 reads the same files, not a Kotlin copy.
   - **Behaviour isn't data.** Parser rules, ceilings like `MAX_SETS`, unit steps and search
     thresholds are ported as code, and `conformance/` is what holds the two sides together. The
     loader's limits that the corpus can't express hold the same way through `YamlTest`, which
     asserts against values measured from js-yaml (nesting depth, for example).
-  - **Comments stay in the TS wrapper**, because JSON has none. `theme.ts` keeps the contrast notes,
-    and `GeneratedThemeTest` recomputes the ratios they record from the generated colors, so the
+  - **Comments stay beside the data**, because JSON has none: `theme-notes.md` (a TS wrapper until
+    #353) keeps the contrast notes, and `GeneratedThemeTest` recomputes the ratios they record from
+    the generated colors, so the
     numbers can't drift away from the values even though they no longer sit beside them.
   - **The seed library and content packs** are the second instance (#224): library YAML plus a
     translation JSON per language in `src/content/`, with `localizeLibrary` ported as behaviour.
     Unlike `theme.json`, their comments live in the data: YAML has them, so the authoring rules sit
-    beside the content they constrain rather than in a TS wrapper.
+    beside the content they constrain rather than in a notes file.
   - **The exercise drawings** are the third (#225, #228): one SVG per drawing in `src/content/art/`
     and an id → drawing map in `art.json`. RN draws the markup with `SvgXml`; `:art` generates
     VectorDrawables from it, accepting only `path`, `circle` and `g` with
@@ -1169,9 +1170,9 @@ decision assembled across several commits. Open work belongs in the sections at 
     `*Schema.kt` readers as data, plus an interpreter for zod 4's fatal and non-fatal rules, to
     generate one file that changes when the format does. **Publishing a Kotlin zod-alike library was
     refused**: Kettle would own a general-purpose validation library to serve one schema.
-  - **Node is to survive only for oxfmt** (#353; jest still runs until then), which formats `site/`
-    and the JSON nothing else owns. The guards jest runs move to JVM tests rather than keeping a
-    Node test runner for them.
+  - **Node survives only for oxfmt** (#353), which formats `site/` and the JSON nothing else owns.
+    The guards jest ran moved to JVM tests (`:strings`, `:app`, `:repo-checks`) rather than keeping
+    a Node test runner for them.
 
 - **Device checks of the user journeys stay in-house scripts, not a test framework (#172).** The CUJ
   checks grow out of `scripts/route-check.sh` and its `.ps1` twin: adb, the debug receivers and a
@@ -1267,7 +1268,9 @@ constraint that outlived the work rather than a description of it.
   reputation is real on Linux CI and will suggest Bun again; on this Windows box the measurement is
   the answer. Bun is otherwise fine — the full suite passed under it before the switch.
 
-  Three things about pnpm that are not obvious and each cost a debugging round:
+  Three things about pnpm that are not obvious and each cost a debugging round. Since #353 none is
+  live: oxfmt is the only package, installed in pnpm's default isolated layout, and
+  `pnpm-workspace.yaml` is gone. They stay for the day a second package arrives.
 
   - **Settings live in `pnpm-workspace.yaml`, not `.npmrc`.** pnpm 10 began moving them and by 11 an
     `.npmrc` entry is read as an npm setting and ignored. `--node-linker=hoisted` on the command line
@@ -1282,7 +1285,6 @@ constraint that outlived the work rather than a description of it.
     one directory name; at the default of 120 the longest `@babel` entries breach Windows' 260-char
     path cap and the install dies with `ENOENT` on `mkdir`. `LongPathsEnabled` is off on this machine
     and turning it on needs admin plus a reboot, so the cap is worked around rather than lifted.
-    Still live after M7: jest's TypeScript transform is babel.
 
   The lockfile came from `pnpm import` against the existing `package-lock.json`, so the migration
   changed the manager without re-resolving a single version. Verified past jest, which doesn't

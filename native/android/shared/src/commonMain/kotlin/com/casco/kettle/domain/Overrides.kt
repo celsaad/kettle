@@ -1,10 +1,9 @@
 package com.casco.kettle.domain
 
 /**
- * What happened to one program-week override, as `OverrideReport` in `src/domain/yaml-mapping.ts`,
- * whose comment says why each part has the granularity it has. [refused] is the whole patch: it is
- * validated merged, as a unit, and none of it applies when that fails. [unknownKeys] is per key,
- * since the known keys beside a typo still apply.
+ * What happened to one program-week override, at the granularity each part has below. [refused] is the whole
+ * patch: it is validated merged, as a unit, and none of it applies when that fails. [unknownKeys] is per
+ * key, since the known keys beside a typo still apply.
  */
 data class OverrideReport(
     val refused: Boolean,

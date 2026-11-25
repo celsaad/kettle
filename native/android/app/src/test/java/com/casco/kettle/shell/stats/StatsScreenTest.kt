@@ -45,7 +45,7 @@ import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Instant
 
 /**
- * Stats (#201), case for case from RN's `analytics.test.tsx`, on the harness recipe (#193): in `pt`,
+ * Stats (#201), on the harness recipe (#193): in `pt`,
  * since an English assertion passes a hardcoded English string, with the files faked behind
  * [StoredFiles] and the clock, zone and first weekday parameters.
  *

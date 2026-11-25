@@ -87,7 +87,7 @@ abstract class WorkoutEditorHarness {
         text: String,
     ) = node(hasContentDescription(name)).performTextReplacement(text)
 
-    /** jest's `pressAlertButton`: a button inside the dialog, never a same-named one on the screen under it. */
+    /** A button inside the dialog, never a same-named one on the screen under it. */
     protected fun ComposeContentTestRule.pressDialogButton(label: String) =
         onNode(hasText(label) and hasAnyAncestor(isDialog())).performClick()
 

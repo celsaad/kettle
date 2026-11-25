@@ -1,7 +1,7 @@
 package com.casco.kettle.domain
 
 // The workout editor's draft (#242): its blocks, keyed, and the moves on them, which RN kept inline in
-// `workout-editor.tsx`. The circuits' own rules are `CircuitEditing.kt`'s; Save is `WorkoutEditing.kt`'s.
+// RN's workout editor. The circuits' own rules are `CircuitEditing.kt`'s; Save is `WorkoutEditing.kt`'s.
 
 /**
  * One block of the draft, with a [key] that stays with it through every move. A `WorkoutBlock` has no

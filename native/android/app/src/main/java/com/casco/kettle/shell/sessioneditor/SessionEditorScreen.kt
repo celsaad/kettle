@@ -89,7 +89,7 @@ class SessionEditorActions(
 )
 
 /**
- * Corrects what a finished session logged (#239), as RN's `session-editor.tsx` did until the sessions
+ * Corrects what a finished session logged (#239), as RN's session editor did until the sessions
  * flip (#240) made this the only writer of an edited session file: a mis-typed rep count, a load
  * entered before the plates changed, an RPE tapped in the wrong column.
  *

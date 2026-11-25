@@ -18,7 +18,7 @@ import com.casco.kettle.shell.theme.KettleTheme
 
 /**
  * One exercise's recent values as a line beside the words that state them, in ink with a dot on the
- * latest (#414; bars until then, RN's `sparkline.tsx`, #201). Where each point goes is `sparklineBars`'
+ * latest (#414; bars until then, since RN's in #201). Where each point goes is `sparklineBars`'
  * decision in `:shared`, the line joining the tops of the bars it would have drawn, so it keeps their
  * rule: **scaled from zero**, so a small gain looks small. A Canvas has no semantics, so a screen reader
  * passes over it; every number it could say is printed beside it.

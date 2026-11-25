@@ -173,7 +173,7 @@ lock screen, and describing it as "watch" would puzzle everyone without one.
 
 ## Testing
 
-Testable in jest, and worth it: the seam (register/clear, and a stale stamp being rejected — prove
+Testable in `:app`'s Robolectric tests, and worth it: the seam (register/clear, and a stale stamp being rejected — prove
 that one fails against the bug it pins, per the house rule), the pure content builder, and the copy,
 by driving a session in `pt`. An English-locale assertion cannot catch a hardcoded English string,
 which is exactly how line 511 shipped.

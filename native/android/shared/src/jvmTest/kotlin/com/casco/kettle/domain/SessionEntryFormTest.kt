@@ -9,7 +9,7 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 
 /**
- * Ported case for case from RN's `session-entry-form.test.ts`. The interesting failure modes live
+ * Ported case for case from RN's session entry form tests. The interesting failure modes live
  * here: a load that drifts on a round trip through pounds, a removal that staples the wrong rest onto
  * the wrong set, an entry that survives losing its last set.
  */

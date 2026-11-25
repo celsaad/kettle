@@ -7,8 +7,8 @@ import org.junit.jupiter.api.Test
 
 /**
  * [overrideNote], the display half of the override merge, which RN's `overrideLines` held inside
- * `program-detail.tsx` until Program detail went native (#233). Its jest cases were the screen's; the
- * targeting and per-key ones are here as the selector's, and the words are `ProgramDetailScreenTest`'s.
+ * its Program detail screen until that went native (#233). The targeting and per-key ones are here as the selector's,
+ * and the words are `ProgramDetailScreenTest`'s.
  */
 class OverrideNotesTest {
     private val pullUps = Exercise("pull-ups", "Pull-ups", ExerciseConfig.Reps(3, 8, restSec = 90.0))

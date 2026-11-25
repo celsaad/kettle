@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 
 /**
- * `src/domain/__tests__/tip.test.ts`, case for case. `tipPurchaseRequest` and `tipStoreCopyKeys` stay
+ * The tip jar. `tipPurchaseRequest` and `tipStoreCopyKeys` stay
  * behind: one is expo-iap's request shape and the other picks the App Store's copy, and neither has an
  * Android caller. What the file reads as is the conformance corpus's (`conformance/supporter.yaml`).
  */

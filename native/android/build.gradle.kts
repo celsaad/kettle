@@ -16,7 +16,7 @@ plugins {
 val ktlintVersion = libs.versions.ktlint.get()
 val detektKotlinVersion = libs.versions.detektKotlin.get()
 
-// Zero warnings and zero errors, the same rule `pnpm run lint` holds on the TS side. Both tools fail
+// Zero warnings and zero errors, the rule AGENTS.md sets for every check. Both tools fail
 // `check` on any finding: ktlint by default, detekt because its default `maxIssues` is 0 and
 // `warningsAsErrors` turns its warning-severity rules into findings too.
 allprojects {

@@ -229,7 +229,7 @@ private fun CodeBlock(sample: String) {
 }
 
 // RN's offsets from the spacing scale, named after what they space: `sectionTitle`, `intro`, `section`,
-// `body` and `codeBlock` in program-guide.tsx's styles.
+// `body` and `codeBlock` in RN's program guide styles.
 private val TitleGap = Spacing.one + 2.dp
 private val SectionGap = Spacing.four - 4.dp
 private val ParagraphGap = Spacing.two - 2.dp
@@ -238,7 +238,7 @@ private val CodePadding = Spacing.two + 4.dp
 private val ButtonShape = RoundedCornerShape(15.dp)
 private val CodeShape = RoundedCornerShape(12.dp)
 
-// Not a second type scale: these are program-guide.tsx's own StyleSheet overrides on ThemedText,
+// Not a second type scale: these are RN's program guide's own StyleSheet overrides on ThemedText,
 // `body`, `inline` and `codeText`, ported with the screen as RN keeps them with it.
 private val BodyStyle = KettleType.default.copy(lineHeight = 20.sp)
 private val InlineCode = SpanStyle(fontFamily = FontFamily.Monospace, fontSize = 13.sp)

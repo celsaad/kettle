@@ -18,7 +18,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import kotlin.concurrent.thread
 
 /**
- * The runner's finish backup (#220), which `session-history-store.test.ts`'s "backing up when a
+ * The runner's finish backup (#220), which RN's session history store tests' "backing up when a
  * session finishes" cases hand over to native: whether it runs, what it backs up, and the answer RN's
  * completion screen warns from. The backup itself is `:shared`'s `BackupTest`.
  */

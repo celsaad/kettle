@@ -1,8 +1,7 @@
 package com.casco.kettle.domain
 
 /**
- * What reading one of the app's files gives back: the value, or why it was refused, as
- * `ParseResult` in `src/domain/yaml-mapping.ts`.
+ * What reading one of the app's files gives back: the value, or why it was refused.
  *
  * `paths` is the part of a refusal both implementations are held to (`conformance/README.md`). The
  * `detail` beside it is this port's own wording and not compared with anything, which is why it is

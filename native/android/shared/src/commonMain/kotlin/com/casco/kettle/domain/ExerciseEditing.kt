@@ -4,7 +4,7 @@ import kotlin.time.Instant
 
 // What the exercise editor (#241) does to the library, and what it shows of the log. The library
 // edits were RN's library store's `saveExercise` and `deleteExercise`; the rest is
-// `history-views.ts`' `exerciseHistory`.
+// `exerciseHistory`.
 
 /** The library with [exercise] in it: in place of the one with its id, or else at the end. */
 fun Library.withExercise(exercise: Exercise): Library = copy(exercises = exercises.upserting(exercise, Exercise::id))

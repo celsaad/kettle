@@ -31,7 +31,7 @@ import kotlin.time.Instant
 
 /**
  * One exercise's value, session by session, across [window]: the chart the Getting stronger row's
- * sparkline is a thumbnail of, ported from RN's `progress-chart.tsx` (#200). Where everything goes is
+ * sparkline is a thumbnail of, ported from RN's progress chart (#200). Where everything goes is
  * `progressChartLayout`'s decision, in `:shared`; this measures the labels and draws.
  *
  * **One series, one hue, and an axis.** The line takes the accent. A filled dot marks each session

@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 
 /**
- * "Last time" on the set row and the live personal-best marker, from RN `use-session-runner.test.tsx`'s
+ * "Last time" on the set row and the live personal-best marker, from RN's runner-hook tests'
  * last-time, personal-best and adopting-load sections. Prior sessions are a parameter here, not
  * something the engine holds.
  */
@@ -149,6 +149,26 @@ class RunnerRecordsTest {
 
             runner.tick(1)
             assertTrue(beatsPersonalBest(runner.state, prior, runner.now))
+        }
+
+        @Test
+        fun `personalBestFor takes the best across every finished session`() {
+            val sessions =
+                listOf(
+                    finishedSession("newest", repsSets(5L to 95.0)),
+                    finishedSession("older", repsSets(5L to 105.0)),
+                    finishedSession("oldest", repsSets(5L to 90.0)),
+                )
+
+            assertEquals(105.0, personalBestFor(sessions, "pullups").heaviestSetKg)
+        }
+
+        @Test
+        fun `personalBestFor keeps a bodyweight best on reps, apart from load`() {
+            // The split entryBest makes, which the marker and the completion screen have to agree on.
+            val best = personalBestFor(listOf(finishedSession("older", repsSets(14L to null))), "pullups")
+
+            assertEquals(PersonalBest(heaviestSetKg = null, mostReps = 14.0, longestHoldSec = null), best)
         }
 
         @Test

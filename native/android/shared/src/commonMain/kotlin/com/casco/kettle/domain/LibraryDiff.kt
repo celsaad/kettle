@@ -1,6 +1,6 @@
 package com.casco.kettle.domain
 
-// What an import is about to overwrite, field by field (#244), as RN's `library-diff.ts`. Merge
+// What an import is about to overwrite, field by field (#244), as RN's library diff. Merge
 // replaces a matching id whole (§6), so an id the user tweaked loses the tweak, and this is what the
 // preview shows of it. Descriptors rather than words: the import screen renders them.
 

@@ -1,7 +1,7 @@
 package com.casco.kettle.domain
 
 /**
- * A program week by number, as `findProgramWeek` in `src/domain/program.ts`. A program that runs
+ * A program week by number. A program that runs
  * several sessions a week repeats the number, and [day] tells them apart; without one, the first
  * week with the number is the match, which is all a program with no `day` anywhere needs.
  */

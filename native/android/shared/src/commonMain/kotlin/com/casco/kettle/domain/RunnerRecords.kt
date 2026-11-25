@@ -1,9 +1,9 @@
 package com.casco.kettle.domain
 
 // "Last time" on the set row and the live PR marker beside it (§3.3 of #294's inventory), from
-// `previousSetFor` and `personalBestFor` in RN's `src/state/selectors/records.ts`, which hold the
-// reasoning. Both read the log as it stood when the session started, `SessionLog.logged`, never the
-// live one, which would answer "last time" with the set finished two minutes ago.
+// `previousSetFor` and `personalBestFor`. Both read the log as it stood when the session started,
+// `SessionLog.logged`, never the live one, which would answer "last time" with the set finished two minutes
+// ago.
 
 /** One set of a previously logged entry, as data: the weight can't be text until it is in display units. */
 sealed interface PreviousSet {

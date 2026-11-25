@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 
 /**
- * The engine's clock and cues, from RN `use-session-runner.test.tsx`'s timing, catch-up, hold,
+ * The engine's clock and cues, from RN's runner-hook tests' timing, catch-up, hold,
  * milestone and +30s sections (§2.2–2.4 and §2.6 of #294's inventory), plus #295's pause rule and
  * the count-in #297 moved into the service.
  */
@@ -144,7 +144,7 @@ class RunnerTimingTest {
 
         /**
          * #295's deliberate difference from RN, which kept one session-wide flag and started the next
-         * step paused (`use-session-runner.ts:407`): the rest after a paused interval sat at full time
+         * step paused (RN's runner hook): the rest after a paused interval sat at full time
          * with no Resume on its screen.
          */
         @Test

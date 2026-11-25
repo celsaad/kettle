@@ -1,4 +1,4 @@
 package com.casco.kettle.domain
 
-/** Weight display units; `Units.kt` converts, and `src/domain/units.ts` holds the reasoning. */
+/** Weight display units; `Units.kt` converts. */
 enum class UnitSystem { METRIC, IMPERIAL }

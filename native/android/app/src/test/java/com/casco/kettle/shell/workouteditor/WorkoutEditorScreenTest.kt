@@ -36,8 +36,8 @@ import org.robolectric.annotation.Config
 import java.io.IOException
 
 /**
- * The workout editor (#242), case for case from RN's `workout-editor.test.tsx`, plus the move half of
- * `reorderable-list.test.tsx` as the custom actions that replace RN's slider, on the harness recipe
+ * The workout editor (#242), plus the move half of RN's reorderable list as the custom actions that
+ * replace its slider, on the harness recipe
  * (#193): in `pt`, with the files faked behind `StoredFiles`. Each asserts on the library written.
  *
  * The draft's own rules are `:shared`'s (`WorkoutEditingTest`); these cover the wiring. A drag itself

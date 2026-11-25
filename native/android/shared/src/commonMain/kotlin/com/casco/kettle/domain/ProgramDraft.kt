@@ -1,6 +1,6 @@
 package com.casco.kettle.domain
 
-// The program editor's draft (#243) and its moves, which RN kept inline in `program-editor.tsx`. Save
+// The program editor's draft (#243) and its moves, which RN kept inline in its program editor. Save
 // is `ProgramEditing.kt`'s; the overrides panel under each week is `OverrideEditing.kt`'s.
 
 /**

@@ -10,7 +10,7 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 /**
- * `historySessionsView`'s cases from RN's `history-views.test.ts`, which went with RN History
+ * `historySessionsView`'s cases from RN's History tests, which went with RN History
  * (#202). RN's asserted the finished labels; here the selector returns their numbers, and the words
  * are History's screen test's (`HistoryScreenTest`, in `pt`). The rest pin what RN's view did without
  * a case of its own: rest entries dropped, a session of rounds, the editable flag and the day in the reader's zone.

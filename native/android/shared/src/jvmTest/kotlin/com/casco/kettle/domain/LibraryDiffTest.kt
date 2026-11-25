@@ -5,7 +5,7 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 
 /**
- * What an import is about to overwrite, case for case from RN's `library-diff.test.ts`. The words are
+ * What an import is about to overwrite, from RN's library diff tests. The words are
  * the screen's (`ImportScreenTest` drives them in `pt`); these are the rules under them.
  */
 class LibraryDiffTest {

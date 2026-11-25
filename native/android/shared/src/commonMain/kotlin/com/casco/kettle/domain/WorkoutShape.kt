@@ -47,7 +47,7 @@ val ExerciseConfig.type: ExerciseType
             is ExerciseConfig.Rest -> ExerciseType.Rest
         }
 
-/** As `workoutShape` in RN's `state/selectors/workout-shape.ts`, which went with RN Home (#235). */
+/** As RN's `workoutShape`, which went with RN Home (#235). */
 fun workoutShape(
     workout: Workout,
     exercises: List<Exercise>,

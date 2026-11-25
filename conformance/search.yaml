@@ -1,4 +1,4 @@
-# Name search (src/domain/search.ts). Each case runs rankByName and filterByName over `names` with
+# Name search. Each case runs rankByName and filterByName over `names` with
 # `query`. `ranked` is best match first; `filtered` is the same matches in the original order.
 cases:
   - name: blank-query-shows-everything

@@ -5,7 +5,7 @@ import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.Test
 import java.text.Normalizer
 
-/** `slug.test.ts`, case for case: a new exercise's id is its name's slug (#241). */
+/** A new exercise's id is its name's slug (#241). */
 class SlugTest {
     @Test
     fun `lowercases the name`() {

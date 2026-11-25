@@ -1,7 +1,7 @@
 package com.casco.kettle.domain
 
 /**
- * One logged session, the domain model of a session file, as `Session` in `src/domain/types.ts`.
+ * One logged session, the domain model of a session file.
  *
  * An optional field is a nullable property whose null means *absent*, and a `| null` field is a
  * nullable property whose null means null. No field is both, so the two never need telling apart in

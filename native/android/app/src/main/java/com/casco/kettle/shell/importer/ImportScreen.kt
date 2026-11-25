@@ -39,7 +39,7 @@ import com.casco.kettle.shell.theme.KettleType
 import com.casco.kettle.shell.theme.Spacing
 
 /**
- * Import (#244), as RN's `import.tsx`: a file, a paste or a starter pack, previewed, then merged by id
+ * Import (#244), as RN's Import screen: a file, a paste or a starter pack, previewed, then merged by id
  * with whole-object replace on confirm. Nothing reaches the library before Merge, and a refusal writes
  * nothing. Around that, the loop with an assistant: the brief out, its YAML back in from the clipboard,
  * and a refusal copied back to it.

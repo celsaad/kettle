@@ -54,9 +54,9 @@ import java.util.Locale
 import kotlin.time.Instant
 
 /**
- * History (#202), case for case from RN's `history.test.tsx`, on the harness recipe (#193): in `pt`,
+ * History (#202), on the harness recipe (#193): in `pt`,
  * since an English assertion passes a hardcoded English string, with the files faked behind
- * [StoredFiles] and every message to the shell heard through [HistoryActions]. Beyond jest's: the
+ * [StoredFiles] and every message to the shell heard through [HistoryActions]. Also: the
  * delete's cancel and failure, the unreadable-file notice, and re-tap-to-top.
  *
  * The row's numbers are `:shared`'s (`HistoryViewsTest`, `HistoryStatsTest`); the words are
@@ -95,8 +95,8 @@ class HistoryScreenTest {
     }
 
     /**
-     * jest's `pressAlertButton`: a button inside the dialog, never a same-named control on the screen
-     * under it, which `onNodeWithText` alone would find too and fail on as ambiguous.
+     * A button inside the dialog, never a same-named control on the screen under it, which `onNodeWithText`
+     * alone would find too and fail on as ambiguous.
      */
     private fun ComposeContentTestRule.pressDialogButton(label: String) =
         onNode(hasText(label) and hasAnyAncestor(isDialog())).performClick()
@@ -164,7 +164,7 @@ class HistoryScreenTest {
             .assert(clickLabel("Ocultar exercícios"))
     }
 
-    // The label History's jest suite pinned through the selector: "1 sets" shipped once.
+    // The label, through the selector: "1 sets" shipped once.
     @Test
     fun `says a row's time and sets, its count in the plural it takes`() {
         val twoSets =

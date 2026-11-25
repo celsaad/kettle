@@ -9,8 +9,8 @@ import kotlinx.datetime.plus
 import kotlinx.datetime.toLocalDateTime
 import kotlin.time.Instant
 
-// Ported from `src/state/selectors/history-stats.ts`, deleted with RN History (#202), its last reader:
-// each rule's reasoning is kept beside it here in short, and in full in that file's git history. Days are calendar
+// The history stats, from RN History's selector (deleted with it, #202): each rule's reasoning is kept
+// beside it here in short, and in full in git history. Days are calendar
 // days in the reader's zone, as RN's `toDateString` and `setDate` count them: a [LocalDate] has no
 // hours, so a week across a DST change can't come out an hour short the way millisecond steps would.
 // `now`, the zone and the first weekday are parameters, where RN reads the clock and the device.

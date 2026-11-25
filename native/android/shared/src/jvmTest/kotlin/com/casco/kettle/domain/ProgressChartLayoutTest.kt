@@ -8,7 +8,7 @@ import kotlin.time.Duration.Companion.days
 import kotlin.time.Instant
 
 /**
- * RN's `progress-chart-layout.test.ts`, ported (#200), its label cases since replaced by the y axis
+ * RN's chart layout tests, ported (#200), its label cases since replaced by the y axis
  * (#413): where the progress chart puts its dots and lines, as arithmetic. How it looks is checked
  * in the running app.
  */

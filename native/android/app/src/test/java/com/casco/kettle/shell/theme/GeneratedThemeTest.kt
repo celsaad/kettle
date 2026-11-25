@@ -144,11 +144,11 @@ class GeneratedThemeTest {
     }
 
     /**
-     * The ratios theme.ts records, recomputed from the generated colors. They are the expected values
-     * here, written by hand from its comments: a color that moved in the port would move its ratio.
+     * The ratios theme-notes.md records, recomputed from the generated colors. They are the expected values
+     * here, written by hand from that file: a color that moved would move its ratio.
      */
     @Test
-    fun `the contrast ratios recorded in theme ts hold for the generated colors`() {
+    fun `the contrast ratios recorded in theme notes hold for the generated colors`() {
         with(LightColors) {
             assertContrast(6.35, textSecondary, background.surface())
             assertContrast(7.03, textSecondary, backgroundElement.surface())
@@ -333,7 +333,7 @@ class GeneratedThemeTest {
     }
 
     private companion object {
-        // Computed here at the byte alpha both platforms render. theme.ts measured some translucent
+        // Computed here at the byte alpha both platforms render. theme-notes.md measured some translucent
         // pairings that way (the dark calendar's) and some at the exact CSS fraction (the light
         // calendar's: 8.59 there, 8.62 rendered), up to 0.03 apart. The exact values are pinned by the
         // channel test above; this one holds the recorded claims.

@@ -38,8 +38,8 @@ data class OverrideKey(
 )
 
 /**
- * One override, for display, as RN's `overrideLines` renders it: ported from `program-detail.tsx`, and
- * kept in RN by `program-override-editor.tsx` until the library flip.
+ * One override, for display, as RN's `overrideLines` renders it: ported from RN's Program detail, and
+ * kept in RN by its override editor until the library flip.
  * [refused] is a patch the schema refuses merged, so none of it applies and no key is marked unknown.
  * A [OverrideTarget.Missing] target is never refused and has no unknown keys either: there was nothing
  * to merge into.

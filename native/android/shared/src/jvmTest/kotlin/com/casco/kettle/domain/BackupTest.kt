@@ -4,7 +4,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 
-/** The backup folder's pure half (#237): `backup.test.ts`'s `backupFolderLabel`, and the record of last time. */
+/** The backup folder's pure half (#237): `backupFolderLabel`, and the record of last time. */
 class BackupTest {
     @Nested
     inner class FolderLabel {

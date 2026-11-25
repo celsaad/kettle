@@ -85,7 +85,7 @@ class ExerciseEditorActions(
 )
 
 /**
- * An exercise's plan (#241), as RN's `exercise-editor.tsx` was, now the empty stub at this path: its
+ * An exercise's plan (#241), as RN's exercise editor was, now the empty stub at this path: its
  * name, type, config and notes, and the bundled drawing of a seeded one. What the log holds of it is
  * Exercise detail's since #413, which the form is one tap behind. One of the library's writers, all
  * native from the library flip (#245).

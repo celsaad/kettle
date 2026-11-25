@@ -11,7 +11,7 @@ data class ChangedItem(
 )
 
 /**
- * What an import is about to do (#244), as RN's `import.tsx` worked it out inline: the ids it adds and
+ * What an import is about to do (#244), as RN's Import screen worked it out inline: the ids it adds and
  * replaces, counted, and what each replaced one loses. [before] is the library the merge was made
  * against, [merged] what Merge would write.
  */

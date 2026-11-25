@@ -28,10 +28,9 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
 /**
- * The quick-add the workout editor's pickers embed (#241), case for case from RN's
- * `new-exercise-form.test.tsx`, in `pt`. RN's was a second copy of the editor's form, which is why
- * jest pinned it; here it is the same form and the same `submitExercise`, and this holds that it
- * stays wired to them.
+ * The quick-add the workout editor's pickers embed (#241), in `pt`. RN's was a second copy of the
+ * editor's form; here it is the same form and the same `submitExercise`, and this holds that it stays wired
+ * to them.
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(qualifiers = "pt")

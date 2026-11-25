@@ -1,7 +1,7 @@
 package com.casco.kettle.domain
 
-// Where Stats' two Canvas drawings put things, in dp, ported from the flexbox of RN's `sparkline.tsx`
-// and `training-calendar.tsx`. Split from the drawing so the rules their comments state are tested
+// Where Stats' two Canvas drawings put things, in dp, ported from the flexbox of RN's sparkline
+// and training calendar. Split from the drawing so the rules their comments state are tested
 // here; how they look is the running app's to show.
 
 /** The sparkline's height. Decorative geometry with no text in it, so a fixed height is right. */

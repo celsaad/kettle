@@ -128,7 +128,7 @@ private fun unpaid(
 ) = StorePurchase(listOf(sku), pending = true, token = token)
 
 /**
- * Support on Play Billing (#198). `support.test.tsx` had one case, the App Store's naming on iOS, which
+ * Support on Play Billing (#198). RN's Support tests had one case, the App Store's naming on iOS, which
  * Android doesn't have; these are the Android cases the port asked for instead.
  *
  * The harness recipe (#193): the class runs in `pt`, since an English assertion passes a hardcoded

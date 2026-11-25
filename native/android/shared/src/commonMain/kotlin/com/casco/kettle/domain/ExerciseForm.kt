@@ -5,7 +5,7 @@ import kotlin.math.floor
 // The exercise form's data model (#241): which fields each exercise type exposes, and the validation
 // the form must run itself, since it writes the library directly and never passes through the schema.
 // How an exercise round-trips to the strings the form holds is `ExerciseDraft.kt`'s. Ported from RN's
-// `exercise-form.ts`, with `validateBlockConfig`, the override editor's (#243), at the end.
+// RN's exercise form, with `validateBlockConfig`, the override editor's (#243), at the end.
 
 /**
  * A config value a form holds, named for the domain property it becomes. The last two are a circuit's

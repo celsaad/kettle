@@ -19,7 +19,7 @@ import java.io.File
 /**
  * The SAF lesson that costs data rather than failing: a document opened `"w"` is overwritten from the
  * start and not truncated, so a backup shorter than the last kept the old one's tail welded on.
- * `backup.test.ts`'s truncation case, against a provider whose files open in the mode asked for, as a
+ * RN's backup truncation case, against a provider whose files open in the mode asked for, as a
  * real one's do. Writing `"w"` in [SafBackupFolder.write] fails this.
  */
 @RunWith(RobolectricTestRunner::class)

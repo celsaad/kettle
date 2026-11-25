@@ -1,7 +1,7 @@
 package com.casco.kettle.domain
 
 /**
- * The engine driven the way RN's `use-session-runner.test.tsx` drives the hook: a virtual clock, a
+ * The engine driven the way RN's runner-hook tests drove it: a virtual clock, a
  * 1 Hz ticker ([tick]), a gap away from the app ([away]), and the session as the effects wrote it.
  * The fixtures are that suite's, plus the built-in rest, so the swap picker has one to leave out.
  */

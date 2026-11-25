@@ -5,7 +5,7 @@ import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Test
 
 /**
- * What the import preview lists and counts (#244), the arithmetic RN's `import.tsx` kept inline. The
+ * What the import preview lists and counts (#244), the arithmetic RN's Import screen kept inline. The
  * screen's own cases are `ImportScreenTest`'s.
  */
 class ImportPreviewTest {

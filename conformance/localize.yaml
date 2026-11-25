@@ -76,36 +76,36 @@ cases:
       pt: { days: {}, exercises: {}, workouts: {}, programs: {} }
     language: pt
 
-  # The shipped content with its shipped tables, read from src/content/ as both apps read them.
+  # The shipped content with its shipped tables, read from content/ as both apps read them.
   - name: shipped-seed-pt
-    source: src/content/seed/library.yaml
-    tables: { pt: src/content/seed/pt.json }
+    source: content/seed/library.yaml
+    tables: { pt: content/seed/pt.json }
     language: pt
   - name: shipped-seed-ja
-    source: src/content/seed/library.yaml
-    tables: { ja: src/content/seed/ja.json }
+    source: content/seed/library.yaml
+    tables: { ja: content/seed/ja.json }
     language: ja
   - name: shipped-pack-steady-strength-pt
-    source: src/content/packs/steady-strength/library.yaml
-    tables: { pt: src/content/packs/steady-strength/pt.json }
+    source: content/packs/steady-strength/library.yaml
+    tables: { pt: content/packs/steady-strength/pt.json }
     language: pt
   - name: shipped-pack-steady-strength-ja
-    source: src/content/packs/steady-strength/library.yaml
-    tables: { ja: src/content/packs/steady-strength/ja.json }
+    source: content/packs/steady-strength/library.yaml
+    tables: { ja: content/packs/steady-strength/ja.json }
     language: ja
   - name: shipped-pack-barbell-gym-pt
-    source: src/content/packs/barbell-gym/library.yaml
-    tables: { pt: src/content/packs/barbell-gym/pt.json }
+    source: content/packs/barbell-gym/library.yaml
+    tables: { pt: content/packs/barbell-gym/pt.json }
     language: pt
   - name: shipped-pack-barbell-gym-ja
-    source: src/content/packs/barbell-gym/library.yaml
-    tables: { ja: src/content/packs/barbell-gym/ja.json }
+    source: content/packs/barbell-gym/library.yaml
+    tables: { ja: content/packs/barbell-gym/ja.json }
     language: ja
   - name: shipped-pack-kettlebell-basics-pt
-    source: src/content/packs/kettlebell-basics/library.yaml
-    tables: { pt: src/content/packs/kettlebell-basics/pt.json }
+    source: content/packs/kettlebell-basics/library.yaml
+    tables: { pt: content/packs/kettlebell-basics/pt.json }
     language: pt
   - name: shipped-pack-kettlebell-basics-ja
-    source: src/content/packs/kettlebell-basics/library.yaml
-    tables: { ja: src/content/packs/kettlebell-basics/ja.json }
+    source: content/packs/kettlebell-basics/library.yaml
+    tables: { ja: content/packs/kettlebell-basics/ja.json }
     language: ja

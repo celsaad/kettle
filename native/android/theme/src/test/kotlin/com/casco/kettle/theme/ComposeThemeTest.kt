@@ -35,7 +35,7 @@ class ComposeThemeTest {
     fun `the file opens with its banner, its package and every import the groups need`() {
         assertEquals(
             """
-            // Generated from src/constants/theme.json by :theme. Edit theme.json, not this file.
+            // Generated from theme.json by :theme. Edit theme.json, not this file.
             package com.casco.kettle.shell.theme
 
             import androidx.compose.runtime.Immutable

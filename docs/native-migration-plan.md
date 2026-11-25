@@ -514,8 +514,8 @@ toolchain moves ride the same release as removal rather than following it.
 - **Native builds with no Node.** No `node_modules`, no `app.json`: the version moves to
   `native/android/gradle.properties` (starting from Play's 0.15.0 / 21, not `app.json`'s), the label
   and brand colours become resources, and the six font faces are committed with their OFL licences.
-  The locale bundles, `theme.json`, `src/content/` and `conformance/` keep their paths until the TS
-  domain is retired.
+  The locale bundles, `theme.json` and `src/content/` kept their `src/` paths until the TS domain
+  was retired, then moved to the top level beside `conformance/` (#354).
 - **The whole Expo layer goes**: the AAR, expo-brownfield, Hermes, `index.ts`, `app.json`,
   `eas.json`, the metro files, `patches/`, the prebuild and every `expo-*`/`react*` dependency. **The
   RN iOS route closes for good**; `app.json`'s iOS facts move into `ios-plan.md` for M8.

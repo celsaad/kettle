@@ -31,7 +31,7 @@ import kotlin.math.abs
 private const val UNKNOWN_KEY = "zz_unknown"
 
 /**
- * `src/content/library-schema.json` is the format's declarative statement, the one the assistant
+ * `content/library-schema.json` is the format's declarative statement, the one the assistant
  * brief carries whole, and it is edited by hand (#349). This holds it to `:shared`'s validator twice:
  *
  * - over the corpus's `library` suite, the format's authority: every case whose golden is `ok`
@@ -338,7 +338,7 @@ class LibrarySchemaFileTest {
         }
 
     private val validator by lazy {
-        val file = File(conformanceDir.parentFile, "src/content/library-schema.json")
+        val file = File(conformanceDir.parentFile, "content/library-schema.json")
         Validator.forSchema(SchemaLoader(JsonParser(file.readText()).parse()).load())
     }
 }

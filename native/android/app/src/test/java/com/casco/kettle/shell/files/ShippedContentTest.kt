@@ -8,7 +8,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 
 /**
- * That `src/content/` reaches the APK as assets and reads back. What the content says is held by
+ * That `content/` reaches the APK as assets and reads back. What the content says is held by
  * `ShippedLibrariesTest`, `ShippedSeedTest` and `ContentPacksTest`, and by the conformance corpus, so
  * this checks the packaging and the reader, not the content.
  */

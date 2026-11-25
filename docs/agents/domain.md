@@ -22,7 +22,9 @@ upfront. The `/domain-modeling` skill (reached via `/grill-with-docs` and
 ├── AGENTS.md
 ├── docs/
 │   └── decisions.md     ← the decision log (stands in for docs/adr/)
-└── src/
+├── conformance/
+├── content/  locales/  theme.json
+└── native/android/
 ```
 
 ## Recording a decision

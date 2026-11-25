@@ -4,7 +4,7 @@
 > drawing per seeded exercise, keyed by id, in the exercise editor and in the runner's next-up card.
 >
 > **Two things went differently from what's written below.** The set is **vector, not raster** — the
-> drawings are hand-authored SVG files under `src/content/art/` (first written as
+> drawings are hand-authored SVG files under `content/art/` (first written as
 > `react-native-svg` components, then moved into data files both UIs read, #228), which is the
 > outcome the format spike was hoping for, reached by the "a model can author SVG directly"
 > route rather than by tracing. So the whole raster half — the alpha step, the `<id>@3x.png` naming,
@@ -21,7 +21,7 @@
 > tenth of the work and needs no format change at all.
 
 An exercise can only explain itself in prose. `notes` is a coaching cue
-(`src/i18n/locales/en.json:493` — "Coaching cue…"), and a cue is a reminder for a move you already
+(`locales/en.json:493` — "Coaching cue…"), and a cue is a reminder for a move you already
 know.
 
 **The rule, in one line:** every **seeded** exercise gets a **bundled line drawing keyed by its id**.

@@ -1,7 +1,7 @@
 // The native app (docs/native-migration-plan.md). `:shared` is the Kotlin Multiplatform domain the
 // iOS app reuses later; `:app` is the Android app; `:strings` generates `:app`'s string resources from
 // the locale bundles, `:theme` its Compose theme from `theme.json`, and `:art` its exercise drawings
-// from `src/content/art/`.
+// from `content/art/`.
 // `:benchmark` times a cold start to a drawn home screen, the shell's against today's app.
 pluginManagement {
     repositories {

@@ -10,7 +10,7 @@ parity is now machine-checked rather than eyeballed, and step 2 fails the build 
 in the app without it); at M7 (#357) `app.json`'s iOS locale list went, an M8 note below now; and
 with the TS (#353), so did `src/i18n/index.ts`'s `resources` map, which only jest read.
 
-1. **`src/i18n/locales/<code>.json`** — the new bundle, at full parity with `en.json`.
+1. **`locales/<code>.json`** — the new bundle, at full parity with `en.json`.
    `:strings` (`BundleCoverage.kt`) holds that parity in both directions, each plural against the
    language's own CLDR categories, for every bundle in the directory, so a key you missed and a key
    you invented both fail the build. If CLDR files 0 under `one` and that reads wrong in the
@@ -19,8 +19,8 @@ with the TS (#353), so did `src/i18n/index.ts`'s `resources` map, which only jes
    through the device's locale, independently of this. What it can't check
    is whether the *strings* are right, or whether a screen renders one at all — for that, drive the
    screen in the new locale (`AGENTS.md`, "Writing tests").
-2. **`src/content/seed/<lang>.json`** — the starter library's string table, plus one per pack in
-   `src/content/packs/<id>/`. A language with no table falls back to English per string, so a new
+2. **`content/seed/<lang>.json`** — the starter library's string table, plus one per pack in
+   `content/packs/<id>/`. A language with no table falls back to English per string, so a new
    user would get translated chrome around an English library. This used to be the one that got
    forgotten; `:app`'s `ShippedLibrariesTest` now fails until every shipped library has a table for
    every UI language, and holds each table to its library in both directions.
@@ -46,7 +46,7 @@ weekday or unit formatting needs touching — all of it reads the device locale,
 `shell/i18n/LocaleFormats.kt`.
 
 Nor is the native app's copy: `:strings` generates its `values-<code>/strings.xml` from whatever
-bundles step 1 left in `src/i18n/locales`, on every build, and `GeneratedStringsTest` round-trips
+bundles step 1 left in `locales`, on every build, and `GeneratedStringsTest` round-trips
 whatever bundles it finds there. Only the `@LocalePreviews` annotation in `:app` and its test name
 languages by hand, and missing them costs a Studio preview, not a translation.
 

@@ -113,7 +113,7 @@ kotlin {
 val soundsDir: Directory = rootProject.layout.projectDirectory.dir("../../assets/sounds")
 
 /** The locale bundles, read in place so there is only one copy of every translation. */
-val localesDir: Directory = rootProject.layout.projectDirectory.dir("../../src/i18n/locales")
+val localesDir: Directory = rootProject.layout.projectDirectory.dir("../../locales")
 
 /** What a generator task runs on: a project's runtime jar, resolved here and never published. */
 fun generatorClasspath(name: String): Configuration =
@@ -173,10 +173,10 @@ abstract class GenerateTheme : JavaExec() {
 val themeGenerator = generatorClasspath("themeGenerator")
 
 /** The shipped seed and content packs (`ShippedContent`), at the asset root. */
-val contentDir: Directory = rootProject.layout.projectDirectory.dir("../../src/content")
+val contentDir: Directory = rootProject.layout.projectDirectory.dir("../../content")
 
 /** The theme, read in place, so a color has one home. */
-val themeFile: RegularFile = rootProject.layout.projectDirectory.file("../../src/constants/theme.json")
+val themeFile: RegularFile = rootProject.layout.projectDirectory.file("../../theme.json")
 
 /**
  * The faces theme.json names, committed with their OFL licences, since the build reads nothing a JS
@@ -194,7 +194,7 @@ val generateTheme =
     }
 
 /**
- * The `:art` generator, the same way again: each drawing in `src/content/art/` becomes a VectorDrawable,
+ * The `:art` generator, the same way again: each drawing in `content/art/` becomes a VectorDrawable,
  * and `art.json` an id → `R.drawable` lookup. It fails the build on any SVG outside the subset it
  * accepts, and on a map and directory that disagree.
  */

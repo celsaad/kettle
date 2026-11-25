@@ -4,7 +4,7 @@
    Both schemes via prefers-color-scheme. No external requests: fonts are self-hosted under ./fonts/.
 
    Contrast: every pairing here is measured against WCAG AA (4.5:1 body, 3:1 large and graphics),
-   the same bar `src/constants/theme-notes.md` records the app's ratios against, and the ratio is recorded beside any value
+   the same bar `theme-notes.md` records the app's ratios against, and the ratio is recorded beside any value
    chosen to clear it. The hero, the footer and the code panels do NOT follow the color scheme —
    they are the runner's black field, as in the app — so anything inside them takes a `--run-*`
    token rather than inheriting a scheme one.

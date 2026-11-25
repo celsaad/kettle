@@ -657,7 +657,7 @@ decision assembled across several commits. Open work belongs in the sections at 
   emulator, not by recalling a Hermes changelog.
 - ✅ **The seed library is curated starter content, and three domain rules constrain what it may
   contain.** It ships two programs and four workouts a new user can press start on, rather than the
-  format demo it used to be. The content itself is `src/content/seed/library.yaml`, whose header
+  format demo it used to be. The content itself is `content/seed/library.yaml`, whose header
   comment repeats the three domain rules any *edit* to it has to respect, all three of which the old
   seed broke:
 
@@ -705,7 +705,7 @@ decision assembled across several commits. Open work belongs in the sections at 
   until M6),
   so every exercise added to it enlarges what a recovery hands back.
 
-  So `src/content/packs/` holds curated libraries the app ships **without seeding**, listed on
+  So `content/packs/` holds curated libraries the app ships **without seeding**, listed on
   the import screen and merged in on a tap. `packs.json`'s order is display order and nothing else:
   unlike the seed's first program, no pack is anybody's default, since a pack only exists once
   somebody has chosen it. Three today: a low-impact one (chair and wall support,
@@ -1096,8 +1096,8 @@ decision assembled across several commits. Open work belongs in the sections at 
 - ✅ **While two UIs exist, a value both need lives in one data file that both read; behaviour is
   ported and held by the conformance corpus.** (Native migration, settled on #147.) The split, and
   what falls on each side:
-  - **Values go in data files.** Translations are the locale bundles (`src/i18n/locales/*.json`, read
-    by `:strings`). Colors, spacing, the type scale and its fonts' names are `src/constants/theme.json`
+  - **Values go in data files.** Translations are the locale bundles (`locales/*.json`, read
+    by `:strings`). Colors, spacing, the type scale and its fonts' names are `theme.json`
     (read by `:theme`), and `theme-notes.md` beside it keeps the notes JSON can't. Native generates
     its code from them on every build into a build directory, so nothing generated is committed and
     nothing can go stale. The Swift app in M8 reads the same files, not a Kotlin copy.
@@ -1110,10 +1110,10 @@ decision assembled across several commits. Open work belongs in the sections at 
     the generated colors, so the
     numbers can't drift away from the values even though they no longer sit beside them.
   - **The seed library and content packs** are the second instance (#224): library YAML plus a
-    translation JSON per language in `src/content/`, with `localizeLibrary` ported as behaviour.
+    translation JSON per language in `content/`, with `localizeLibrary` ported as behaviour.
     Unlike `theme.json`, their comments live in the data: YAML has them, so the authoring rules sit
     beside the content they constrain rather than in a notes file.
-  - **The exercise drawings** are the third (#225, #228): one SVG per drawing in `src/content/art/`
+  - **The exercise drawings** are the third (#225, #228): one SVG per drawing in `content/art/`
     and an id → drawing map in `art.json`. RN draws the markup with `SvgXml`; `:art` generates
     VectorDrawables from it, accepting only `path`, `circle` and `g` with
     `translate`/`rotate`/`scale` under a single `currentColor` stroke, and failing the build on

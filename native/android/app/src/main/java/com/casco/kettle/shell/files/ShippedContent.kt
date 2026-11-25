@@ -16,7 +16,7 @@ data class ContentPackEntry(
 )
 
 /**
- * The libraries the app ships, read from `src/content/`, which `:app` packages as assets in place, so
+ * The libraries the app ships, read from `content/`, which `:app` packages as assets in place, so
  * there is one copy. The decision log holds the reasoning for the seed and the packs, and
  * `ShippedLibrariesTest`, `ShippedSeedTest` and `ContentPacksTest` hold the content's own invariants.
  *

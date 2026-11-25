@@ -240,7 +240,7 @@ wanting states and assignees, it wants GitHub issues instead.
   direction, so the physical-direction properties are the small half, and the real work is the drawn glyphs
   that can't flip (the Canvas ones in native's `list/RowStartButton.kt` and `home/NextUpCard.kt`, and
   whatever the native runner draws) plus the arrows baked into
-  copy (`grep '→' src/i18n/locales/en.json` — getting those out of the strings is worth doing whether or not Arabic ever ships). Three that note
+  copy (`grep '→' locales/en.json` — getting those out of the strings is worth doing whether or not Arabic ever ships). Three that note
   doesn't carry: a language that changes while the app runs has to flip the layout direction too, which
   nothing tests today; Arabic has **six** plural categories against en/pt's
   two, which i18next and Android's plurals both resolve but the bundles' key shape does not; and the runner is

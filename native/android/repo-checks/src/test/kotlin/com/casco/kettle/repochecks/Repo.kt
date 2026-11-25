@@ -14,7 +14,7 @@ internal fun repoText(path: String): String = File(repoRoot, path).readText()
 
 /** The shipped seed's English structure: the library a reader importing an example already has. */
 internal val seed: Library by lazy {
-    when (val result = parseLibraryYaml(repoText("src/content/seed/library.yaml"))) {
+    when (val result = parseLibraryYaml(repoText("content/seed/library.yaml"))) {
         is ParseResult.Ok -> result.value
         else -> error("the shipped seed does not parse: $result")
     }

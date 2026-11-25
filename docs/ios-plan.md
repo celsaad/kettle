@@ -93,7 +93,7 @@ these were missing:
 | Confirm dialogs | everywhere `Alert.alert` is used | Real on iOS. The no-op is web only |
 | Keyboard | [`session-exercise-picker.tsx:74`](../src/components/session-exercise-picker.tsx#L74) | Already branches `Platform.OS === 'ios' ? 'padding' : undefined` |
 | Export / share | [`storage/export.ts`](../src/storage/export.ts) | `expo-sharing` is the iOS share sheet. It opens; **what it offers is 2.6** |
-| Privacy posture | nothing in `src/` transmits | The App Privacy label mirrors the Play declaration verbatim: nothing collected, nothing shared |
+| Privacy posture | nothing in the app transmits | The App Privacy label mirrors the Play declaration verbatim: nothing collected, nothing shared |
 
 Two consequences worth stating: **the a11y and i18n work carries over free** (roles, labels and the
 three locale bundles are platform-neutral, and VoiceOver reads the same props TalkBack does), and
@@ -113,7 +113,7 @@ The `ios` block in [`app.json`](#what-appjson-held-for-ios) is **shipped**, bar 
   entry has the rule).
 - **`supportsTablet`** — **decide this by looking, not by reasoning.** The tempting argument is that
   the layouts already cap themselves with `MaxContentWidth` so an iPad gets a centred column rather
-  than stretched rows. But `MaxContentWidth` is **480** ([`theme.json`](../src/constants/theme.json)),
+  than stretched rows. But `MaxContentWidth` is **480** ([`theme.json`](../theme.json)),
   and a 480pt column centred on a 13" iPad is mostly empty screen — which then becomes a *required
   screenshot* on the listing. Turning it on may cost more than the App Store filter it buys. Check it
   in the simulator, which is free, and while there confirm whether iPadOS 26's windowing still honours
@@ -170,7 +170,7 @@ Support when the tip jar moved to native Play Billing in M4 (`TipJar.kt`), and w
 ### 2.2 Two locale strings name Google Play — *shipped*
 
 `support.why` ("A tip helps cover the Google Play developer fee") and `support.storeUnavailable`
-("Couldn't reach the Play Store") in [`en.json`](../src/i18n/locales/en.json) and both siblings. House
+("Couldn't reach the Play Store") in [`en.json`](../locales/en.json) and both siblings. House
 rule is that no user-facing string lives outside the bundles, so this is a platform-keyed pair of keys
 in all three files, not a `Platform.select` over literals.
 

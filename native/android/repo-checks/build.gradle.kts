@@ -54,7 +54,7 @@ tasks.test {
             root.dir("site"),
             root.dir("store"),
             root.file("CHANGELOG.md"),
-            root.dir("src/content"),
+            root.dir("content"),
         )
     jvmArgumentProviders.add(RepoFiles(objects.fileCollection().from(read), root))
     testLogging {

@@ -1,6 +1,6 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
-// The generator that turns src/content/art/*.svg into VectorDrawables, so the exercise drawings stay
+// The generator that turns content/art/*.svg into VectorDrawables, so the exercise drawings stay
 // single-sourced while both UIs exist. `:app` runs it at build time; nothing it writes is committed.
 plugins {
     alias(libs.plugins.kotlin.jvm)

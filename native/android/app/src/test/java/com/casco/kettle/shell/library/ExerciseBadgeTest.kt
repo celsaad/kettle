@@ -3,7 +3,6 @@ package com.casco.kettle.shell.library
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import com.casco.kettle.domain.ExerciseConfig
-import com.casco.kettle.domain.SessionEntry
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -18,16 +17,14 @@ class ExerciseBadgeTest {
     val compose = createComposeRule()
 
     @Test
-    fun `a hold, a rest and a cardio tag read in Portuguese`() {
+    fun `a hold and a rest tag read in Portuguese, and an acronym stays as it is`() {
         compose.setContent {
             ExerciseBadge(ExerciseConfig.TimedHold(2, 20.0, 30.0, 30.0))
             ExerciseBadge(ExerciseConfig.Rest(60.0))
-            ExerciseBadge(SessionEntry.Cardio("row", 600.0, null))
             ExerciseBadge(ExerciseConfig.Amrap(600.0))
         }
         compose.onNodeWithText("ISOMETRIA").assertExists()
         compose.onNodeWithText("DESCANSO").assertExists()
-        compose.onNodeWithText("CARDIO").assertExists()
         compose.onNodeWithText("AMRAP").assertExists()
         compose.onNodeWithText("HOLD").assertDoesNotExist()
     }

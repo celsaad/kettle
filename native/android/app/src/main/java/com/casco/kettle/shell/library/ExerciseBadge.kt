@@ -7,7 +7,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.casco.kettle.domain.ExerciseConfig
@@ -17,7 +16,7 @@ import com.casco.kettle.shell.theme.KettleTheme
 import com.casco.kettle.shell.theme.KettleType
 
 /**
- * An exercise's type as a tag, as RN's `ExerciseBadge`. HIIT, EMOM and AMRAP are acronyms, the same in
+ * An exercise's type as a tag. HIIT, EMOM and AMRAP are acronyms, the same in
  * every locale; the other words are translated, and the tag's capitals are drawn on the translated word
  * (#520). HIIT and hold take the accent and the calm accent, so the two timed types stand out from the
  * counted ones.
@@ -26,7 +25,7 @@ import com.casco.kettle.shell.theme.KettleType
 fun ExerciseBadge(
     config: ExerciseConfig,
     /**
-     * Shown in place of the type, in the accent, as RN's `overrideLabel`: the workout editor's mark on
+     * Shown in place of the type, in the accent: the workout editor's mark on
      * a rest block whose duration the workout sets for itself.
      */
     overrideLabel: String? = null,
@@ -68,6 +67,8 @@ private enum class BadgeKind {
     Rest,
 }
 
+// Upper-cased in Locale.ROOT, the bundles' casing, not the device's: a Turkish phone falls back to English and
+// would read "CARDİO".
 @Composable
 private fun label(kind: BadgeKind): String =
     when (kind) {
@@ -78,7 +79,7 @@ private fun label(kind: BadgeKind): String =
         BadgeKind.Reps -> stringResource(R.string.library_badge_reps)
         BadgeKind.Cardio -> stringResource(R.string.library_badge_cardio)
         BadgeKind.Rest -> stringResource(R.string.library_badge_rest)
-    }.uppercase(LocalConfiguration.current.locales[0])
+    }.uppercase()
 
 @Composable
 private fun Badge(

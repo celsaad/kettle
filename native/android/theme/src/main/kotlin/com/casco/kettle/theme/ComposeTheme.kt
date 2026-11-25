@@ -15,7 +15,7 @@ const val OUTPUT_PACKAGE = "$APP_PACKAGE.theme"
 fun generateTheme(json: String): String {
     val theme = parseTheme(json)
     return buildString {
-        appendLine("// Generated from src/constants/theme.json by :theme. Edit theme.json, not this file.")
+        appendLine("// Generated from theme.json by :theme. Edit theme.json, not this file.")
         appendLine("package $OUTPUT_PACKAGE")
         appendLine()
         appendLine("import androidx.compose.runtime.Immutable")

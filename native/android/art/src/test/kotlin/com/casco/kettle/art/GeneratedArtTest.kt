@@ -28,7 +28,7 @@ class GeneratedArtTest {
         assertEquals(
             """
             <?xml version="1.0" encoding="utf-8"?>
-            <!-- Generated from src/content/art/plank.svg by :art. Edit the SVG, not this file. -->
+            <!-- Generated from content/art/plank.svg by :art. Edit the SVG, not this file. -->
             <vector xmlns:android="http://schemas.android.com/apk/res/android"
                 android:width="120dp"
                 android:height="96dp"
@@ -178,7 +178,7 @@ class GeneratedArtTest {
             assertThrows<IllegalArgumentException> {
                 generateArt("""{ "drawings": { "plank": "plank", "kb-halo": "halo" } }""", mapOf("plank" to line))
             }.message.orEmpty()
-        assertTrue("kb-halo" in message && "src/content/art/halo.svg" in message, message)
+        assertTrue("kb-halo" in message && "content/art/halo.svg" in message, message)
     }
 
     @Test
@@ -187,7 +187,7 @@ class GeneratedArtTest {
             assertThrows<IllegalArgumentException> {
                 generateArt("""{ "drawings": { "plank": "plank" } }""", mapOf("plank" to line, "halo" to line))
             }.message.orEmpty()
-        assertTrue("src/content/art/halo.svg" in message, message)
+        assertTrue("content/art/halo.svg" in message, message)
     }
 
     @Test
@@ -206,7 +206,7 @@ class GeneratedArtTest {
         assertEquals(setOf("art_easy_cardio", "art_plank"), art.drawables.keys)
         assertEquals(
             """
-            // Generated from src/content/art.json by :art. Edit art.json, not this file.
+            // Generated from content/art.json by :art. Edit art.json, not this file.
             package com.casco.kettle.shell.art
 
             import com.casco.kettle.shell.R

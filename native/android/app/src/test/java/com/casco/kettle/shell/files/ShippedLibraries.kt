@@ -19,7 +19,7 @@ internal class ShippedLibraries {
     private val assets = RuntimeEnvironment.getApplication().assets
     val content = ShippedContent(assets)
 
-    /** One shipped library: [dir] under `src/content/`, and how the app reads it in a language. */
+    /** One shipped library: [dir] under `content/`, and how the app reads it in a language. */
     class Shipped(
         val name: String,
         val dir: String,

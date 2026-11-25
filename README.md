@@ -71,10 +71,11 @@ pnpm run format
 ## Project structure
 
 ```
-src/
-  constants/            theme.json, the tokens both the theme generator and its notes describe
-  content/              the shipped seed library, the content packs and the exercise drawings
-  i18n/locales/         the en / pt / ja locale bundles
+content/                the shipped seed library, the content packs and the exercise drawings
+locales/                the en / pt / ja locale bundles
+theme.json              the theme's tokens, with theme-notes.md beside it for what JSON can't hold
+conformance/            the format's behaviour as data: YAML inputs and golden outputs
+native/android/         the app, and every test
 site/                   the public landing site (GitHub Pages), static HTML, no build step
 store/                  Play listing copy and generated store graphics
 ```

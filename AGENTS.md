@@ -69,7 +69,7 @@ mistake here that cannot be fixed for anyone who has already installed it.
 
 ## Where things live
 
-- `src/content/` — the content the app *ships*, as data, read through `ShippedContent`; native
+- `content/` — the content the app *ships*, as data, read through `ShippedContent`; native
   writes the seed on a first launch (`PreparedLibrary.kt`). It is an English `library.yaml` plus a `<lang>.json` string table per
   language (`:shared`'s `LibraryTranslation.kt`), and `packs.json` for the pack order. `:app`'s
   `ShippedLibrariesTest`, `ShippedSeedTest` and `ContentPacksTest` hold what the content says, in
@@ -103,9 +103,9 @@ mistake here that cannot be fixed for anyone who has already installed it.
   Compose `:app`, and `:strings`, which generates `:app`'s string resources from the locale bundles
   on every build (never committed; plurals go through
   `pluralText`, not `pluralStringResource`), `:theme`, which generates its Compose theme from
-  `src/constants/theme.json` the same way and copies the fonts its `Fonts` names out of
-  `native/android/theme/fonts` (committed, with their OFL licences), and `:art`, which turns `src/content/art/*.svg` into
-  VectorDrawables and fails the build on any SVG outside the subset `src/content/art/README.md`
+  `theme.json` the same way and copies the fonts its `Fonts` names out of
+  `native/android/theme/fonts` (committed, with their OFL licences), and `:art`, which turns `content/art/*.svg` into
+  VectorDrawables and fails the build on any SVG outside the subset `content/art/README.md`
   names.
   `gradlew build` from that directory compiles, tests and lints it, and ktlint, detekt and Android
   lint hold the zero-warning rule; `gradlew ktlintFormat` is its `pnpm run format`.
@@ -169,8 +169,8 @@ are house rules here rather than a backlog — cheap as you go, tedious to retro
   somewhere rather than something to do.
 - Theming is strict: `KettleTheme.colors`, `KettleType`, `Spacing.*`, `MaxContentWidth`. The
   session runner ignores the scheme: its field (`theme.json`'s `RunnerColors`) follows the step's clock. Colors, spacing and the type
-  scale are edited in `constants/theme.json`, which native's `:theme` generates its Compose theme from;
-  `constants/theme-notes.md` beside it holds the notes JSON can't.
+  scale are edited in `theme.json`, which native's `:theme` generates its Compose theme from;
+  `theme-notes.md` beside it holds the notes JSON can't.
 - In-app forms write straight to the file and never pass through the schema, so they need their own
   validation (see `validateConfig` in `:shared`'s `ExerciseForm.kt`).
 - **Weights are stored in kilograms, always.** The library is a file users export and share, so it
@@ -192,7 +192,7 @@ are house rules here rather than a backlog — cheap as you go, tedious to retro
   `hitSlop`. Decorative geometry — progress bars, CSS triangles, the grabber — keeps a fixed `height`;
   the rule is about controls, not every box.
 - **Contrast-check new colors** against every surface they sit on, alpha-compositing where the
-  background is translucent. `constants/theme-notes.md` records the measured ratios. A control drawn with
+  background is translucent. `theme-notes.md` records the measured ratios. A control drawn with
   no fill takes `lineStrong` for its edge, held to 3:1; `border` is the decorative hairline.
 - **No user-facing string in `:shared`.** It returns descriptors and the screens render them.
   Counts go through `pluralText` (never an `== 1` branch), and dates through `shell/i18n/`'s
@@ -253,7 +253,7 @@ lands in one PR, in all of these:
 - **`:shared`'s schema readers** (`SchemaReader.kt` and the `*Schema.kt` beside it), the format's
   behaviour, with a `conformance/` case for it: regenerate with
   `./gradlew :shared:jvmTest -PupdateConformance` (then `pnpm run format`) and read the golden diff.
-- **`src/content/library-schema.json`**, the JSON Schema the assistant brief carries. It is
+- **`content/library-schema.json`**, the JSON Schema the assistant brief carries. It is
   hand-maintained, the declarative statement of the format. `LibrarySchemaFileTest` in `:shared`
   holds it to the importer: every `ok` corpus case validates, every `schemaMismatch` case is refused
   at its golden's paths, and every one-edit variant of `every-shape` is refused where `:shared`
@@ -264,7 +264,7 @@ lands in one PR, in all of these:
   2. `docs/product-plan.md` — its file-format section.
   3. **`site/format.html`** — the published reference on the landing site, which is the copy an
      outside author or an assistant actually reads. It is the easiest to forget precisely because it
-     doesn't look like a doc and nothing in `src/` imports it.
+     doesn't look like a doc and nothing in the app reads it.
 
 The mirrors have tests of their own, and it's worth knowing exactly where they stop:
 

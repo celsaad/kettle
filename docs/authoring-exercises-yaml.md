@@ -8,7 +8,7 @@
 
 Reference for hand-writing exercise, workout, and program definitions, matching exactly what the
 app's importer accepts (`:shared`'s schema readers, stated declaratively in
-`src/content/library-schema.json`). Field names below are the
+`content/library-schema.json`). Field names below are the
 literal YAML keys (snake_case) — the app maps them to camelCase internally.
 
 For whole worked programs rather than field-by-field rules, `site/examples/*.yaml` holds four

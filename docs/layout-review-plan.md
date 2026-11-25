@@ -31,7 +31,7 @@ Keep this section. It is the reason not to re-open these.
 | §9 "−/+/SWAP are under AA" | `#9a9384` on `#17140d` measures **6.0:1**. Passes AA for normal text. |
 | §9 "RPE selection is carried by fill alone" | Fill **plus** a text-colour inversion (`RunnerColors.text` → `RunnerColors.background`) **plus** `accessibilityState={{ selected }}`. Survives greyscale and screen readers. |
 | §8 "the newest build has five tabs, go back to four" | It is already four. The proposed fix removes Programs, which would make it three — Programs is a destination you browse and edit in, not a picker. |
-| §3 "the theme has no divider token, which is why everything became a card" | `border` exists at [theme.ts:27](../src/constants/theme.ts#L27) and is exactly what the cards already draw with. |
+| §3 "the theme has no divider token, which is why everything became a card" | `border` exists at `theme.ts:27` (now `theme.json`) and is exactly what the cards already draw with. |
 | §1 "the selected sort pill is a fourth accent meaning" | Selected pills fill with `theme.text`, not the accent. The accent-overload diagnosis is still right, but with three uses, not four. |
 | §6f "the runner prints three lines explaining what EMOM means" | That is the exercise's own `notes:` field — user data, rendered verbatim by house rule. Moving it to the get-ready screen would hide content the author chose to put there. The *layout* half of the complaint is accepted; see Phase 3. |
 

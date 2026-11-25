@@ -20,7 +20,7 @@ class GeneratedArt(
  * `art.json` and the drawings it names (file name without `.svg` → markup), as VectorDrawables named
  * `art_<drawing>` and a lookup from exercise id to each one's `R.drawable`.
  *
- * Only the subset `src/content/art/README.md` names is accepted, and anything else fails the build
+ * Only the subset `content/art/README.md` names is accepted, and anything else fails the build
  * with the file and the offender in the message. A converter that skipped what it didn't understand
  * would ship a drawing with a stroke missing, which nothing downstream would notice.
  */
@@ -38,10 +38,10 @@ fun generateArt(
     // Both directions, since each fails silently on its own: an id with no file draws nothing, and a
     // file nothing names is dead weight in the APK.
     drawings.entries.firstOrNull { it.value !in svgs }?.let { (id, drawing) ->
-        throw IllegalArgumentException("art.json draws $id with src/content/art/$drawing.svg, which doesn't exist")
+        throw IllegalArgumentException("art.json draws $id with content/art/$drawing.svg, which doesn't exist")
     }
     (svgs.keys - drawings.values.toSet()).firstOrNull()?.let { drawing ->
-        throw IllegalArgumentException("src/content/art/$drawing.svg: no id in art.json draws with it")
+        throw IllegalArgumentException("content/art/$drawing.svg: no id in art.json draws with it")
     }
     val drawables = svgs.entries.associate { (name, svg) -> resourceName(name) to Drawing(name).vector(svg) }
     return GeneratedArt(drawables, lookup(drawings))
@@ -54,7 +54,7 @@ const val OUTPUT_PACKAGE = "com.casco.kettle.shell.art"
 
 private fun lookup(drawings: Map<String, String>) =
     buildString {
-        appendLine("// Generated from src/content/art.json by :art. Edit art.json, not this file.")
+        appendLine("// Generated from content/art.json by :art. Edit art.json, not this file.")
         appendLine("package $OUTPUT_PACKAGE")
         appendLine()
         appendLine("import com.casco.kettle.shell.R")
@@ -140,7 +140,7 @@ private class Drawing(
 
         return buildString {
             appendLine("""<?xml version="1.0" encoding="utf-8"?>""")
-            appendLine("<!-- Generated from src/content/art/$name.svg by :art. Edit the SVG, not this file. -->")
+            appendLine("<!-- Generated from content/art/$name.svg by :art. Edit the SVG, not this file. -->")
             appendLine("""<vector xmlns:android="http://schemas.android.com/apk/res/android"""")
             appendLine("""    android:width="${width}dp"""")
             appendLine("""    android:height="${height}dp"""")
@@ -279,7 +279,7 @@ private class Drawing(
         if (!condition) fail(message())
     }
 
-    fun fail(message: String): Nothing = throw IllegalArgumentException("src/content/art/$name.svg: $message")
+    fun fail(message: String): Nothing = throw IllegalArgumentException("content/art/$name.svg: $message")
 
     private fun parse(svg: String): Element =
         DocumentBuilderFactory

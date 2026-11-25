@@ -9,7 +9,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
 /**
- * The format has hand-maintained mirrors beside `src/content/library-schema.json`, and the samples
+ * The format has hand-maintained mirrors beside `content/library-schema.json`, and the samples
  * test covers only their samples. Their type tables were checked by eye, which failed the first time
  * it mattered: the published reference shipped with `emom` taking `rounds` instead of
  * `total_minutes` and `amrap` missing its required `time_cap_sec`, plausible enough to read as right
@@ -33,7 +33,7 @@ class FormatMirrorsTest {
     /** Each exercise type's config fields, from the schema file the assistant brief carries. */
     private val expected: Map<String, List<Field>> =
         Json
-            .parseToJsonElement(repoText("src/content/library-schema.json"))
+            .parseToJsonElement(repoText("content/library-schema.json"))
             .jsonObject
             .path("properties", "exercises", "items")
             .getValue("oneOf")

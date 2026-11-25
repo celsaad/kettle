@@ -408,7 +408,7 @@ class Case(
 
 /**
  * A case's library text: inline under [key], or the repo file at `source` (the published
- * `site/examples/` libraries and the shipped `src/content/` ones), read in place like the corpus
+ * `site/examples/` libraries and the shipped `content/` ones), read in place like the corpus
  * itself so there is still one copy.
  */
 internal fun libraryText(

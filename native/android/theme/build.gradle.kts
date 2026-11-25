@@ -1,6 +1,6 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
-// The generator that turns src/constants/theme.json into a Compose theme, so colors and spacing stay
+// The generator that turns theme.json into a Compose theme, so colors and spacing stay
 // single-sourced while both UIs exist. `:app` runs it at build time; nothing it writes is committed.
 plugins {
     alias(libs.plugins.kotlin.jvm)

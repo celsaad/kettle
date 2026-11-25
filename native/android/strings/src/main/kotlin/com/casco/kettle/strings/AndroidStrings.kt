@@ -159,7 +159,7 @@ private fun render(
 ): String =
     buildString {
         appendLine("""<?xml version="1.0" encoding="utf-8"?>""")
-        appendLine("<!-- Generated from src/i18n/locales by :strings. Edit the JSON bundles, not this file. -->")
+        appendLine("<!-- Generated from locales by :strings. Edit the JSON bundles, not this file. -->")
         appendLine("<resources>")
         for (entry in entries) {
             val args = arguments[entry.key].orEmpty()

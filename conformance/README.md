@@ -18,7 +18,7 @@ Each suite is two files:
 `native/android/shared/src/jvmTest/.../ConformanceTest.kt` checks `:shared` against these files, read
 in place, and writes them. It finds suites by listing this directory, and one with no runner is
 reported as skipped under its own name, never as passing. Adding a suite is adding its runner there.
-`LibrarySchemaFileTest.kt` beside it holds `src/content/library-schema.json`, the hand-maintained
+`LibrarySchemaFileTest.kt` beside it holds `content/library-schema.json`, the hand-maintained
 JSON Schema the assistant brief carries, to the `library` suite's goldens.
 
 When a change to `:shared` is meant to change behaviour, run
@@ -44,7 +44,7 @@ mean. The writer keeps the key order TS wrote, so key order alone never shows up
 | `steps` | the runner's `buildStepsWithLimits`, its mid-session edits, `upcomingOutline` and Coming up's `comingUpTimeline`, over the workout in `library` | the step list, the list after each edit, or the outline or timeline per index (the file's header) |
 | `records` | by `op`: `entryBest`, `sessionEntryResult` or `sessionSetCount` over the session file in `session`; `recordKey(exercise, kind)`; `sessionDurationMinutes` of `session`; or `sessionRecords` of `session` against the session files in `prior`, named from the inline `library` | a list of `{ kind, value, reps, oneRepMaxKg }` or `null` per entry; a list of entry results; a set count; the key string; whole minutes; a list of `{ kind, exerciseId, exerciseName, … }` records, the kind's own fields after |
 
-The `source` cases read `site/examples/` and the shipped seed and packs in `src/content/` in place,
+The `source` cases read `site/examples/` and the shipped seed and packs in `content/` in place,
 so an edit to that content moves their goldens, and the diff is the record of what changed. `localize`
 is how both apps translate that shipped content: a table only ever replaces names, notes and day
 labels, and its header lists the rules.

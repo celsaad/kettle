@@ -183,8 +183,8 @@ and both already hold the week — the churn is not worth it.
 
 ### i18n
 
-New keys in **both** [`en.json`](../src/i18n/locales/en.json) and
-[`pt.json`](../src/i18n/locales/pt.json), at exact parity: the rest card's label, "Train anyway",
+New keys in **both** [`en.json`](../locales/en.json) and
+[`pt.json`](../locales/pt.json), at exact parity: the rest card's label, "Train anyway",
 program detail's Rest badge, the editor's toggle label and its new validation error, and session.tsx's
 rest message. Day labels and week notes are user data and render verbatim, untranslated, as always.
 

@@ -33,6 +33,8 @@ import com.casco.kettle.domain.lastLogged
 import com.casco.kettle.domain.reduceRunner
 import com.casco.kettle.domain.startRunner
 import com.casco.kettle.shell.theme.KettleTheme
+import com.casco.kettle.shell.theme.LocalRunnerBars
+import com.casco.kettle.shell.theme.RunnerBars
 import org.junit.Rule
 
 /**
@@ -105,6 +107,7 @@ abstract class RunnerScreenHarness {
         RunnerView.Running(plan, state.snapshot, state.session, logged = lastLogged(state).takeUnless { restored }),
     )
 
+    protected val runnerBars = RunnerBars()
     protected var shown = false
     protected var fontScale by mutableStateOf(1f)
 
@@ -118,7 +121,10 @@ abstract class RunnerScreenHarness {
         shown = true
         compose.setContent {
             val density = LocalDensity.current
-            CompositionLocalProvider(LocalDensity provides Density(density.density, fontScale)) {
+            CompositionLocalProvider(
+                LocalDensity provides Density(density.density, fontScale),
+                LocalRunnerBars provides runnerBars,
+            ) {
                 Screen()
             }
         }

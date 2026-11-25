@@ -86,7 +86,8 @@ internal fun OverlaySheet(
     scrolls: Boolean = false,
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    // Written straight from each drag move, so no move can land after the spring back has begun.
+    // Written straight from each drag move; a new grab cancels the spring back ([Grabber]), so the two never
+    // write it at once.
     val drag = remember { mutableFloatStateOf(0f) }
     Box(Modifier.fillMaxSize()) {
         Box(
@@ -169,6 +170,8 @@ private fun Grabber(
             }.draggable(
                 rememberDraggableState { delta -> drag.floatValue = maxOf(0f, drag.floatValue + delta) },
                 Orientation.Vertical,
+                // Mid-spring, a finger landing takes the sheet at once rather than after touch slop, as M3's does.
+                startDragImmediately = springBack?.isActive == true,
                 onDragStarted = { springBack?.cancel() },
                 onDragStopped = { velocity ->
                     if (drag.floatValue > dismissAt || velocity > flingAt) {

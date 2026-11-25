@@ -39,7 +39,7 @@ internal enum class RunnerField(
      * [dimmed] while a sheet's [Backdrop] covers the field and the bars with it, so the icons contrast with
      * the colour under them rather than the field's: dark icons on the dimmed orange were near-invisible.
      */
-    fun darkBarIcons(dimmed: Boolean = false): Boolean =
+    fun darkBarIcons(dimmed: Boolean): Boolean =
         (if (dimmed) Backdrop.compositeOver(palette.background) else palette.background).luminance() > EVEN_LUMINANCE
 }
 

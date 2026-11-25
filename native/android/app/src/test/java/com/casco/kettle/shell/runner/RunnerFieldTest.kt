@@ -69,7 +69,7 @@ class RunnerFieldTest {
 
     @Test
     fun `only the orange field darkens the system bars' icons`() {
-        assertEquals(listOf(RunnerField.WORK), RunnerField.entries.filter { it.darkBarIcons() })
+        assertEquals(listOf(RunnerField.WORK), RunnerField.entries.filter { it.darkBarIcons(dimmed = false) })
     }
 
     @Test

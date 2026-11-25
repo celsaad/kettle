@@ -12,7 +12,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import java.io.File
 
-/** The disk's side of `listSessions` in `src/storage/session-files.ts`. What a file means is the corpus's. */
+/** The disk's side of `SessionLog`'s reading. What a file means is the corpus's. */
 class SessionLogTest {
     @TempDir
     lateinit var dir: File

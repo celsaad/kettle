@@ -1,7 +1,7 @@
 package com.casco.kettle.domain
 
 /**
- * `rawLibrarySchema` and `rawWorkoutSchema` from `src/domain/schema.ts`. Exercises are read in
+ * The library and its workouts. Exercises are read in
  * `ExerciseSchema.kt` and programs in `ProgramSchema.kt`; the writer for all of it is `LibraryYaml.kt`.
  */
 internal fun SchemaReader.library(value: Any?): Library? {

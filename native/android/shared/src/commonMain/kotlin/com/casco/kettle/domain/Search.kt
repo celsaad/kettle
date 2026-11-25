@@ -5,15 +5,14 @@ import kotlin.math.max
 import kotlin.math.min
 
 /*
- * Name search, ported from `src/domain/search.ts`, whose header holds the rules and
- * the reasoning; `conformance/search.yaml` is what this is held to. The one thing the port has to
- * add is code points: a Kotlin `String` indexes UTF-16 units as JS does, but the TS iterates with
- * `for…of` and `Array.from`, which walk code points, so the typo checks here do the same.
+ * Name search, held by `conformance/search.yaml`. The one thing
+ * to get right is code points: a Kotlin `String` indexes UTF-16 units as JS does, but the format's
+ * rules walk code points, so the typo checks here do the same.
  */
 
 private const val TYPO_MIN_LENGTH = 4
 
-/** The shortest start of a name word a typo is checked against; `search.ts` says why. */
+/** The shortest start of a name word a typo is checked against. */
 private const val TYPO_MIN_PREFIX = 5
 
 private const val TIER_WORD_START = 0
@@ -36,7 +35,7 @@ private fun wordsOf(value: String): List<String> = nameWords(foldKana(foldName(v
 
 /**
  * Explicit ranges, never a script class, so no platform's Unicode tables can change the answer. They
- * are the same four as `search.ts`, so the numbers are the spec rather than constants to name.
+ * are the same four the format's rules give, so the numbers are the spec rather than constants to name.
  */
 @Suppress("MagicNumber")
 private val TYPO_RANGES: List<IntRange> =

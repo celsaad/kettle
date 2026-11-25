@@ -41,11 +41,10 @@ import org.robolectric.annotation.Config
 
 /**
  * Settings (#237), trimmed to preferences in #416 (the backup folder's cases moved to
- * `FileSheetBackupTest` with the rows), case for case from RN's `settings-sounds` and `settings-contact`
- * tests, on the harness recipe (#193): in `pt`, since an English assertion passes a hardcoded English
- * string, with the files faked behind [StoredFiles] and the platform behind [SettingsActions]. Where
- * jest read the store, these read the file written, which is what native's write is. Beyond jest's:
- * the grant that wasn't kept, the reminder's permission, an export that couldn't share, and the a11y.
+ * `FileSheetBackupTest` with the rows), on the harness recipe (#193): in `pt`, since an English assertion passes a
+ * hardcoded English string, with the files faked behind [StoredFiles] and the platform behind [SettingsActions]. These
+ * read the file written, which is what native's write is. Also: the grant that wasn't kept, the reminder's permission,
+ * an export that couldn't share, and the a11y.
  *
  * The backup itself is `:shared`'s (`BackupTest`); these cover the wiring.
  */

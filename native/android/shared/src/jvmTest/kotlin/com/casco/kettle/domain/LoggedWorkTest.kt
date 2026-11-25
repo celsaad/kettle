@@ -8,8 +8,7 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 
 /**
- * `src/domain/__tests__/logged-work.test.ts` and `src/state/selectors/__tests__/logged-sessions.test.ts`,
- * case for case. Logging 0 is how an exercise is skipped in the runner, so a zero set shown in History
+ * Logged work. Logging 0 is how an exercise is skipped in the runner, so a zero set shown in History
  * or counted as a set reads as work that never happened.
  */
 class LoggedWorkTest {

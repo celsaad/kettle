@@ -568,7 +568,7 @@ constraints that shape future work, and claims that become **false** the moment 
   replaced, at M7 (#357), the RN-era rule of one integer serving both stores, which held only while
   one `app.json` built both. The changelog heading (`## <version> — versionCode <n>, <date>`) names
   Android's build number, so M8 decides how a heading names iOS's.
-- **[`store-copy.test.ts`](../src/domain/__tests__/store-copy.test.ts)** — a bigger job than a changed
+- **[`StoreCopyTest.kt`](../native/android/repo-checks/src/test/kotlin/com/casco/kettle/repochecks/StoreCopyTest.kt)** — a bigger job than a changed
   constant. It asserts Play's whole shape: 80 characters for short, 4000 for full, 500 per release-note
   block, that each heading *declares its own real length*, and that full descriptions keep 30
   characters of headroom. The App Store's limits differ across the board — name 30, subtitle 30,

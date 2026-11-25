@@ -40,7 +40,7 @@ import com.casco.kettle.shell.theme.KettleTheme
 import com.casco.kettle.shell.theme.KettleType
 import com.casco.kettle.shell.theme.Spacing
 
-// Settings' building blocks, `src/app/settings.tsx`'s Section, Segmented and ActionRow.
+// Settings' building blocks, RN's Settings' Section, Segmented and ActionRow.
 
 @Composable
 internal fun Section(

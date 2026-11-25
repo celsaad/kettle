@@ -17,7 +17,7 @@ import java.io.File
 import java.io.IOException
 
 /**
- * The backup (#237): `backup.test.ts`'s `backUpNow` cases, against a folder faked behind
+ * The backup (#237): the `backUpNow` cases, against a folder faked behind
  * [BackupFolder]. Two stay behind: truncation is the SAF adapter's mode (`"wt"`), which only a device
  * shows, and "unsupported" has no Android case.
  */

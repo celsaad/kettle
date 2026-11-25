@@ -17,8 +17,7 @@ import org.robolectric.RobolectricTestRunner
 
 /**
  * The labels' fit (#265). Robolectric measures no real glyph widths, so which size a label settles at is
- * a device check; what this holds is the mechanism: one line, whatever the scale, as jest read
- * `numberOfLines`.
+ * a device check; what this holds is the mechanism: one line, whatever the scale.
  */
 @RunWith(RobolectricTestRunner::class)
 class TabBarTest {

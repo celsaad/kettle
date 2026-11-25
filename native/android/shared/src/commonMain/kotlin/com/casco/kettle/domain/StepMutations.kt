@@ -1,6 +1,6 @@
 package com.casco.kettle.domain
 
-// Mid-session edits to a running step list, from `session-steps.ts`.
+// Mid-session edits to a running step list, from RN's step builder.
 //
 // **Circuit members are refused**: each edit returns a circuit member's list unchanged. A member's
 // setIndex there is its round, and its steps aren't contiguous, so "one more set" would mean "one

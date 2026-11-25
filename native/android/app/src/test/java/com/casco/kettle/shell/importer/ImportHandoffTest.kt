@@ -18,7 +18,7 @@ import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
 
 /**
- * Import's hand-offs to an assistant (#244), case for case from `import.test.tsx`: the repair loop,
+ * Import's hand-offs to an assistant (#244): the repair loop,
  * the assistant brief and pasting from the clipboard. The brief's own layout is `:shared`'s
  * `AssistantBriefTest`.
  */

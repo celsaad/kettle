@@ -5,10 +5,10 @@
 > outlived the build. The roadmap (§11) and open questions (§12) are settled and marked; the live
 > backlog is [`open-work.md`](open-work.md), and §13 is the honest current gap list.
 >
-> **§4 is one of `schema.ts`'s three hand-maintained mirrors.** Changing the format means changing it
+> **§4 is one of the format's three hand-maintained mirrors.** Changing the format means changing it
 > here, in `authoring-exercises-yaml.md`, and in `site/format.html`, in the same PR — see `AGENTS.md`
-> § "Changing the YAML format". The complete YAML samples on this page are parsed by
-> `docs-samples.test.ts` and the field tables by `format-mirrors.test.ts`; the prose is on you.
+> § "Changing the YAML format". `:repo-checks`' `SamplesTest` parses the complete YAML samples on
+> this page; §3's type table names fields in prose, so it and the rest of the prose are on you.
 
 A backend-free app for planning and tracking workouts, native on Android (Kotlin and Compose) since the migration that ended React Native at M7. Exercises and workout templates live in a hand-editable YAML library; completed sessions are written by the app to a local store, one file per session. No server, no account — fully local, portable, and power-user friendly.
 
@@ -164,7 +164,7 @@ programs:                       # required key; `[]` when you have none
 ```
 
 This sample is illustrative; [`authoring-exercises-yaml.md`](authoring-exercises-yaml.md) is the exact
-reference, kept against `schema.ts`. It postdates this section, which is why circuits, programs and
+reference, kept against `library-schema.json`. It postdates this section, which is why circuits, programs and
 the rep/hold *range* fields appear there and only in passing here.
 
 **Design notes:**
@@ -402,8 +402,9 @@ What's genuinely missing today, checked directly against the code:
 - ~~**Known bug (web only): leaving the session screen crashes with a redbox.**~~ ✅ Fixed — see the
   [decision log](decisions.md) for the details. `useKeepAwake` now passes
   `suppressDeactivateWarnings`, the library's own flag for exactly this race.
-- ~~**No automated tests at all.**~~ ✅ Closed — jest (via `jest-expo` until M7, plain jest with babel since), running in CI alongside
-  typecheck and lint. (`pnpm test` is the suite size; no doc quotes it, because every copy went stale —
+- ~~**No automated tests at all.**~~ ✅ Closed — jest until the TS domain went (#353), and Gradle's
+  JVM and Robolectric tests since, running in CI in `./gradlew build`. (That build is the suite
+  size; no doc quotes it, because every copy went stale —
   this line itself read "230 tests across 22 files" long after that stopped being true.) Covers
   the domain layer, the wall-clock session runner
   (§7.1, "the make-or-break issue"), and the highest-branch screens. Layout, animation, real audio and

@@ -1169,9 +1169,9 @@ decision assembled across several commits. Open work belongs in the sections at 
     `*Schema.kt` readers as data, plus an interpreter for zod 4's fatal and non-fatal rules, to
     generate one file that changes when the format does. **Publishing a Kotlin zod-alike library was
     refused**: Kettle would own a general-purpose validation library to serve one schema.
-  - **Node is to survive only for oxfmt** (#353; jest still runs until then), which formats `site/`
-    and the JSON nothing else owns. The guards jest runs move to JVM tests rather than keeping a
-    Node test runner for them.
+  - **Node survives only for oxfmt** (#353), which formats `site/` and the JSON nothing else owns.
+    The guards jest ran moved to JVM tests (`:strings`, `:app`, `:repo-checks`) rather than keeping
+    a Node test runner for them.
 
 - **Device checks of the user journeys stay in-house scripts, not a test framework (#172).** The CUJ
   checks grow out of `scripts/route-check.sh` and its `.ps1` twin: adb, the debug receivers and a
@@ -1267,7 +1267,9 @@ constraint that outlived the work rather than a description of it.
   reputation is real on Linux CI and will suggest Bun again; on this Windows box the measurement is
   the answer. Bun is otherwise fine — the full suite passed under it before the switch.
 
-  Three things about pnpm that are not obvious and each cost a debugging round:
+  Three things about pnpm that are not obvious and each cost a debugging round. Since #353 none is
+  live: oxfmt is the only package, installed in pnpm's default isolated layout, and
+  `pnpm-workspace.yaml` is gone. They stay for the day a second package arrives.
 
   - **Settings live in `pnpm-workspace.yaml`, not `.npmrc`.** pnpm 10 began moving them and by 11 an
     `.npmrc` entry is read as an npm setting and ignored. `--node-linker=hoisted` on the command line

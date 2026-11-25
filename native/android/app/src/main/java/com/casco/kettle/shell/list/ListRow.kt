@@ -23,7 +23,7 @@ import com.casco.kettle.shell.theme.Spacing
 // neighbours, and no horizontal padding: the card's padding sat on top of the screen's, insetting
 // every name past the title and search above it. The metrics are shared rather than retyped per screen,
 // since sibling lists that look subtly unlike each other read as a bug, not a distinction. RN's
-// `list-row.tsx` held this until its last list went native (#245).
+// RN's list row held this until its last list went native (#245).
 
 /** For a row that can't be a [ListRow]: share these rather than retyping them. */
 val ListRowMinHeight = 56.dp

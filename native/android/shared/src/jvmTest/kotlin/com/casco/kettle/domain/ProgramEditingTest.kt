@@ -5,7 +5,7 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 
 /**
- * What the program editor (#243) does to its draft and to the library: the state `program-editor.tsx`
+ * What the program editor (#243) does to its draft and to the library: the state RN's program editor
  * kept inline, and the store's `saveProgram`/`deleteProgram`. The screen's own cases are
  * `ProgramEditorScreenTest`'s; these are the rules under them.
  *

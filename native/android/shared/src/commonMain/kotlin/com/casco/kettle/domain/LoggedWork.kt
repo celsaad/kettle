@@ -1,7 +1,6 @@
 package com.casco.kettle.domain
 
-// `src/domain/logged-work.ts` and `src/state/selectors/logged-sessions.ts`, which hold the reasoning:
-// logging 0 is how an exercise is skipped in the runner, so a set at exactly 0 reps or 0 seconds is
+// Logging 0 is how an exercise is skipped in the runner, so a set at exactly 0 reps or 0 seconds is
 // "not done", and a finished session left with no work is hidden from every training view. EMOM and
 // HIIT are deliberately out. The files keep what was written; this filters on read.
 

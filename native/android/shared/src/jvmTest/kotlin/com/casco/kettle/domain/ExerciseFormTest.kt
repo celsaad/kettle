@@ -23,10 +23,9 @@ import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
 
 /**
- * `exercise-form.test.ts`, ported with the form (#241). jest asserted the English message; here the
- * problem is a descriptor the screen puts into words, so each case asserts the descriptor whose
- * message jest named. `validateBlockConfig`'s cases stay behind with the override editor, which is
- * the only form that uses it.
+ * The exercise form's validation (#241). The problem is a descriptor the screen puts into words, so each
+ * case asserts the descriptor, not an English message. `validateBlockConfig`'s cases stay behind with the
+ * override editor, which is the only form that uses it.
  */
 class ExerciseFormTest {
     private val metric = UnitSystem.METRIC

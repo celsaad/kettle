@@ -7,7 +7,7 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 
 /**
- * The program editor's overrides panel (#243), as `program-override-editor.test.tsx` holds it, less
+ * The program editor's overrides panel (#243), as RN's override editor tests held it, less
  * what is the screen's (`ProgramEditorScreenTest`).
  *
  * The conversion is the point: an override's `config` is a partial, snake_case patch, while the form

@@ -75,11 +75,10 @@ import kotlin.time.Duration.Companion.days
 import kotlin.time.Instant
 
 /**
- * Home (#235), case for case from RN's `workouts-list.test.tsx`, `workouts-next-up.test.tsx` and
- * `workouts-startup-marker.test.tsx`, on the harness recipe (#193): in `pt`, since an English
+ * Home (#235), on the harness recipe (#193): in `pt`, since an English
  * assertion passes a hardcoded English string, with the files faked behind [StoredFiles], the clock
  * fixed (every session that a day boundary could move is logged at that instant, so the device's
- * zone can't), and every route heard through a parameter. Beyond jest's: what each control sends, the
+ * zone can't), and every route heard through a parameter. Also: what each control sends, the
  * targets' size and re-tap-to-top. The splash's exit is the shell's (`ShellTest`).
  *
  * A queued workout's name is on the card and on its row, so a row is matched as the button carrying
@@ -151,7 +150,7 @@ class HomeScreenTest {
     /** Empty session's start, a plus named by what it does (#412). */
     private fun emptySession() = compose.onNode(hasContentDescription("Começar uma sessão vazia") and isButton)
 
-    // The card: workouts-next-up.test.tsx.
+    // The card.
 
     /** The title and the gear sit above everything an empty library affects, and the gear is the way out. */
     @Test
@@ -462,7 +461,7 @@ class HomeScreenTest {
             "and stop entirely if the bar speed drops. Sleep is the priority this week."
 
     /**
-     * The cap a text was laid out with, which is the mechanism, as jest read `numberOfLines`: Robolectric
+     * The cap a text was laid out with, which is the mechanism: Robolectric
      * measures no real glyph widths, so nothing ever wraps for a rendered line count to show.
      */
     private fun maxLines(node: SemanticsNodeInteraction): Int {
@@ -696,7 +695,7 @@ class HomeScreenTest {
         emptySession().assertExists()
     }
 
-    // The startup marker: workouts-startup-marker.test.tsx. Where the benchmark stops its clock, so it
+    // The startup marker. Where the benchmark stops its clock, so it
     // must not fire on a frame drawn before the library has loaded.
 
     @Test

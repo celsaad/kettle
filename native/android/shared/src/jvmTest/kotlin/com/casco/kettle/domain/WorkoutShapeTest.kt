@@ -4,7 +4,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
 /**
- * `workoutShape`, from RN's `workout-shape.test.ts`, which went with RN Home (#235), less its duration
+ * `workoutShape`, from RN's workout shape tests, which went with RN Home (#235), less its duration
  * cases: the estimate went in #412, since a reps block only knew its rest.
  */
 class WorkoutShapeTest {

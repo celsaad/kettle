@@ -52,7 +52,7 @@ fun SupportRoute() {
 }
 
 /**
- * Support, the tip jar (#198): `src/app/support.tsx` on the Play Billing Library. A test passes a
+ * Support, the tip jar (#198): RN's Support screen on the Play Billing Library. A test passes a
  * [runtime] to fix the clock, write inline, and give up on a store that never answers without waiting
  * the real time.
  */

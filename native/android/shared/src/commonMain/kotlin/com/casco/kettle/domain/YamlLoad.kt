@@ -36,7 +36,7 @@ import it.krzeminski.snakeyaml.engine.kmp.tokens.Token
 
 /**
  * The YAML loader for the app's files: snakeyaml-engine-kmp, the multiplatform port of
- * snakeyaml-engine, held to what `js-yaml` 5 does in `src/domain/yaml-mapping.ts`. Those are the
+ * snakeyaml-engine, held to what `js-yaml` 5 does. Those are the
  * rules in `conformance/README.md`, and each departure from the engine's defaults below is one of
  * them.
  *

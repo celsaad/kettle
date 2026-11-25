@@ -233,8 +233,8 @@ Nothing user-visible ships in M1. It builds the pieces every later milestone dep
   YAML inputs plus generated golden outputs (parsed library and session, refusal paths, repair,
   merge, program resolution, overrides, units). The inputs are drawn from the existing domain tests
   and `site/examples/*.yaml`. The docs samples went to `:repo-checks` with the rest of the
-  repo's guards (#352), since extracting them from markdown turned out to be no TS-only job. **Both** jest and the Kotlin tests run it. A fixture one side
-  passes and the other fails is a fork of the format, and it fails CI.
+  repo's guards (#352), since extracting them from markdown turned out to be no TS-only job. Kotlin
+  is the corpus's only runner and writer since #348.
 - **Generated resources**, so translations and colors stay single-sourced while both UIs exist:
   - `en.json`, `pt.json` and `ja.json` → `values{,-pt,-ja}/strings.xml`, plurals included.
     Android's plural rules never select `zero` for Portuguese, so the generator emits an explicit

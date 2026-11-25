@@ -1,7 +1,7 @@
 package com.casco.kettle.domain
 
 /**
- * `rawExerciseSchema` from `src/domain/schema.ts`, read straight into the domain model as
+ * An exercise, read straight into the domain model as
  * `SessionSchema.kt` reads a session. The writer is in `LibraryYaml.kt`.
  */
 internal fun SchemaReader.exercise(

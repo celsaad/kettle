@@ -18,7 +18,7 @@ import java.util.Locale
 import kotlin.time.Instant
 
 /**
- * `formatMonthDay` in `src/i18n/format.ts`: Intl's `{ month: 'short', day: 'numeric' }`, which is the
+ * `formatMonthDay`: Intl's `{ month: 'short', day: 'numeric' }`, which is the
  * locale's own best pattern for those fields, "Aug 4" or "4 de ago.". `SimpleDateFormat` because
  * `getBestDateTimePattern` returns a pattern for that class.
  */
@@ -55,7 +55,7 @@ fun formatMonthDay(
 ): String = formatMonthDay(date.atStartOfDayIn(TimeZone.UTC), locale, TimeZone.UTC)
 
 /**
- * `formatWeekday(date, 'narrow')` in `src/i18n/format.ts`: "M", "T", or "S" for both Saturday and
+ * The narrow weekday: "M", "T", or "S" for both Saturday and
  * Sunday. ICU's formatter, not `SimpleDateFormat`: the locale's pattern for it is the standalone
  * `ccccc`, which `java.text` refuses, and on a JVM `java.text` reads `EEEEE` as the full name.
  */
@@ -69,7 +69,7 @@ fun formatNarrowWeekday(
         .format(Date(date.atStartOfDayIn(TimeZone.UTC).toEpochMilliseconds()))
 
 /**
- * What `firstWeekdayIndex` in `src/i18n/index.ts` read before its last caller went native (#202): the
+ * The first day of the week: the
  * day the reader's calendar starts its week on, which expo-localization reads from `Calendar` in the
  * device's locale, as this does.
  */
@@ -90,7 +90,7 @@ private fun format(
         .format(Date(at.toEpochMilliseconds()))
 
 /**
- * `deviceUnitSystem` in `src/i18n/index.ts`: what RN shows until the reader picks one in Settings,
+ * What the app shows until the reader picks one in Settings,
  * imperial where the locale measures in US units. Decided as expo-localization decides what RN reads:
  * ICU's answer from API 28, where it arrived, and expo's own list of regions below that.
  */

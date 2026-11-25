@@ -1,8 +1,8 @@
 package com.casco.kettle.domain
 
 /**
- * The library file's domain model: exercises, workouts and programs, as `Library` in
- * `src/domain/types.ts`. Optional fields follow `Session.kt`'s rule: a nullable property whose null
+ * The library file's domain model: exercises, workouts and programs, held by
+ * `conformance/library.yaml`. Optional fields follow `Session.kt`'s rule: a nullable property whose null
  * means *absent*.
  *
  * Integers are `Long` and other numbers `Double`, for the reason `SchemaReader.integer` gives.
@@ -114,7 +114,7 @@ data class Program(
 
 /**
  * One slot in a program's rotation: a workout to run, or a scheduled day off. Two classes rather than
- * a flag for the reason `ProgramWeek` in `types.ts` gives: a rest week has no workout to look up.
+ * a flag for the reason RN's `ProgramWeek` gave: a rest week has no workout to look up.
  */
 sealed interface ProgramWeek {
     val week: Long

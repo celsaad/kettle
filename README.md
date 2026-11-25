@@ -59,29 +59,22 @@ native/android/gradlew -p native/android build   # tests, ktlint, detekt, Androi
 scripts/native-dev.sh                            # build the .dev app, install it on a phone, launch it
 ```
 
-The repo root is a small Node project as well: the TypeScript domain, the shipped content's tests,
-and the YAML format's reference implementation, which `conformance/` holds the Kotlin port to.
+The repo root is a small Node project as well, for one tool: oxfmt, which formats the site and the
+JSON.
 
 ```bash
 corepack enable      # once; pnpm is pinned by "packageManager" in package.json
 pnpm install
-pnpm test
+pnpm run format
 ```
-
-**pnpm, not npm.** `pnpm-workspace.yaml` holds settings another manager ignores; see the decision
-log.
 
 ## Project structure
 
 ```
 src/
-  constants/            theme tokens, with the measured contrast ratios recorded alongside them
-  domain/               types, zod schemas, YAML<->domain mapping, library merge, display formatting,
-                         kg/lb conversion
-  storage/              readers for the content the app ships: the seed library and the packs
-  state/selectors/      derived-display selectors
-  i18n/                 i18next setup and the en / pt / ja locale bundles
-  test-support/         shared fixtures used by the test suite
+  constants/            theme.json, the tokens both the theme generator and its notes describe
+  content/              the shipped seed library, the content packs and the exercise drawings
+  i18n/locales/         the en / pt / ja locale bundles
 site/                   the public landing site (GitHub Pages), static HTML, no build step
 store/                  Play listing copy and generated store graphics
 ```
@@ -89,15 +82,14 @@ store/                  Play listing copy and generated store graphics
 ## Scripts
 
 ```bash
-pnpm run typecheck    # tsc --noEmit
-pnpm run lint         # oxlint
-pnpm test             # jest
-pnpm run format       # oxfmt (markdown and package.json are excluded; HTML is not)
+pnpm run format                        # oxfmt (markdown and package.json are excluded; HTML is not)
+cd native/android && ./gradlew build   # every test, ktlint, detekt and Android lint
 ```
 
-All three checks run in CI (`.github/workflows/ci.yml`) on every push and pull request. The suite
-covers the domain layer, the session runner, the stores and the highest-branch screens; layout,
-animation, real audio and file writes are verified by driving the running app instead.
+Both run in CI (`.github/workflows/ci.yml`) on every push and pull request. The tests cover the
+format (the conformance corpus), the domain, the runner, the screens, the shipped content and the
+docs and site; layout, animation, real audio and file writes are verified by driving the running app
+instead.
 
 ## Docs
 

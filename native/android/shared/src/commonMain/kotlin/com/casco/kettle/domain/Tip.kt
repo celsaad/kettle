@@ -1,7 +1,7 @@
 package com.casco.kettle.domain
 
 /**
- * The tip jar: `src/domain/tip.ts`, which holds the reasoning. Ordered smallest to largest, and this
+ * The tip jar, ordered smallest to largest; this
  * order *is* the display order, never the fetched price's.
  *
  * [sku] is the Play Console product ID. Those are permanent once created, so treat them as fixed.
@@ -65,7 +65,7 @@ fun withTipRecorded(
 ): SupporterState = SupporterState(current.tipCount + 1, isoInstant(at), tier)
 
 /**
- * What a `supporter.json` says, held to `src/domain/tip.ts`'s `parseSupporterState` by
+ * What a `supporter.json` says, held by
  * `conformance/supporter.yaml`. Anything the schema refuses reads as the empty state, never an error:
  * the file is the app's, so there's no user to report to, and being wrong forgets a past tip rather
  * than any workout data.

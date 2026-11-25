@@ -1,7 +1,7 @@
 package com.casco.kettle.domain
 
 /**
- * The library file, as the library half of `src/domain/yaml-mapping.ts`. Its schema is split across
+ * The library file, as the library half of the YAML mapping. Its schema is split across
  * `LibrarySchema.kt`, `ExerciseSchema.kt` and `ProgramSchema.kt`, and all of it is held to
  * `conformance/library.yaml`.
  */

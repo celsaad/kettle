@@ -45,7 +45,7 @@ sealed interface PurchaseUpdate {
 }
 
 /**
- * What Support asks of the store, as a boundary its test fakes: the role `safe-iap.ts` played for RN,
+ * What Support asks of the store, as a boundary its test fakes: the role expo-iap played for RN,
  * except nothing here can be missing from the binary, so every failure is a runtime one and ends in a
  * value rather than a throw.
  */

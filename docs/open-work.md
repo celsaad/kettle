@@ -60,8 +60,8 @@ wanting states and assignees, it wants GitHub issues instead.
     was unreachable rather than merely unexploited. `maxAliases: 1000` is set anyway, since that
     immunity is a property of the current schema rather than a guarantee about the next one.
   - ~~**A machine-readable schema to hand the model.**~~ ~~**The user's existing ids, alongside
-    it.**~~ ✅ Both shipped, as one payload: `domain/assistant-brief.ts` builds a "Copy the format for
-    an assistant" brief of `z.toJSONSchema(rawLibrarySchema)` plus every id/name/type currently in the
+    it.**~~ ✅ Both shipped, as one payload: RN's `assistant-brief.ts` (now `:shared`'s
+    `AssistantBrief.kt`) built a "Copy the format for an assistant" brief of `z.toJSONSchema(rawLibrarySchema)` plus every id/name/type currently in the
     library, and the import screen copies it. Generated rather than written out, so it couldn't drift
     from what the importer accepts (native's is the hand-maintained `library-schema.json` since #349,
     held to the importer by `LibrarySchemaFileTest` instead) — which was the whole argument, given

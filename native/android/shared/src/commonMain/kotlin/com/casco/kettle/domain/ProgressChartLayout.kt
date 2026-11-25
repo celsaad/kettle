@@ -59,7 +59,7 @@ data class ChartLayout(
 
 /**
  * Where everything in the exercise progress chart goes, as plain numbers. Ported from RN's
- * `progress-chart-layout.ts`, deleted with the RN screen in #200.
+ * RN's chart layout, deleted with the RN screen in #200.
  *
  * Split out of the drawing because the rules worth pinning (which dot a session gets, where the
  * axis's lines fall) are arithmetic, and a test should reach them without a Canvas. Units are the

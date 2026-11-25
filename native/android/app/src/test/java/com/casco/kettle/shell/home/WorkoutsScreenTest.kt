@@ -54,7 +54,7 @@ import org.robolectric.annotation.Config
 
 /**
  * Library's Workouts section (#412), the list Today held until it narrowed to what's next: its tests
- * moved with it from HomeScreenTest, case for case from RN's `workouts-list.test.tsx`. In `pt`, since
+ * moved with it from HomeScreenTest. In `pt`, since
  * an English assertion passes a hardcoded English string, with the files faked behind
  * [com.casco.kettle.shell.files.StoredFiles] and every route heard through a parameter.
  */

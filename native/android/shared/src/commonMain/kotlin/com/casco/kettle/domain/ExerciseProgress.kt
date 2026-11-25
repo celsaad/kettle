@@ -7,8 +7,7 @@ import kotlin.math.abs
 import kotlin.time.Instant
 
 /**
- * One exercise's trend over a window: `ExerciseProgress` in `src/state/selectors/exercise-progress.ts`,
- * which holds the reasoning for every rule below. [points] and [sessions] are oldest first.
+ * One exercise's trend over a window. [points] and [sessions] are oldest first.
  */
 data class ExerciseProgress(
     val exerciseId: String,
@@ -48,8 +47,7 @@ data class ProgressView(
 const val TREND_WEEKS = 8
 
 /**
- * Per-exercise progress over the last [weeks] weeks before [now]: `exerciseProgress` in
- * `src/state/selectors/exercise-progress.ts`, over the window [trendWindowStart] gives.
+ * Per-exercise progress over the last [weeks] weeks before [now], over the window [trendWindowStart] gives.
  *
  * A `startedAt` that isn't an instant is left out, as RN's `new Date` comparisons leave out an invalid
  * date. Ties in the order break on the id by code unit, where RN's `localeCompare` collates; the two

@@ -2,10 +2,9 @@ package com.casco.kettle.domain
 
 /**
  * A library file with every count past its ceiling clamped back to the ceiling, as YAML, or null if
- * there was nothing to repair or nothing parseable to repair it in. `repairLibraryBounds` in
- * `src/domain/yaml-mapping.ts` says why it exists: the ceilings turned files that used to parse into
- * refusals, and a refused library is reseeded, so without this the release that added them would
- * have replaced the user's library with the starter one.
+ * there was nothing to repair or nothing parseable to repair it in. It exists because the ceilings turned files that
+ * used to parse into refusals, and a refused library is reseeded, so without this the release that added
+ * them would have replaced the user's library with the starter one.
  *
  * Driven by the schema's own complaints ([SchemaReader.ceilings]), so a ceiling added later is
  * repaired without touching this. Only a value past a ceiling is repaired; a zero, a fraction or a

@@ -1,7 +1,7 @@
 package com.casco.kettle.domain
 
 // The program editor's overrides panel (#243): what a week's override can target, the form an add or
-// an edit opens, and the patch its confirm emits. Ported from RN's `program-override-editor.tsx`.
+// an edit opens, and the patch its confirm emits. Ported from RN's override editor.
 //
 // An override's `config` is a partial, snake_case patch of raw values, never a domain object
 // (AGENTS.md), while the form holds the same strings any exercise form holds. The merge seeds the form

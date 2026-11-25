@@ -1,7 +1,7 @@
 package com.casco.kettle.domain
 
 /**
- * What an import added and replaced, by id, as `MergeSummary` in `src/domain/merge.ts`. Each list is
+ * What an import added and replaced, by id, held by `conformance/merge.yaml`. Each list is
  * in the order the incoming file had it.
  */
 data class MergeSummary(
@@ -43,7 +43,7 @@ sealed interface MergeResult {
 }
 
 /**
- * An import, as `mergeLibraries` in `src/domain/merge.ts`: an incoming item replaces the existing one
+ * An import: an incoming item replaces the existing one
  * with its id whole, never field by field, or is appended if it's new. Existing items keep their
  * place, which a [LinkedHashMap] does on replace as a JS `Map` does. The version is the existing
  * file's.

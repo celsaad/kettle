@@ -1,7 +1,7 @@
 package com.casco.kettle.domain
 
 /**
- * Session files, as the session half of `src/domain/yaml-mapping.ts`. The schema they are read with
+ * Session files, as the session half of the YAML mapping. The schema they are read with
  * is in `SessionSchema.kt`. Both are held to `conformance/session.yaml`.
  */
 fun parseSessionYaml(text: String): ParseResult<Session> = parseYaml(text) { session(it) }
@@ -10,7 +10,7 @@ fun parseSessionYaml(text: String): ParseResult<Session> = parseYaml(text) { ses
 fun serializeSessionYaml(session: Session): String = dumpYaml(session.toRaw())
 
 /**
- * The whole log as one document, `serializeSessionArchiveYaml` in `src/domain/yaml-mapping.ts`: the
+ * The whole log as one document, `serializeSessionArchiveYaml`: the
  * history export and the backup's `kettle-history.yaml` (#237), since a share hands over one file. Each
  * session is what its own file holds. Sorted oldest-first here, where RN's two callers each sort: an
  * archive read top to bottom in some other app runs forward in time. [exportedAt] is the caller's clock.

@@ -3,8 +3,8 @@ package com.casco.kettle.domain
 import kotlin.time.Instant
 
 /**
- * How long [session] ran, in whole minutes: `sessionDurationMinutes` in
- * `src/state/selectors/session-summary.ts`, held to it by `conformance/records.yaml`. An unfinished
+ * How long [session] ran, in whole minutes: `sessionDurationMinutes`,
+ * held by `conformance/records.yaml`. An unfinished
  * session is 0, and so is one that ended before it started, which a clock set back mid-session does.
  *
  * Rounded as JS's `Math.round`, through [roundHalfUp]. A time that isn't an instant counts as 0 where RN's would
@@ -19,8 +19,8 @@ fun sessionDurationMinutes(session: Session): Int {
 }
 
 /**
- * How many sets [session] is worth: `sessionSetCount` in `src/state/selectors/session-summary.ts`,
- * held to it by `conformance/records.yaml`. The unit is one interval actually performed, so a HIIT or
+ * How many sets [session] is worth: `sessionSetCount`,
+ * held by `conformance/records.yaml`. The unit is one interval actually performed, so a HIIT or
  * AMRAP round and an EMOM minute each count one; cardio is one continuous effort, and rest is none.
  */
 fun sessionSetCount(session: Session): Int =
@@ -49,7 +49,7 @@ private fun instantOrNull(text: String): Instant? =
 private const val MS_PER_MINUTE = 60_000.0
 
 /**
- * What one logged entry put up, as `EntryResult` in `src/domain/format.ts`: structured, never a
+ * What one logged entry put up: structured, never a
  * sentence, which History's screen renders. Seven entry types fold onto six shapes, since hiit and
  * amrap both reduce to rounds.
  */
@@ -86,7 +86,7 @@ sealed interface EntryResult {
 }
 
 /**
- * `sessionEntryResult` in `src/state/selectors/session-summary.ts`, held to it by
+ * `sessionEntryResult`, held by
  * `conformance/records.yaml`: RN's exercise editor keeps reading it until the library flip.
  */
 fun sessionEntryResult(entry: SessionEntry): EntryResult =

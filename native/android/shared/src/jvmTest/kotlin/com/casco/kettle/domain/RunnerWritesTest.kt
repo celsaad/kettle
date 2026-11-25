@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 
 /**
- * The engine's write path and its one-level undo, from RN `use-session-runner.test.tsx`'s undo,
+ * The engine's write path and its one-level undo, from RN's runner-hook tests' undo,
  * write-through, logging, circuits, zero-work and finish sections (§2.1 and §2.5 of #294's inventory).
  * Undo first, as #304 asks: it is the most intricate state machine in the runner.
  */

@@ -9,7 +9,7 @@ internal val ROOT: Path = emptyList()
 internal typealias Read<T> = SchemaReader.(value: Any?, path: Path) -> T?
 
 /**
- * The Kotlin side of the zod schemas in `src/domain/schema.ts`, as small readers over the loaded
+ * The zod-style schemas, as small readers over the loaded
  * tree. Each records its refusal and returns null rather than throwing, so one pass collects every
  * refused field the way zod does, and the caller turns the tree into the domain value only if
  * nothing was refused.

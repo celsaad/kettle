@@ -19,7 +19,7 @@ sealed interface SessionParams {
 }
 
 /**
- * What Home queues up, as `NextUpView` in RN's `state/selectors/next-up.ts`, which went with RN Home
+ * What Home queues up, as RN's `NextUpView`, which went with RN Home
  * (#235). Two classes because a rest day has no workout and nothing to start, and the card is the one
  * place that must not get that wrong. The week's fields are structured, so the card composes the
  * label; [Queued.weekDay] and the notes are user data and render verbatim.

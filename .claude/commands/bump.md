@@ -1,7 +1,7 @@
 ---
 description: Bump the app version and each shipping platform's build number, close out the changelog, and commit the release
 argument-hint: "[patch|minor|major|<explicit version>]"
-allowed-tools: Read, Edit, Bash(git:*), Bash(node:*), Bash(pnpm run typecheck), Bash(pnpm run lint), Bash(pnpm test), Bash(gh pr:*)
+allowed-tools: Read, Edit, Bash(git:*), Bash(node:*), Bash(gh pr:*)
 ---
 
 Cut a release by bumping the version. The requested bump is: **$ARGUMENTS** (if that's empty, work out
@@ -99,10 +99,11 @@ Check what's in flight before deciding, and say which you're doing:
 1. Edit each chosen platform's version file: for Android, both properties in
    `native/android/gradle.properties`. Show the edit you're making before you make it.
 2. Close out `CHANGELOG.md` as above.
-3. Run `pnpm test`, `pnpm run typecheck` and `pnpm run lint`. Typecheck and lint should be untouched by
-   a version bump; if they aren't clean, something else is wrong and the bump isn't the thing to fix it
-   with. Also run `./gradlew :repo-checks:test` from `native/android`: its `StoreCopyTest` reads
-   `CHANGELOG.md` and fails on a release-note block over 500 characters. Nothing checks the version file: read the diff.
+3. Run `./gradlew :repo-checks:test` from `native/android`, with `JAVA_HOME` on a JDK 21 and
+   `ANDROID_HOME` set (`docs/building-android.md`): its `StoreCopyTest` reads `CHANGELOG.md` and
+   fails on a release-note block over 500 characters. Nothing else should move under a version bump;
+   if something else fails, it is wrong already and the bump isn't the thing to fix it with. Nothing
+   checks the version file: read the diff.
 4. Commit as **`Release <version> (versionCode <n>)`**, matching every previous release. The body says
    what's in it — the user-facing changes, by PR number where there is one — and why the level was
    patch/minor/major if that isn't obvious. Note anything deliberately excluded.

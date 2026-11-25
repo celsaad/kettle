@@ -5,28 +5,23 @@ plus a local session log, one file per session. No server, no account.
 
 ## Commands
 
-**The package manager is pnpm, not npm** — `pnpm install`, never `npm install`, which ignores
-`pnpm-workspace.yaml` and the lockfile. Its `nodeLinker: hoisted` is kept until the TS project goes
-(#353), no longer required; the decision log has the history. Trailing args need no `--` separator, so
-it's `pnpm test --ci`, not `npm test -- --ci`.
+**Node is here for oxfmt alone**, and its package manager is pnpm: `pnpm install`, never
+`npm install`, which ignores the lockfile. Everything else, every test included, is Gradle's, run from
+`native/android`.
 
-- `pnpm run typecheck` — `tsc --noEmit`
-- `pnpm run lint` — oxlint. **Keep it at zero warnings and zero errors.** A warning you genuinely
-  can't fix wants a one-line disable naming the reason, not a new accepted baseline. It also holds
-  a layer rule: `src/domain/` imports no React, Expo or store. Tests get the jest rules, chiefly the two that catch a
-  test passing vacuously — no assertion, or an assertion on only one branch.
-- `pnpm run knip` — unused files, dependencies and exports, and any import `package.json` doesn't
-  list. Same rule as a lint warning: delete the dead code, or name a genuine exception in
-  `knip.jsonc` with its reason.
-- `pnpm test` — jest, with babel stripping the types (`babel.config.js`). Covers the domain layer, the shipped content and its mirrors;
-  every screen and the runner are `:app`'s and `:shared`'s tests since routing moved native (#309).
-  Under a minute, so run it. A single file is `pnpm jest <path>`.
-- `pnpm run format` — oxfmt (same Oxc toolchain as oxlint, so they agree). Run it instead of matching
+- `pnpm run format` — oxfmt, over `site/`, the JSON and the corpus. Run it instead of matching
   the style by hand, and never reach for `pnpm dlx prettier`, which has no config here and would
   reformat the file to its own defaults. **Markdown and `package.json` are excluded on purpose** —
   see the decision log before adding them. **`site/*.html` is not excluded**, and reads like it should
   be: editing the landing site by hand and skipping `format` because "it's only HTML" is what broke
   CI on #58, since `check` runs `oxfmt --check` over everything that isn't on that list.
+- `./gradlew build` from `native/android` — every module's tests, ktlint, detekt, Android lint and
+  compiler warnings, all failing on any finding. **Keep it at zero warnings.** A finding you
+  genuinely can't fix wants a one-line suppression naming the reason, not a new accepted baseline.
+  It covers more than the app: `:repo-checks` holds the docs, the site and the store copy, so a
+  prose-only change runs it too. It needs no `pnpm install`, since it reads the repo's plain files
+  and nothing from Node. `./gradlew ktlintFormat` formats the Kotlin; a single module's tests are
+  `./gradlew :<module>:test` (`:shared:jvmTest`, `:app:testDebugUnitTest`).
 
 ## Working on a feature
 
@@ -49,21 +44,15 @@ retrofit, so answer them out loud even when the answer is no.
       why they're a checklist item.
 - [ ] **Does it need error checks, an error boundary, or a graceful degrade?** Ask per layer: can a
       storage call fail without throwing into its caller; does an in-app form need `validateConfig`-style
-      validation (the zod schema does *not* run on that path); can a render throw here cost a workout in
+      validation (the importer's schema readers do *not* run on that path); can a render throw here cost a workout in
       progress? Degrading beats crashing — `RunnerService.kt`'s `notifyIfAllowed`,
       `PreparedLibrary.kt`'s reseed of a corrupt library, and native Support's store states
       (`TipJar.kt`) are the patterns to copy.
 - [ ] **Add tests if it makes sense.** Pure logic, error and empty branches, validation wiring: yes.
       Layout, animation, real audio and file writes: drive the running app instead. See "Writing tests".
-- [ ] `pnpm test`
-- [ ] `pnpm run typecheck`
-- [ ] `pnpm run format`
-- [ ] `pnpm run lint` — it comes back completely silent, so anything it prints is yours.
-- [ ] `pnpm run knip` — silent too.
-- [ ] **Touched `native/android`, or moved a golden in `conformance/`?** `gradlew build` from
-      `native/android`: tests, ktlint, detekt, Android lint and compiler warnings, all failing on any
-      finding. A golden change reaches it because the Kotlin runner reads the same corpus. It needs
-      no `pnpm install`: the native build reads the repo's plain files and nothing from Node.
+- [ ] `pnpm run format`, and `./gradlew ktlintFormat` from `native/android` if you touched Kotlin.
+- [ ] `./gradlew build` from `native/android` — it comes back with no findings, so anything it
+      reports is yours. A moved golden reaches it because the Kotlin runner reads the corpus.
 - [ ] **Push the branch and open a PR** (`gh pr create`). The commit message is the durable record —
       root cause, alternatives, deliberate scope cuts go there, not into the docs (see "Docs").
 
@@ -80,15 +69,8 @@ mistake here that cannot be fixed for anyone who has already installed it.
 
 ## Where things live
 
-- `src/domain/` — pure logic, no I/O. `types.ts` (domain model), `schema.ts` (zod validation of raw
-  YAML), `yaml-mapping.ts`, `merge.ts` (import merges by `id`, whole-object replace), `program.ts`
-  (week resolution + override application). Every editor is native's since the library flip (#245),
-  so the form logic lives in `:shared` (`ExerciseForm.kt`, `SessionEntryForm.kt`) rather than here.
-- `src/storage/` — the readers for the content the app *ships*; every file the app writes is
-  native's since #308, RN's own readers went with its stores (#309), and the last TS one with the
-  guards that read it (#352); native writes the real seed on a first launch
-  (`PreparedLibrary.kt`). The content itself is data in `src/content/`, which native
-  reads through `ShippedContent`: an English `library.yaml` plus a `<lang>.json` string table per
+- `src/content/` — the content the app *ships*, as data, read through `ShippedContent`; native
+  writes the seed on a first launch (`PreparedLibrary.kt`). It is an English `library.yaml` plus a `<lang>.json` string table per
   language (`:shared`'s `LibraryTranslation.kt`), and `packs.json` for the pack order. `:app`'s
   `ShippedLibrariesTest`, `ShippedSeedTest` and `ContentPacksTest` hold what the content says, in
   every language. **New shipped content goes in a pack, not in the seed** — the seed can only ever
@@ -97,9 +79,6 @@ mistake here that cannot be fixed for anyone who has already installed it.
   `packStrings`; `ContentPacksTest` fails when the first three disagree, `:app` won't compile
   without the row, and `ImportScreenTest` fails without the line. See the decision log for the four
   rules a pack has to respect; the prefixed-id one is the load-bearing one.
-- `src/state/selectors/` — derived/display logic split per view (`records`, `logged-sessions`,
-  `session-summary`, …), pure and tested. No screen reads it since the stores went (#309); M7 decides
-  what of it stays.
 - The session runner is native's since the flip release (#308): a headless engine in `:shared`
   (`RunnerEngine.kt`, with the step model in `RunnerSteps.kt`) that `:app`'s foreground service
   (`shell/runner/RunnerService.kt`) owns and feeds the time, and the Compose runner over it. The
@@ -118,7 +97,7 @@ mistake here that cannot be fixed for anyone who has already installed it.
 - `native/android/repo-checks/` — `:repo-checks`, tests only: the guards on the repo's own prose and
   published files (the site's samples and examples, the docs' samples, the format mirrors' tables,
   the Play copy), read in place with `:shared` doing the parsing. It runs in `gradlew build`, so a
-  docs-only change fails CI's native job, not jest.
+  docs-only change fails CI's native job.
 
 - `native/android/` — the app: a Kotlin Multiplatform `:shared` module (the domain port), a
   Compose `:app`, and `:strings`, which generates `:app`'s string resources from the locale bundles
@@ -129,7 +108,7 @@ mistake here that cannot be fixed for anyone who has already installed it.
   VectorDrawables and fails the build on any SVG outside the subset `src/content/art/README.md`
   names.
   `gradlew build` from that directory compiles, tests and lints it, and ktlint, detekt and Android
-  lint hold the same zero-warning rule oxlint does; `gradlew ktlintFormat` is its `pnpm run format`.
+  lint hold the zero-warning rule; `gradlew ktlintFormat` is its `pnpm run format`.
   The version is `gradle.properties`' (`kettle.versionCode` / `kettle.versionName`, which `/bump`
   moves), and the icons and manifest are edited in `app/src` itself. `scripts/native-dev.sh` is the
   dev loop: build, install on a phone, launch. Each device script is a `.sh` with a step-for-step
@@ -147,10 +126,10 @@ mistake here that cannot be fixed for anyone who has already installed it.
 - `conformance/` — the format's behaviour as data, and its authority: hand-written YAML inputs and
   golden outputs, checked and written by the Kotlin runner in `:shared`; its README is the contract.
   A behaviour change in `:shared` needs `./gradlew :shared:jvmTest -PupdateConformance` (then
-  `pnpm run format`), and the golden diff is part of the review. TS doesn't read the corpus, so a
-  format change made in `src/domain/` alone reaches no golden.
+  `pnpm run format`), and the golden diff is part of the review.
 
-**YAML is snake_case, domain code is camelCase**, bridged only in `yaml-mapping.ts`. Program
+**YAML is snake_case, domain code is camelCase**, bridged only in `:shared`'s readers and writers
+(the `*Schema.kt` readers, `LibraryYaml.kt`, `SessionYaml.kt`). Program
 `overrides` are partial *raw* (snake_case) patches — that asymmetry is deliberate and load-bearing.
 
 ## Platform constraints that change how you work
@@ -190,13 +169,12 @@ are house rules here rather than a backlog — cheap as you go, tedious to retro
   somewhere rather than something to do.
 - Theming is strict: `KettleTheme.colors`, `KettleType`, `Spacing.*`, `MaxContentWidth`. The
   session runner ignores the scheme: its field (`theme.json`'s `RunnerColors`) follows the step's clock. Colors, spacing and the type
-  scale are edited in `constants/theme.json`, which native's `:theme` generates its Compose theme from; `theme.ts`
-  re-exports them and holds their notes.
+  scale are edited in `constants/theme.json`, which native's `:theme` generates its Compose theme from;
+  `constants/theme-notes.md` beside it holds the notes JSON can't.
 - In-app forms write straight to the file and never pass through the schema, so they need their own
   validation (see `validateConfig` in `:shared`'s `ExerciseForm.kt`).
 - **Weights are stored in kilograms, always.** The library is a file users export and share, so it
-  can't change meaning with the reader's settings. `domain/units.ts` and its `:shared` port
-  (`Units.kt`) are the only converters — never store a pound value, and never format a weight without
+  can't change meaning with the reader's settings. `:shared`'s `Units.kt` is the only converter — never store a pound value, and never format a weight without
   going through `toDisplayWeight`. Anything editing a *stored* weight must also pass
   `previousWeightKg`, or an untouched field silently drifts on save (see the decision log).
 - **Comments explain why, not what** — trade-offs, root causes, and deliberate scope cuts. Match the
@@ -214,11 +192,11 @@ are house rules here rather than a backlog — cheap as you go, tedious to retro
   `hitSlop`. Decorative geometry — progress bars, CSS triangles, the grabber — keeps a fixed `height`;
   the rule is about controls, not every box.
 - **Contrast-check new colors** against every surface they sit on, alpha-compositing where the
-  background is translucent. `constants/theme.ts` records the measured ratios. A control drawn with
+  background is translucent. `constants/theme-notes.md` records the measured ratios. A control drawn with
   no fill takes `lineStrong` for its edge, held to 3:1; `border` is the decorative hairline.
-- **No user-facing string in the logic layer.** Producers return descriptors; `domain/format.ts` and
-  the views render them. Counts go through i18next's `count` (never a `=== 1` ternary), and dates
-  through `i18n/format.ts` (never `toLocaleDateString('en-US', …)`).
+- **No user-facing string in `:shared`.** It returns descriptors and the screens render them.
+  Counts go through `pluralText` (never an `== 1` branch), and dates through `shell/i18n/`'s
+  `LocaleFormats.kt` (never a hardcoded pattern or locale).
 - **Never translate user data** — exercise, workout and program names, notes, and `ProgramWeek.day`
   come from the user's YAML and render verbatim. Key the English around them and interpolate the name.
 - Adding a key means adding it to **all three** bundles — `en.json`, `pt.json` and `ja.json`. `pt`
@@ -242,15 +220,13 @@ undeclared locale is unreachable on iOS with every test still green.
 
 - **Mock at our own boundary**, not at the platform's — assertions then read as "what got persisted"
   rather than "what got written". Native's screens take a `StoredFiles` (`FakeStoredFiles` in tests).
-- `src/test-support/` holds the shared fixtures. A `jest.mock` factory is hoisted above every `const`
-  and may not close over one, which is why a stand-in there is a module rather than an inline factory.
 - **Prove a regression test fails against the bug it pins**, by reintroducing that bug. A test that
   passes either way is worthless, and this has caught more than one.
 - **To test that a screen is translated, drive it in `pt`** (`@Config(qualifiers = "pt")` on a
   Robolectric test). An English-locale assertion *cannot* catch a hardcoded English string — the
   resource and the literal it returns render identically. Three screens have shipped with hardcoded
   strings for exactly this reason.
-- Finish with `pnpm run format`; don't hand-align a new test file against the rest.
+- Finish with `./gradlew ktlintFormat`; don't hand-align a new test file against the rest.
 
 What tests can't reach — layout, animation, real audio and file writes — is verified by driving the
 running app on a device or emulator: `scripts/native-dev.sh` puts the `.dev` shell on it, and
@@ -263,8 +239,8 @@ should go to a cheaper subagent rather than being done inline. Point it at an ex
 and give it the exact list of cases; that's most of the quality.
 
 **Verify what comes back rather than trusting the report.** A subagent has reported pre-existing lint
-damage that its own edits caused. Re-run `pnpm test`, `pnpm run typecheck` and `pnpm run lint` yourself
-after any delegated change, and skim the diff.
+damage that its own edits caused. Re-run `./gradlew build` yourself after any delegated change, and
+skim the diff.
 
 ## Changing the YAML format
 
@@ -408,7 +384,7 @@ Three rules about keeping the plan files honest, in the order they get broken:
   already fixed, and this file asserting an a11y pass was complete when seven files had no a11y props
   at all. The YAML samples no longer rely on this: `:repo-checks`' `SamplesTest` runs every complete
   library sample in `authoring-exercises-yaml.md` and the product plan through the real `parseLibraryYaml`, so
-  a doc that teaches a shape the schema refuses fails the suite. Prose is still on you.
+  a doc that teaches a shape the importer refuses fails the build. Prose is still on you.
 
 And two about what doesn't get written down at all:
 
@@ -420,7 +396,7 @@ And two about what doesn't get written down at all:
   existing bullet. If it needs prose, it needs the site.
 - **Never quote a hand-maintained count.** Test totals, key counts, file counts: they are wrong
   within two PRs, nothing fails when they are, and they were the specific claims the drift audit
-  above caught. Name the source instead — `pnpm test`, the locale bundles.
+  above caught. Name the source instead — `./gradlew build`, the locale bundles.
 
 Keep open-work entries short. If the list starts wanting states and assignees, move it to GitHub
 issues (`origin` and `gh` are both available); until then the file is deliberately enough.

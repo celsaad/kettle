@@ -9,7 +9,7 @@ import org.junit.jupiter.api.Test
 /**
  * The step model's cases that `conformance/steps.yaml` can't hold, because the schema refuses the
  * input that reaches them: a count past the per-exercise ceiling, a 0-second hold end, zero work.
- * Built from domain values directly, as RN's `build-steps.test.ts` does, which these twin. The Next
+ * Built from domain values directly, as RN's step-builder tests did, which these twin. The Next
  * card's descriptors are here too, since TS renders them to strings and the goldens can't pin those.
  */
 class RunnerStepsTest {

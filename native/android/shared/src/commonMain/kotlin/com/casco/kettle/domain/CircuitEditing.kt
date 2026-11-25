@@ -1,7 +1,7 @@
 package com.casco.kettle.domain
 
 // What the workout editor (#242) does to one circuit, and to the picker's selection that builds one:
-// RN's `workout-circuit-block.tsx` and `workout-editor.tsx`, inline there.
+// RN's circuit block and workout editor, inline there.
 
 /** The circuit picker's selection with [exerciseId] added, or taken out if it was already in. */
 fun toggledMember(

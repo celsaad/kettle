@@ -1,7 +1,7 @@
 package com.casco.kettle.domain
 
 // The runner's Next card and its log button's label, ported from the pure helpers in RN's
-// `use-session-runner.ts` and `session-steps.ts`. Those were private to the RN runner, so
+// RN's session-runner hook and step builder. Those were private to the RN runner, so
 // `conformance/steps.yaml` never held them, and `RunnerStepsTest` does.
 //
 // Descriptors rather than strings, so `:shared` holds no user-facing text: the app formats a target

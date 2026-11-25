@@ -10,7 +10,7 @@ import com.casco.kettle.shell.i18n.pluralText
 import com.casco.kettle.shell.runner.weightText
 
 /**
- * What one logged entry put up, in the reader's words, after `formatEntryResult` in `src/domain/format.ts`.
+ * What one logged entry put up, in the reader's words,.
  * Numbers print as JS prints them, so a 52.5s hold reads the same on both sides and a whole one has no ".0".
  * A reps entry's load is native's alone: the TS formatter renders the reps only, since no screen reads it
  * after #309. A load is in [units], as every weight the reader sees is.

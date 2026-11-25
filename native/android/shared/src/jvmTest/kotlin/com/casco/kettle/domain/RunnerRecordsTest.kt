@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 
 /**
- * "Last time" on the set row and the live personal-best marker, from RN `use-session-runner.test.tsx`'s
+ * "Last time" on the set row and the live personal-best marker, from RN's runner-hook tests'
  * last-time, personal-best and adopting-load sections. Prior sessions are a parameter here, not
  * something the engine holds.
  */

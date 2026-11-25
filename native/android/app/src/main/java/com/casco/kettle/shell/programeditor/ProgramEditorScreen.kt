@@ -111,7 +111,7 @@ class ProgramEditorActions(
 )
 
 /**
- * A program (#243), as RN's `program-editor.tsx`: its name and its weeks, each a workout or a rest
+ * A program (#243), as RN's program editor was: its name and its weeks, each a workout or a rest
  * day, with a number, an optional day for a second session in the week, notes, and the per-week
  * overrides. Save-at-the-end: nothing reaches the library until Save, and a refusal writes nothing.
  */

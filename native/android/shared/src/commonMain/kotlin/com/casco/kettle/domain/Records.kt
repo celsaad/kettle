@@ -3,8 +3,8 @@ package com.casco.kettle.domain
 import kotlin.time.Instant
 
 /**
- * What a logged entry competes on: `RecordKind` in `src/state/selectors/records.ts`, which holds the
- * reasoning. [json] is the kind as RN spells it, which [recordKey] writes into every key.
+ * What a logged entry competes on, held by `conformance/records.yaml`. [json] is the kind as RN spells it,
+ * which [recordKey] writes into every key.
  */
 enum class RecordKind(
     val json: String,
@@ -24,7 +24,7 @@ data class EntryBest(
 )
 
 /**
- * `entryBest` in `src/state/selectors/records.ts`, held to it by `conformance/records.yaml`. Null for
+ * `entryBest`, held by `conformance/records.yaml`. Null for
  * an entry that competes for nothing: interval work and rest always, and a set list with no sets.
  */
 fun entryBest(entry: SessionEntry): EntryBest? =
@@ -77,7 +77,7 @@ fun recordKey(
 ): String = "[${jsonString(exerciseId)},${jsonString(kind.json)}]"
 
 /**
- * Epley, `src/domain/one-rm.ts`, which holds the reasoning: null for a bodyweight set, no reps, or
+ * Epley: null for a bodyweight set, no reps, or
  * past [MAX_ESTIMABLE_REPS], and a single as itself.
  */
 fun estimatedOneRepMaxKg(
@@ -95,8 +95,8 @@ private const val MAX_ESTIMABLE_REPS = 12
 private const val EPLEY_REPS = 30.0
 
 /**
- * What a session beat, for the completion screen: `sessionRecords` in `src/state/selectors/records.ts`,
- * held to it by `conformance/records.yaml`. [exerciseName] is the user's own and renders verbatim.
+ * What a session beat, for the completion screen: `sessionRecords`,
+ * held by `conformance/records.yaml`. [exerciseName] is the user's own and renders verbatim.
  */
 sealed interface SessionRecord {
     val kind: RecordKind

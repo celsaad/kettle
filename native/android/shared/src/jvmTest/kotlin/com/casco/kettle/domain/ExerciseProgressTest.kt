@@ -9,11 +9,11 @@ import org.junit.jupiter.api.Test
 import kotlin.time.Instant
 
 /**
- * `src/state/selectors/__tests__/exercise-progress.test.ts`, case for case. The measure itself is
+ * Per-exercise progress. The measure itself is
  * `entryBest`'s, held by `conformance/records.yaml`; these pin the windowing, the two-session floor,
  * the one-kind rule, the fixed-hold exclusion, the split, the order and the best-ever mark.
  *
- * In UTC, which is what jest's run in too: the zone only moves where the window's calendar days fall.
+ * In UTC: the zone only moves where the window's calendar days fall.
  */
 class ExerciseProgressTest {
     private val now = Instant.parse("2026-08-18T12:00:00.000Z")

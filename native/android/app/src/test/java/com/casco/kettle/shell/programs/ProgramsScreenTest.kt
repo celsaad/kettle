@@ -41,9 +41,9 @@ import kotlin.time.Clock
 import kotlin.time.Instant
 
 /**
- * Programs (#232), case for case from RN's `programs.test.tsx`, on the harness recipe (#193): in `pt`,
+ * Programs (#232), on the harness recipe (#193): in `pt`,
  * since an English assertion passes a hardcoded English string, with the library faked behind
- * [StoredFiles] and every route it opens heard through `open`. Beyond jest's: what each control opens,
+ * [StoredFiles] and every route it opens heard through `open`. Also: what each control opens,
  * the targets' size, re-tap-to-top, and nothing said before the library is read.
  *
  * The weeks-with-notes count is `:shared`'s (`ProgramWeeksTest`); this covers its words.

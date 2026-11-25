@@ -49,7 +49,7 @@ import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 
 /**
- * The native runner's screens (#306), case for case from `session.test.tsx` and the `session-*` suites,
+ * The native runner's screens (#306),
  * driven in `pt` so a hardcoded English string fails, with views built by `:shared`'s own engine. The
  * engine's rules are its tests; these are what the screen shows and sends.
  */

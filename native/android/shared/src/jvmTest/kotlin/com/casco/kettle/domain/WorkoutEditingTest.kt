@@ -5,8 +5,8 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 
 /**
- * What the workout editor (#242) does to its draft and to the library: the state `workout-editor.tsx`
- * and `workout-circuit-block.tsx` kept inline, and the store's `saveWorkout`/`deleteWorkout`. The
+ * What the workout editor (#242) does to its draft and to the library: the state RN's workout editor
+ * and circuit block kept inline, and the store's `saveWorkout`/`deleteWorkout`. The
  * screen's own cases are `WorkoutEditorScreenTest`'s; these are the rules under them.
  */
 class WorkoutEditingTest {

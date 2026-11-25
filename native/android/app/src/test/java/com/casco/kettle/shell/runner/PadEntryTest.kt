@@ -4,7 +4,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
 
-/** The number pad's entry rules (§3.4 of #294's inventory), `session-number-pad.tsx`'s buffer. */
+/** The number pad's entry rules (§3.4 of #294's inventory), RN's number-pad buffer. */
 class PadEntryTest {
     private fun PadEntry.typed(keys: String) = keys.fold(this) { entry, key -> entry.type(key) }
 

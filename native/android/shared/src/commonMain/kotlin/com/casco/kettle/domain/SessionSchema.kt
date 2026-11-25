@@ -1,7 +1,7 @@
 package com.casco.kettle.domain
 
 /**
- * `rawSessionSchema` from `src/domain/schema.ts`, read straight into the camelCase domain model, so
+ * A session, read straight into the camelCase domain model, so
  * the snake_case names live here and in the writer in `SessionYaml.kt` (the corpus runner spells
  * them out again on purpose, as its own oracle).
  *

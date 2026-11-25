@@ -28,7 +28,7 @@ import com.casco.kettle.shell.theme.KettleType
 import com.casco.kettle.shell.theme.Spacing
 
 /**
- * The exercise form's mini version, as RN's `new-exercise-form.tsx`: embedded in the workout editor's
+ * The exercise form's mini version, as RN's new-exercise form was: embedded in the workout editor's
  * pickers rather than opening the editor, since the workout being built is unsaved, and leaving it
  * would lose it. Built on the editor's own [ExerciseFormFields] and `submitExercise`, so the checks
  * the editor runs are the checks this runs; RN's copy had fallen behind on both.

@@ -25,8 +25,8 @@ from an editor needs cleaning up before it lands.
 - **One colour, set once.** The root `<g>`'s `currentColor` is the only colour in a file, and
   nothing else sets `stroke` or `fill` (`:art` refuses any other attribute on a child, so it holds
   that). It is what lets one file serve the light theme, the dark theme and the always-dark runner:
-  RN passes `color`, Android tints, and iOS uses template rendering. A fixed colour anywhere
-  vanishes on one of the three.
+  Android tints, and iOS uses template rendering. A fixed colour anywhere vanishes on one of the
+  three.
 - **One canvas.** The same viewBox for the whole set is what keeps separately drawn figures looking
   like one style: a figure drawn 1.4× larger than its neighbours is the drift you notice first when
   they're seen together. It is landscape because the movements are: a push-up, a row and a carry are
@@ -119,5 +119,7 @@ drawing", which would otherwise be silent.
 
 Adding a drawing is a file here, an entry in `art.json`, and an `exerciseArt.<id>` description in
 all three locale bundles. The Android build fails if any of them is missing: `:art` on the file and
-the entry, `:app`'s `ArtCoverageTest` on the English description and on a shipped exercise left with
-neither a drawing nor a `noArt` entry, and `:strings` on a description missing from `pt` or `ja`.
+the entry, `:strings` on a description in some bundles and not others, and `:art`'s generated lookup,
+which won't compile, on one missing from all three. `:app`'s `ArtCoverageTest` catches the rest: a
+shipped exercise left with neither a drawing nor a `noArt` entry, and a description left without a
+drawing.

@@ -4,10 +4,10 @@ The library and session formats' behaviour, pinned as data rather than as one im
 It is the format's authority: what a file means is what these cases and their goldens say, and the
 prose around them, here and in `site/format.html`, explains them and loses to them. It was built to
 hold the Kotlin port in [`docs/native-migration-plan.md`](../docs/native-migration-plan.md) to the
-TypeScript parser, a case one passed and the other failed being a fork of the file format. TS has
-since been retired (#348, the decision log): Kotlin took the goldens over with a regeneration that
-changed no file, so the corpus is exactly what TS wrote, and it now holds `:shared` to itself and to
-every platform that reuses it.
+TypeScript parser, a case one passed and the other failed being a fork of the file format. The TS
+parser was retired in #348 and deleted in #353 (the decision log): Kotlin took the goldens over
+with a regeneration that changed no file, so the corpus is exactly what TS wrote, and it now holds
+`:shared` to itself and to every platform that reuses it.
 
 Each suite is two files:
 
@@ -24,7 +24,8 @@ JSON Schema the assistant brief carries, to the `library` suite's goldens.
 When a change to `:shared` is meant to change behaviour, run
 `./gradlew :shared:jvmTest -PupdateConformance` from `native/android`, then `pnpm run format`. The
 golden diff it leaves is part of the review, because a change there is a change to what users' files
-mean. The writer keeps the key order TS wrote, so key order alone never shows up as a diff.
+mean. The writer keeps the key order the TS writer left (until #348), so key order alone never
+shows up as a diff.
 
 ## Suites
 
@@ -46,7 +47,7 @@ mean. The writer keeps the key order TS wrote, so key order alone never shows up
 
 The `source` cases read `site/examples/` and the shipped seed and packs in `content/` in place,
 so an edit to that content moves their goldens, and the diff is the record of what changed. `localize`
-is how both apps translate that shipped content: a table only ever replaces names, notes and day
+is how the app translates that shipped content: a table only ever replaces names, notes and day
 labels, and its header lists the rules.
 
 `search` isn't part of the file format, but it is the same problem: every platform must find the
@@ -54,12 +55,13 @@ same workout for the same search. Its rules are in `:shared`'s `Search.kt`, held
 `search.yaml`.
 
 `preferences` is the same again, for `preferences.json`, and `supporter` for `supporter.json`: the
-app's own settings files, which a platform must read, and refuse, the same way. Both were suites
-while RN and native shared those files.
+app's own settings files, which a platform must read, and refuse, the same way. Both became suites
+while RN and native shared those files (until the preferences flip, #238), and stay for the next
+platform.
 
 `records` is not a file at all but what one means: which entries are a record, and on what. It held
-RN's runner and native Stats to one rule while both existed, and it still pins what counts as doing
-more, and how long a session ran.
+RN's runner and native Stats to one rule while both existed (until #308), and it still pins what
+counts as doing more, and how long a session ran.
 
 `steps` isn't a file either: it is what a workout *runs*, step by step. It held the native runner to
 RN's while both existed (#303). The flip release (#308) deleted RN's and kept the corpus: it is still the

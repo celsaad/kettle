@@ -1,7 +1,7 @@
 # Exercise art
 
-One line drawing per shipped exercise, as plain SVG that both UIs read: RN draws the markup with
-`SvgXml`, and native's `:art` module turns each file into an Android VectorDrawable on every build.
+One line drawing per shipped exercise, as plain SVG: the `:art` module turns each file into an
+Android VectorDrawable on every build.
 `../art.json` says which exercise gets which drawing. The notes on individual strokes stay in the
 files as XML comments; what follows is the set as a whole.
 

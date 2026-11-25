@@ -7,8 +7,7 @@ Four places on Android, and only the first two fail loudly if you miss them. Ver
 code rather than recalled, and re-checked when `ja` went in as the third. Changes since: step 1's
 parity is now machine-checked rather than eyeballed, and step 2 fails the build too since #351; step
 4 turned out to be both wrong and skipped (the listing copy does live in this repo, and `ja` shipped
-in the app without it); at M7 (#357) `app.json`'s iOS locale list went, an M8 note below now; and
-with the TS (#353), so did `src/i18n/index.ts`'s `resources` map, which only jest read.
+in the app without it); and at M7 (#357) `app.json`'s iOS locale list went, an M8 note below now.
 
 1. **`locales/<code>.json`** — the new bundle, at full parity with `en.json`.
    `:strings` (`BundleCoverage.kt`) holds that parity in both directions, each plural against the
@@ -33,13 +32,13 @@ with the TS (#353), so did `src/i18n/index.ts`'s `resources` map, which only jes
    the language in the Play Console is a separate act**, and until it is done a release note tagged
    with the new locale is rejected on upload rather than ignored.
 
-**On iOS, from M8, a sixth:** the app's `CFBundleLocalizations`. iOS filters
+**On iOS, from M8, a fifth:** the app's `CFBundleLocalizations`. iOS filters
 `Locale.preferredLanguages` against what the bundle declares, so an undeclared language is reported
 by no device, everything renders in the fallback, and a complete, parity-checked bundle sits in the
 binary unreachable. Nothing throws, and from every angle except an iPhone the language looks shipped.
-The RN app declared it through `app.json` (`supportedLocales.ios`), with a test diffing that list
-against `resources`; M8's build should hold the same check. `docs/ios-plan.md` §2.5 has the
-mechanism.
+Until M7 (#357) the RN app declared it through `app.json` (`supportedLocales.ios`), with a test
+diffing that list against the bundles; M8's build should hold the same check. `docs/ios-plan.md`
+§2.5 has the mechanism.
 
 One thing that is *not* on the list, checked rather than assumed: nothing about date, number,
 weekday or unit formatting needs touching — all of it reads the device locale, through
@@ -63,11 +62,14 @@ Three traps before picking one:
   which rendered "0 sessão", so `pt.json` carries a `_zero` beside every `_one` (`pluralText` reads
   `_zero` first whenever `count` is 0) and `ZERO_READS_PLURAL` in `:strings` requires them. French
   files 0 under `one` too and means it, so this is decided per language, not derived from CLDR.
-- **An RTL language is a project, not a bundle.** The `I18nManager` plumbing was deliberately deferred
-  until a real RTL locale existed (see `testing-a11y-i18n-plan.md`), and the work it defers is the
-  CSS-triangle glyphs, which are drawn and don't flip, plus any arrow character baked into copy (one is
-  left, `import.emptyYamlLink`'s "→"). Adding Arabic or Hebrew means doing that first.
-- **A seed table's day labels must sort in training order.** `nextWeekAfter` walks a multi-day week by
-  `day.localeCompare`, so `Dia 1`/`Dia 2`/`Dia 3` and `1日目`/`2日目`/`3日目` work and weekday names do
-  not — the per-language seed test catches it, and this is why it runs every structural invariant
-  against every language.
+- **An RTL language is a project, not a bundle.** RTL was deliberately deferred until a real RTL
+  locale existed (see `testing-a11y-i18n-plan.md`). Compose flips rows and `start`/`end` padding
+  with the layout direction, so what it defers is the Canvas-drawn glyphs, which don't flip, plus
+  any arrow character baked into copy (one is left, `import.emptyYamlLink`'s "→"). Adding Arabic or
+  Hebrew means doing that first; `open-work.md` has what is known.
+- **A seed table's day labels must stay distinct within a week.** The app finds its place in a
+  program by week and `day`, and runs a week's days in the order the file writes them (`rotation`
+  in `NextUp.kt`), so a table that gives two days one label folds two slots into one.
+  `ShippedLibrariesTest` catches it, and this is why it runs every structural invariant against
+  every language. (RN's Home sorted a week's days by label, so until #235 they also had to *sort*
+  in training order; that constraint is gone.)

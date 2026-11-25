@@ -1,23 +1,47 @@
 # Shipping Kettle on iOS — plan
 
-> **The RN iOS route is closed for good.** React Native and Expo left the app at M7 (#357), so
-> `expo prebuild --platform ios`, `app.json`, `app-config.test.ts` (which held its iOS keys) and every
-> RN file this plan links are gone, and iOS is
-> M8's native app (`docs/native-migration-plan.md`). Read the body as history and as reasoning: the
-> background-cue, Files-app, localization and store decisions carry over to M8, and the facts
-> `app.json` held are in "What `app.json` held for iOS" below, which is where a link to `app.json`
-> in the body now points.
+> **Superseded in its mechanics by M8's Compose Multiplatform decision (#345), and to be re-planned
+> when M8's work starts.** This plan ships iOS as an Expo build of the React Native app. React
+> Native and Expo left the app at M7 (#357), so that route is closed for good: iOS is M8, a native
+> app in Compose Multiplatform over `:shared` (`docs/native-migration-plan.md`'s M8 section, and
+> "iOS gets Compose Multiplatform, not SwiftUI" in the decision log). The body below is left as it
+> was written, against the tree at `d80e5e7` and Expo SDK 57. Read it as history and as reasoning,
+> not as steps, section by section:
 >
-> **Partly executed.** Written against the tree at `d80e5e7`, SDK 57. **Five of Phase 2's six changes have
-> shipped** — everything but 2.3, which is store-side work in App Store Connect — along with the
-> `app.json` block Phase 1 asks for (minus `supportsTablet`) and the notification half of Phase 4.
-> What is left is what money, a Mac or a device gates: nothing here has been built, run, signed or
-> submitted, and no simulator has ever opened this app.
+> - **Superseded outright:** the opening argument that there is "no `ios/` tree to write"; the "What
+>   already works, unchanged" table, every row of which but the privacy one describes RN code;
+>   Phase 1's `expo prebuild` bring-up, and the tab-bar and `ModalHeader` items in its checklist;
+>   and every fact read out of `node_modules` (`expo-iap` in 2.1, `expo-localization` in 2.5,
+>   `expo-sharing` in 2.6, `expo-file-system` in Phase 3, `expo-notifications` and `expo-audio` in
+>   Phase 4, and the Watch section's notification flags).
+> - **"Shipped" below means shipped in the RN app, and that code went with it.** That covers five of
+>   Phase 2's six changes, the `app.json` block Phase 1 asks for and the notification half of
+>   Phase 4. What is left of them in the tree is data: 2.2's platform-keyed strings
+>   (`support.whyAppStore`, `support.storeUnavailableAppStore`) and 2.4's Files-app copy
+>   (`settings.filesInFilesApp`) in the locale bundles, and the facts in "What `app.json` held for
+>   iOS" below. The purchase call (2.1), the declared localizations (2.5), the share sheet's type
+>   (2.6) and the rest cue (Phase 4) are M8's to build natively.
+> - **Carries over as reasoning:** 2.3, which was always store-side; 2.4's access-not-sync argument;
+>   2.5's failure mode, an undeclared localization being silently unreachable; Phase 3's refusal of
+>   CloudKit, though its reason for cutting iCloud Drive ("no SDK 57 surface") no longer applies to
+>   a native app and is M8's to cost again; Phase 4's choice between an audible time-sensitive
+>   notification and background audio, and its Apple Watch forwarding constraint; Phase 5's Mac,
+>   signing and submission lists, less their CocoaPods, `pnpm-lock.yaml` and prebuild details;
+>   Phase 6's list of docs and commands that change the day iOS ships; and the out-of-scope list,
+>   less its "no first-party SDK 57 module" reasons.
+> - **Every link in the body to a `src/...` file is dead**, and so are its references to
+>   `app-config.test.ts`, `(tabs)/_layout.tsx`, `ModalHeader` and the session hooks: those RN files
+>   are deleted. A link to `app.json` points at "What `app.json` held for iOS" below. The links to
+>   `Tip.kt`, `Merge.kt`, `StoreCopyTest.kt`, `theme.json`, the locale bundles and the other docs
+>   are live.
+>
+> **Nothing here has been built, run, signed or submitted**, and no simulator has ever opened this
+> app: everything a Mac, a device or the $99 gates is untouched.
 >
 > Nothing about the *decision* has changed with it. The two that mattered were bugs on the shipping
 > Android app rather than iOS work, and they were worth fixing either way. The decision log still says
 > iOS is deferred ([`decisions.md`](decisions.md), the tip-jar entry) and the README still says it
-> isn't planned — both remain accurate, and **Phase 5 is where they get changed**, not before.
+> isn't planned — both remain accurate, and **Phase 6 is where they get changed**, not before.
 >
 > **Since M5's preferences flip (#238) the RN build has no Settings.** `settings.tsx` is an empty stub
 > the Android shell draws over, and RN's preferences writers, backup, export, tip-store read and

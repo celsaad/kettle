@@ -38,7 +38,7 @@ transmitted.
   Export the library or the whole log as plain files any time.
 - **English, Brazilian Portuguese and Japanese**, the seeded starter library included, with dates, numbers,
   first day of week and kg/lb following the device locale. User data is never translated.
-- **Accessible by house rule** — roles and labels on every control, 44px targets, contrast-checked
+- **Accessible by house rule** — roles and labels on every control, 44dp targets, contrast-checked
   colors, screen-reader announcements in the runner, and reduce-motion support.
 - **No ads, no account, no subscription, no analytics or third-party purchase SDK**, so the Play
   Data Safety declaration stays at zero data collected. An optional tip jar (Google Play Billing)

@@ -58,7 +58,8 @@ const val RECENT_LIMIT = 5
 /**
  * The last [limit] times exercise [id] was logged, newest first as [sessions] already are. Unfinished
  * sessions are skipped, and so are rest entries: a rest's repeat performance means nothing the way a
- * lift's does, so a rest exercise has no history to show. Volumes are in [units], see [entryVolume].
+ * lift's does, so a rest exercise has no history to show. Each entry's volume is in [units] (see
+ * [entryVolume]); nothing on a screen reads it since the Recent bar chart went.
  */
 fun exerciseHistory(
     sessions: List<Session>,
@@ -85,11 +86,12 @@ fun exerciseHistory(
         .toList()
 
 /**
- * One number for how much an entry did, for the Recent chart to compare sessions by. Reps are weighted
- * by load only when a set carries one, so a bodyweight exercise isn't all zeros; cardio prefers
- * distance, and falls back to duration.
+ * One number for how much an entry did, made for the Recent bar chart to compare sessions by, which
+ * Exercise detail no longer draws: [exerciseHistory] still fills it in, and nothing reads it. Reps
+ * are weighted by load only when a set carries one, so a bodyweight exercise isn't all zeros; cardio
+ * prefers distance, and falls back to duration.
  *
- * A weighted volume is in [units], since the chart prints it beside fields in the reader's unit: each
+ * A weighted volume is in [units], since the chart printed it beside fields in the reader's unit: each
  * set's load is converted before it's multiplied, the way the reader would work it out from the list.
  * Nothing else here is a weight, so [units] touches nothing else.
  */

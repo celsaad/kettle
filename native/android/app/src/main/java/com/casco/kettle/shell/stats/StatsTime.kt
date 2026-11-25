@@ -26,7 +26,7 @@ internal data class StatsTime(
 
 /**
  * When Stats counts from (#411), kept current while it shows: a tab's section can stay up for days,
- * which a sheet never did, and this week, the streak and today's cell all turn over with the date.
+ * which a sheet never did, and this week and today's cell both turn over with the date.
  *
  * Read again each time the screen comes back (ON_START), and at each local midnight while it stays up.
  * The timer alone isn't enough: `delay` counts uptime, which stops while the phone sleeps, so a night

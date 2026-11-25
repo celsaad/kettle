@@ -190,35 +190,4 @@ class ExerciseEditingTest {
             assertEquals(sessionEntryResult(bench), entry.result)
         }
     }
-
-    /** Where the Recent chart's bars go, as RN's volume chart placed them. */
-    @Nested
-    inner class Chart {
-        @Test
-        fun `fills the bar area with the tallest bar and scales the rest to it`() {
-            val bars = volumeChartLayout(listOf(300.0, 600.0), 200f)
-            assertEquals(listOf(28f, 56f), bars.map { it.height })
-            // Each stands on the line above the date labels, at the chart's bottom less their 18.
-            assertEquals(listOf(50f, 22f), bars.map { it.top })
-        }
-
-        @Test
-        fun `centres each bar in an equal share of the width`() {
-            val bars = volumeChartLayout(listOf(1.0, 1.0, 1.0, 1.0), 200f)
-            assertEquals(listOf(25f, 75f, 125f, 175f), bars.map { it.centerX })
-            // A share of 50 less 8 of gap is 42, past the widest a bar gets.
-            assertEquals(40f, bars.first().width)
-        }
-
-        @Test
-        fun `keeps a bar wide enough to see when the shares are narrow`() {
-            assertEquals(16f, volumeChartLayout(List(10) { 1.0 }, 100f).first().width)
-        }
-
-        // A session that moved nothing still shows it was there.
-        @Test
-        fun `draws a zero as a sliver, and an all-zero chart without dividing by zero`() {
-            assertEquals(listOf(2f, 2f), volumeChartLayout(listOf(0.0, 0.0), 100f).map { it.height })
-        }
-    }
 }

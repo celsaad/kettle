@@ -45,7 +45,7 @@ class ArtCoverageTest {
     fun everyShippedExerciseIsDrawnOrSaysOutLoudThatItIsNot() {
         // Silent by nature: a new shipped exercise simply renders without art, which looks like a
         // deliberate omission from every angle but this one. Landing on noArt is then a decision.
-        assertTrue(shipped.size > drawn.size / 2)
+        assertTrue("read no shipped exercises, so nothing below could fail", shipped.size > drawn.size / 2)
         assertEquals(emptySet<String>(), shipped - drawn - noArt)
     }
 

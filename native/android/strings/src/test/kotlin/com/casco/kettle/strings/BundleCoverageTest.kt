@@ -25,7 +25,7 @@ class BundleCoverageTest {
     @Test
     fun `a key missing from a translation fails the build, rather than rendering in English`() {
         assertEquals(
-            "pt is missing a.k, which English has",
+            "pt is missing a.k (English's keys, in its own plural categories)",
             refusal("en" to en, "pt" to pt.replace(""""a": { "k": "Oi" }, """, "")),
         )
     }
@@ -41,7 +41,7 @@ class BundleCoverageTest {
     @Test
     fun `a Portuguese plural without its _zero fails the build, which would bring back 0 sessão`() {
         assertEquals(
-            "pt is missing s_zero, which English has",
+            "pt is missing s_zero (English's keys, in its own plural categories)",
             refusal("en" to en, "pt" to pt.replace(""", "s_zero": "{{count}} sessões"""", "")),
         )
     }
@@ -55,9 +55,9 @@ class BundleCoverageTest {
     }
 
     @Test
-    fun `a Japanese plural missing its one form fails the build`() {
+    fun `a Japanese plural missing its only form fails the build`() {
         assertEquals(
-            "ja is missing s_other, which English has",
+            "ja is missing s_other (English's keys, in its own plural categories)",
             refusal(
                 "en" to en,
                 "ja" to """{ "a": { "k": "やあ" } }""",
@@ -68,7 +68,7 @@ class BundleCoverageTest {
     @Test
     fun `English holds itself to its own categories, so its plural can't lose a form either`() {
         assertEquals(
-            "en is missing s_one, which English has",
+            "en is missing s_one (English's keys, in its own plural categories)",
             refusal("en" to en.replace(""""s_one": "{{count}} session", """, "")),
         )
     }

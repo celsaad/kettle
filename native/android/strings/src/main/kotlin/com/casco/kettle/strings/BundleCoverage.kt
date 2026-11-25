@@ -4,9 +4,10 @@ import com.ibm.icu.text.PluralRules
 import com.ibm.icu.util.ULocale
 
 /**
- * The plural categories CLDR gives [language], from ICU: the same rule data Android's own resource
- * lookup selects a `quantity` with, so the bundles are held to what the device will actually ask for.
- * `en` has two, `pt` three, `ja` one.
+ * The plural categories CLDR gives [language], as ICU ships them: the rules Android's own resource
+ * lookup selects a `quantity` by, though a device carries the CLDR of its own release rather than
+ * this one, which `BundleCoverageTest` pins for the languages shipped. `en` has two, `pt` three, `ja`
+ * one.
  */
 internal fun pluralCategories(language: String): Set<String> =
     PluralRules.forLocale(ULocale.forLanguageTag(language)).keywords
@@ -45,13 +46,13 @@ internal fun checkCoverage(
     val permitted = keys(english, categories + zero)
     val actual = keys(entries)
 
-    (required - actual).takeIf { it.isNotEmpty() }?.let { missing ->
-        throw IllegalArgumentException("$language is missing ${missing.sorted().joinToString()}, which English has")
+    val missing = (required - actual).sorted()
+    require(missing.isEmpty()) {
+        "$language is missing ${missing.joinToString()} (English's keys, in its own plural categories)"
     }
-    (actual - permitted).takeIf { it.isNotEmpty() }?.let { extra ->
-        throw IllegalArgumentException(
-            "$language has ${extra.sorted().joinToString()}, which English doesn't have or $language can't select",
-        )
+    val extra = (actual - permitted).sorted()
+    require(extra.isEmpty()) {
+        "$language has ${extra.joinToString()}, which English doesn't have or $language can't select"
     }
 }
 

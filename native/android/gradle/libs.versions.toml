@@ -40,8 +40,8 @@ reorderable = "3.1.0"
 # The JSON Schema validator `:shared`'s tests hold `library-schema.json` to the corpus with (#349).
 # Test-only: nothing that ships validates against the file, the brief only carries it.
 jsonSkema = "0.32.0"
-# CLDR's plural categories per language, for :strings to hold the bundles to (#350). The rule data
-# Android's own plural lookup reads; a build-time dependency of the generator, never shipped.
+# CLDR's plural categories per language, as ICU ships them, for :strings to hold the bundles to
+# (#350). A build-time dependency of the generator, never shipped.
 icu4j = "78.3"
 
 [libraries]

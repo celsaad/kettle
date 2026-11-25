@@ -63,8 +63,8 @@ internal fun loadYaml(text: String): YamlLoad =
         // refused, and depth is counted without the composer's recursion. A bomb under that count
         // loads, as shared references; what keeps it harmless is that the schema readers never walk
         // a value they refuse or don't know (SchemaReader), so a new whole-tree walk has to guard
-        // itself, as PreparedLibrary's repair does. The
-        // tokens: they alone say where a `-` was, and how a line was indented (see [checkTokens]).
+        // itself, as PreparedLibrary's repair does. The tokens: they alone say where a `-` was, and
+        // how a line was indented (see [checkTokens]).
         (checkEvents(text) ?: checkTokens(text))?.let(YamlLoad::Invalid)
             ?: YamlLoad.Loaded(Load(loadSettings).loadOne(text))
     } catch (error: YamlEngineException) {

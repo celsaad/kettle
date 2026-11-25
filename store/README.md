@@ -357,10 +357,10 @@ Why these, and what not to change casually:
 - **Product IDs are permanent.** They cannot be renamed, and cannot be reused after deletion.
   Everything else in these tables is editable in the Console at any time.
 - **There is no "consumable" setting in the Console.** Consumability is entirely app-side:
-  `TipBilling.kt`'s `consume`, which `TipJar.kt` calls on every paid tip (never on a pending one, which consuming would close
-  unpaid). Without it Play treats
-  the SKU as owned and refuses every later purchase of that tier — so "buy the same tier twice" is
-  the test that actually proves the tip jar works, not "buy one".
+  `TipBilling.kt`'s `consume`, which `TipJar.kt` calls on every paid tip (never on a pending one,
+  which consuming would close unpaid). Without it Play treats the SKU as owned and refuses every
+  later purchase of that tier — so "buy the same tier twice" is the test that actually proves the
+  tip jar works, not "buy one".
 - Play auto-converts to other currencies and its rounding is occasionally odd. Worth checking the
   BRL and JPY figures by hand, Portuguese and Japanese being two of the three shipped languages. The
   app renders

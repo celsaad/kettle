@@ -9,8 +9,7 @@ import kotlin.time.Instant
 
 /**
  * What the exercise editor (#241) does to the library, and what it shows of the log: RN's store's
- * `saveExercise`/`deleteExercise`, the delete guard the screen ran inline, and `exerciseHistory`, whose
- * two cases are the volume ones below.
+ * `saveExercise`/`deleteExercise`, the delete guard the screen ran inline, and `exerciseHistory`.
  */
 class ExerciseEditingTest {
     private val pullUps =

@@ -121,7 +121,7 @@ wanting states and assignees, it wants GitHub issues instead.
   - **The parallel per-type branches stay.** The survey was of the TS domain (gone in #353), where
     exhaustive `switch` blocks over `SessionEntry` and `Exercise` looked like one table waiting to
     be built. Why they stayed carries to the `when`s that replaced them in `:shared`
-    (`sessionEntryResult`, `entryVolume`): each is exhaustive over a sealed type with no `else`, so
+    (`sessionEntryResult`, `sessionSetCount`): each is exhaustive over a sealed type with no `else`, so
     adding a type is already a *compile error* in each place that hasn't been updated. The drift
     they'd be consolidated to prevent cannot happen silently, and a per-type record of lambdas would
     trade separately-named, separately-documented functions computing different things for one

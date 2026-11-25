@@ -154,7 +154,11 @@ class RunnerRecordsTest {
         @Test
         fun `personalBestFor takes the best across every finished session`() {
             val sessions =
-                listOf(finishedSession("newer", repsSets(5L to 95.0)), finishedSession("older", repsSets(5L to 105.0)))
+                listOf(
+                    finishedSession("newest", repsSets(5L to 95.0)),
+                    finishedSession("older", repsSets(5L to 105.0)),
+                    finishedSession("oldest", repsSets(5L to 90.0)),
+                )
 
             assertEquals(105.0, personalBestFor(sessions, "pullups").heaviestSetKg)
         }

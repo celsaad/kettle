@@ -100,7 +100,7 @@ Check what's in flight before deciding, and say which you're doing:
    `native/android/gradle.properties`. Show the edit you're making before you make it.
 2. Close out `CHANGELOG.md` as above.
 3. Run `./gradlew :repo-checks:test` from `native/android`, with `JAVA_HOME` on a JDK 21 (the
-   Gradle build's own; detekt refuses newer) and `ANDROID_HOME` on the Android SDK: its `StoreCopyTest` reads `CHANGELOG.md` and
+   tests' toolchain; detekt refuses newer) and `ANDROID_HOME` on the Android SDK: its `StoreCopyTest` reads `CHANGELOG.md` and
    fails on a release-note block over 500 characters. Nothing else should move under a version bump;
    if something else fails, it is wrong already and the bump isn't the thing to fix it with. Nothing
    checks the version file: read the diff.

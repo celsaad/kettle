@@ -106,7 +106,7 @@ private fun tierOf(
             TIER_INSIDE_WORD
         }
 
-        // Code points only once both substring checks have failed, as `search.yaml` pins.
+        // Code points only once both substring checks have failed.
         else -> {
             codePoints(token)
                 .takeIf(::forgivesTypos)

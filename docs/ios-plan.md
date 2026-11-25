@@ -97,7 +97,7 @@ these were missing:
 
 Two consequences worth stating: **the a11y and i18n work carries over free** (roles, labels and the
 three locale bundles are platform-neutral, and VoiceOver reads the same props TalkBack does), and
-**every domain test stays valid** — nothing in `src/domain/` knows what a platform is.
+**every domain test stays valid** — nothing in `:shared` knows what a platform is.
 
 ## Phase 1 — Simulator bring-up, before spending anything
 
@@ -159,7 +159,7 @@ await requestPurchase({ request: { google: { skus: [sku] } }, type: 'in-app' });
 `sku`, not a `skus` array. Everything wrapped around this call is already platform-neutral and does not
 move: `finishTransaction({ isConsumable: true })`, the `purchaseState === 'pending'` guard, the
 `ErrorCode.UserCancelled` branch, and `toTipTierOffers`. Both keys now go in the one request object
-so the store picks its own, built by `tipPurchaseRequest` in [`tip.ts`](../src/domain/tip.ts) — which
+so the store picks its own, built by RN's `tipPurchaseRequest` (in `tip.ts`, deleted with the TS in #353) — which
 puts it where typecheck can check it against expo-iap's `RequestPurchaseProps` and where a test can
 pin the shape without a React tree. This was the one line where a silent iOS-only failure lands on
 the screen that asks the user for money.
@@ -183,7 +183,7 @@ rather than $25 once, which is the strongest version of the argument that screen
 
 ### 2.3 App Store Connect products, same SKU ids
 
-[`tip.ts:23`](../src/domain/tip.ts#L23) fixes `tip_small` / `tip_medium` / `tip_large`. Create the same
+[`Tip.kt`](../native/android/shared/src/commonMain/kotlin/com/casco/kettle/domain/Tip.kt) fixes `tip_small` / `tip_medium` / `tip_large`. Create the same
 three ids in App Store Connect as **Consumable** in-app purchases. Same reasoning as Play: consumables
 are what make a repeat tip possible, and consumables aren't restorable from either store, so "has
 tipped" stays local in `supporter.json` and nothing about that design changes.
@@ -330,7 +330,7 @@ confused:
   container identifier in the entitlements, which is a Phase 4 signing concern.
 - **CloudKit key-value or record sync.** Structured, conflict-resolved, app-managed. This is a real
   sync layer, and it is a different product: it needs a merge strategy for sessions written on two
-  devices, which the app deliberately does not have — [`merge.ts`](../src/domain/merge.ts) merges the
+  devices, which the app deliberately does not have — [`Merge.kt`](../native/android/shared/src/commonMain/kotlin/com/casco/kettle/domain/Merge.kt) merges the
   *library* by id with whole-object replace, and the session log is append-only-in-fact and
   **export-only** (see the decision log). There is nothing today that reads a session log back in.
 

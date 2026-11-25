@@ -1,10 +1,10 @@
 package com.casco.kettle.domain
 
 /**
- * A per-language string table for a library the app ships: `LibraryTranslation` in
- * `src/storage/library-translation.ts`, which holds the reasoning, held to it by
- * `conformance/localize.yaml`. The tables are the `<language>.json` files beside each library in
- * `src/content/`.
+ * A per-language string table for a library the app ships, held by `conformance/localize.yaml`; the
+ * decision log's seed entry holds the reasoning. The tables are the `<language>.json` files beside
+ * each library in `src/content/`. Only names, notes and day labels are strings: `restDay` above all
+ * is structure, since translating it would turn a training day into a day off.
  *
  * [days] maps an English day label to its replacement, shared by every program in the library.
  * Program week notes are keyed by [libraryWeekKey], since a week has no id.
@@ -83,7 +83,8 @@ fun translationFor(
 /**
  * A shipped `<language>.json` table. Read with the YAML loader, since JSON is YAML 1.2, so `:shared`
  * needs no JSON library. **Throws** on a table that isn't one: it is a file the app ships, so a bad one
- * is a build defect with nothing honest to degrade to, and the RN tests read every one.
+ * is a build defect with nothing honest to degrade to, and `:app`'s `ShippedLibrariesTest` reads every
+ * one.
  */
 fun parseLibraryTranslation(text: String): LibraryTranslation {
     val loaded = loadYaml(text)

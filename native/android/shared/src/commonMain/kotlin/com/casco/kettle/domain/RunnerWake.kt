@@ -29,6 +29,33 @@ fun nextTimeUpdateAt(
     return if (overdue) now else second?.let { clock.phaseStartedAt + clock.pausedMs + it * MS_PER_SECOND }
 }
 
+/**
+ * The moment the step on screen ends by itself, or null when it won't: paused, or one only the user
+ * ends. The first moment its elapsed second reaches [endSecond], which is when [timeUpdate] ends it.
+ */
+internal fun stepEndAt(snapshot: RunnerSnapshot): Long? {
+    val clock = snapshot.clock
+    val second = snapshot.step?.takeIf { !clock.paused }?.let { endSecond(it, clock.stepEndSec) }
+    return second?.let { clock.phaseStartedAt + clock.pausedMs + it * MS_PER_SECOND }
+}
+
+/**
+ * Every step end a catch-up from [snapshot] would cross, in order, with nobody touching it: the step on
+ * screen's end, then each self-ending step's after it at its planned length, up to the first step only
+ * the user ends or the workout's end. Empty when paused. It is the schedule a host posts its alerts
+ * from when it can't run the clock itself (iOS, #420), and replaying to a moment `t` crosses exactly
+ * the moments listed at or before `t` (RunnerTimingTest's UpcomingEnds cases).
+ */
+fun upcomingStepEnds(snapshot: RunnerSnapshot): List<Long> {
+    var at = stepEndAt(snapshot) ?: return emptyList()
+    val ends = mutableListOf(at)
+    for (step in snapshot.steps.drop(snapshot.stepIndex + 1)) {
+        at += (endSecond(step, stepEndSec(step)) ?: break) * MS_PER_SECOND
+        ends += at
+    }
+    return ends
+}
+
 /** The elapsed second at which [step] ends by itself, or null for one only the user ends. */
 private fun endSecond(
     step: RunnerStep,

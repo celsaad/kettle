@@ -228,7 +228,8 @@ class RunnerRecoveryTest {
 
             assertEquals(2, resumed.state.snapshot.stepIndex)
             assertTrue(resumed.state.snapshot.clock.paused)
-            assertEquals(0L, elapsedSec(resumed.state.snapshot.clock, back + 60 * MS))
+            // Paused where it landed, the set started at the rest's end: it owns the rest of the kill.
+            assertEquals(3_510L, elapsedSec(resumed.state.snapshot.clock, back + 60 * MS))
             val sets =
                 (
                     resumed.state.session.entries
@@ -246,13 +247,13 @@ class RunnerRecoveryTest {
         @Test
         fun `resumes a rest it landed paused on, which then counts out and advances`() {
             val runner = Runner(workoutOf(single("burpees")))
-            val back = T0 + 3_600 * MS
+            val back = T0 + 50 * MS // 10 s into the rest after round 1
             val landed = resumeRunner(promptFor(runner), back).state
             assertTrue(landed.snapshot.step is RunnerStep.Rest && landed.snapshot.clock.paused)
 
             val resumed = reduceRunner(landed, RunnerCommand.TogglePause, back + 5 * MS).state
-            assertEquals(20.0, remainingSec(resumed.snapshot.clock, back + 5 * MS))
-            val ended = reduceRunner(resumed, RunnerCommand.TimeUpdate(resumed.snapshot.visit), back + 25 * MS).state
+            assertEquals(10.0, remainingSec(resumed.snapshot.clock, back + 5 * MS))
+            val ended = reduceRunner(resumed, RunnerCommand.TimeUpdate(resumed.snapshot.visit), back + 15 * MS).state
             assertEquals(2, ended.snapshot.stepIndex)
         }
 
@@ -295,12 +296,20 @@ class RunnerRecoveryTest {
             assertEquals(40.0, (skipped.session.entries.single() as SessionEntry.Reps).sets.single().restTakenSec)
         }
 
+        /**
+         * A kill spanning several self-ending steps replays them as a live gap does (#420), and lands
+         * paused on the step the replay reached. Against the one-step catch-up it stopped on the rest.
+         */
         @Test
-        fun `advances at most one step, however long the kill`() {
-            val runner = Runner(workoutOf(single("burpees")))
-            val resumed = resumeRunner(promptFor(runner), T0 + 86_400 * MS)
+        fun `replays every step that ran out during the kill, as a live gap would`() {
+            val workout = workoutOf(single("plank"), single("rest"), single("swings"), single("pullups"))
+            val resumed = resumeRunner(promptFor(Runner(workout)), T0 + 600 * MS).state
+            val live = Runner(workout).apply { away(600) }
 
-            assertEquals(1, resumed.state.snapshot.stepIndex)
+            assertEquals(7, resumed.snapshot.stepIndex)
+            assertTrue(resumed.snapshot.clock.paused)
+            assertEquals(live.index, resumed.snapshot.stepIndex)
+            assertEquals(live.written.entries, resumed.session.entries)
         }
 
         @Test

@@ -36,6 +36,10 @@ here, next to what it describes.
   Cardio, Rest) is now in your language. Ending a session early no longer calls an AMRAP "not
   started" once you've logged a round. The finish screen counts rounds, not sets, for a session of
   intervals alone, as Sessions already does (#520).
+- **A session that ran on without you is logged as it ran**: if the app is closed in the middle of a
+  workout, Resume now picks it up where the timers would have reached by then, with every timed hold,
+  round, minute and rest that ended along the way logged, each at its own length. Before, it moved
+  on one step at most (#420).
 
 ---
 

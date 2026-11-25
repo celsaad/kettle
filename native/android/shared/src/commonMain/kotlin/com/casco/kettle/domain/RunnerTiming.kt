@@ -24,7 +24,7 @@ internal fun stepIdentity(snapshot: RunnerSnapshot): String {
 }
 
 /** Where [step] ends by itself; 0 for one only the user ends. A hold's end is here too, for the alert. */
-private fun stepEndSec(step: RunnerStep?): Double =
+internal fun stepEndSec(step: RunnerStep?): Double =
     when (step) {
         is RunnerStep.Rest -> step.seconds
         is RunnerStep.Interval -> if (step.countUp) 0.0 else step.targetSec
@@ -79,14 +79,13 @@ private fun seededInputs(
     return inputs.copy(reps = reps, weightKg = weightKg, rpe = null, roundsCompleted = 0, extraReps = 0)
 }
 
-/** What the clock says about the step on screen at one reading. */
+/** What the clock says about the step on screen at one reading, short of its end. */
 private data class Reading(
-    val ended: Boolean,
     val tick: Boolean,
     val milestone: Boolean,
 )
 
-private val QUIET = Reading(ended = false, tick = false, milestone = false)
+private val QUIET = Reading(tick = false, milestone = false)
 
 /** A countdown's last seconds, each of which ticks. Public for the app, whose screen marks them too. */
 const val TICK_SECONDS = 3
@@ -96,8 +95,8 @@ const val TICK_SECONDS = 3
  *
  * - Countdowns (rest, and intervals with a target) end at `remaining <= 0`, holds at the *top* of
  *   their range. A max-effort hold and count-up cardio never end by themselves.
- * - **After a gap it advances at most one step**, and the next starts fresh at [now], the moment of
- *   return. The time away isn't carried into later steps; that is deliberate now.
+ * - **After a gap it replays the timeline** ([replayed]): each self-ending step ends at its own moment
+ *   and the next starts there, through to the first step only the user ends, or the end.
  * - It does nothing when paused, or when aimed at a step already left ([visit] isn't the snapshot's).
  *
  * Ticks sound once per whole second, so a service ticking faster than 1 Hz doesn't play more of them,
@@ -107,19 +106,51 @@ internal fun timeUpdate(
     state: RunnerState,
     visit: Long,
     now: Long,
+    context: RunnerContext,
 ): RunnerTransition {
     val snapshot = state.snapshot
     val step = snapshot.step
     if (step == null || visit != snapshot.visit || snapshot.clock.paused) return unchanged(state)
+    val ended = stepEndAt(snapshot)?.let { it <= now } == true
     val elapsed = elapsedSec(snapshot.clock, now)
-    val reading = reading(step, snapshot.clock.stepEndSec, elapsed)
-    return if (reading.ended) {
-        val moved = advance(state, now)
-        val ended = RunnerEffect.StepEnded(step, snapshot.steps.getOrNull(snapshot.stepIndex + 1))
-        RunnerTransition(moved.state, listOf(ended) + moved.effects)
+    return if (ended) {
+        replayed(state, now, context)
     } else {
-        cued(state, reading, elapsed)
+        cued(state, reading(step, snapshot.clock.stepEndSec, elapsed), elapsed)
     }
+}
+
+/**
+ * The catch-up (#420): every self-ending step whose end is at or before [now] commits at that end, as a
+ * hold at its end or a rest at its planned length, and the next is seeded from there. Committing at the
+ * end rather than at [now] is what keeps the time away out of a rest; the step it stops on owns it.
+ *
+ * A step whose end the update saw live, inside the second after it, keeps its alert and its exercise
+ * change; one a gap passed plays nothing, since nobody was there to hear it. Only the last write is
+ * kept, each being the whole file.
+ */
+private fun replayed(
+    state: RunnerState,
+    now: Long,
+    context: RunnerContext,
+): RunnerTransition {
+    var current = state
+    val effects = mutableListOf<RunnerEffect>()
+    var endAt = stepEndAt(current.snapshot)?.takeIf { it <= now }
+    while (endAt != null) {
+        val snapshot = current.snapshot
+        val moved = advance(current, endAt)
+        if (now < endAt + MS_PER_SECOND) {
+            val next = snapshot.steps.getOrNull(snapshot.stepIndex + 1)
+            effects += listOfNotNull(snapshot.step?.let { RunnerEffect.StepEnded(it, next) }) + moved.effects
+        } else {
+            effects += moved.effects.filterNot { it is RunnerEffect.PlayCue }
+        }
+        current = if (moved.state.finished) moved.state else seeded(moved.state, endAt, context)
+        endAt = stepEndAt(current.snapshot)?.takeIf { it <= now && !current.finished }
+    }
+    val lastWrite = effects.lastOrNull { it is RunnerEffect.WriteSession }
+    return RunnerTransition(current, effects.filter { it !is RunnerEffect.WriteSession || it === lastWrite })
 }
 
 private fun reading(
@@ -135,7 +166,6 @@ private fun reading(
             val target = step.holdTargetSec
             val remaining = end?.let { it - elapsed }
             Reading(
-                ended = remaining != null && remaining <= 0,
                 tick = remaining != null && remaining > 0 && remaining <= TICK_SECONDS,
                 milestone = target != null && elapsed >= target && (end == null || target < end),
             )
@@ -164,7 +194,6 @@ private fun countdown(
 ): Reading {
     val remaining = max(0.0, endSec - elapsed)
     return Reading(
-        ended = remaining <= 0,
         tick = remaining <= TICK_SECONDS,
         milestone = halfway != null && remaining <= halfway,
     )

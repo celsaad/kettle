@@ -267,7 +267,7 @@ fun reduceRunner(
             }
 
             is RunnerCommand.TimeUpdate -> {
-                timeUpdate(state, command.visit, now)
+                timeUpdate(state, command.visit, now, context)
             }
 
             RunnerCommand.Prev -> {
@@ -315,8 +315,14 @@ private fun settled(
     val after = moved.state
     val changed = after.snapshot !== before.snapshot || after.session !== before.session
     if (!changed || after.finished) return moved
+    // A catch-up seeds each step it crosses at that step's start, and moves the visit when it does.
+    val seededAlready = after.snapshot.visit != before.snapshot.visit
     val reseeded =
-        if (stepIdentity(before.snapshot) != stepIdentity(after.snapshot)) seeded(after, now, context) else after
+        if (!seededAlready && stepIdentity(before.snapshot) != stepIdentity(after.snapshot)) {
+            seeded(after, now, context)
+        } else {
+            after
+        }
     return RunnerTransition(
         reseeded.copy(snapshot = reseeded.snapshot.copy(updatedAt = now)),
         moved.effects + RunnerEffect.SaveSnapshot(debounce),

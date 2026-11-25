@@ -246,13 +246,14 @@ class RunnerWritesTest {
         }
 
         @Test
-        fun `does not clamp rest to its length`() {
+        fun `logs a rest a gap passed at its planned length, the time away going to the next set`() {
             val runner = Runner(workoutOf(single("pullups")))
             runner.advance()
             runner.away(300) // a 90 s rest, noticed after five minutes
 
             assertEquals(2, runner.index)
-            assertEquals(300.0, runner.pullupSets()[0].restTakenSec)
+            assertEquals(90.0, runner.pullupSets()[0].restTakenSec)
+            assertEquals(210L, runner.elapsed())
         }
 
         @Test

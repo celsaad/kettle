@@ -47,7 +47,7 @@ transmitted.
 ## Install
 
 **[Google Play](https://play.google.com/store/apps/details?id=com.casco.kettle)** — `com.casco.kettle`.
-iOS is not planned.
+iOS is in development: a native app in Compose Multiplatform, sharing `:shared` (M8).
 
 ## Development
 

@@ -42,9 +42,10 @@
 >
 > Nothing about the *decision* has changed with it. The two that mattered were bugs on the shipping
 > Android app rather than iOS work, and they were worth fixing either way. The decision log still says
-> iOS is deferred ([`decisions.md`](decisions.md), the tip-jar entry) and the README still says it
-> isn't planned. Both were accurate when this was written; with M8 decided, whether they change now
-> or the day iOS ships is the owner's call, and **Phase 6 is where this plan changes them**.
+> iOS is deferred ([`decisions.md`](decisions.md), the tip-jar entry) and the README said it
+> wasn't planned. Both were accurate when this was written. With M8 decided, the README now says iOS
+> is in development; the decision log's entry is history, and Phase 6's list of what changes the day
+> iOS ships still applies.
 >
 > **Since M5's preferences flip (#238) the RN build has no Settings.** `settings.tsx` is an empty stub
 > the Android shell draws over, and RN's preferences writers, backup, export, tip-store read and

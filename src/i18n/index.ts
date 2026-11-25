@@ -19,7 +19,7 @@ import pt from '@/i18n/locales/pt.json';
  * **`pt` carries a `_zero` beside every `_one`.** CLDR files Portuguese 0 under `one`, so a count of
  * zero rendered "0 sessão"; Brazilian Portuguese says "0 sessões". i18next consults a `_zero` key before
  * the plural rule whenever `count` is 0, so the fix is in the bundle rather than a patch to i18next's
- * resolver, and `locale-bundles.test.ts` requires one for every `_one`. JSON takes no comments, so all
+ * resolver, and `:strings` (`BundleCoverage.kt`) requires one for every `_one`. JSON takes no comments, so all
  * of this has to live here.
  */
 export const resources = {

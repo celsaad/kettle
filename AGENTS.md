@@ -219,9 +219,9 @@ are house rules here rather than a backlog — cheap as you go, tedious to retro
 - Adding a key means adding it to **all three** bundles — `en.json`, `pt.json` and `ja.json`. `pt`
   matches `en` key for key, plus a **`_zero` beside every `_one`** — CLDR files Portuguese 0 under
   `one`, which rendered "0 sessão" — and **`ja` carries only the `_other` form of a plural**, since
-  Japanese has no separate singular category. `locale-bundles.test.ts` holds all three shapes, so a
-  missing or stray key fails there instead of rendering quietly in English through `fallbackLng`; the
-  words themselves are still checked by hand. (No count is quoted
+  Japanese has no separate singular category. `:strings` holds all three shapes against CLDR's
+  plural categories (`BundleCoverage.kt`), so a missing or stray key fails the build instead of
+  rendering quietly in English; the words themselves are still checked by hand. (No count is quoted
   here on purpose: the one that used to be went stale, and the bundles are the only honest answer.)
 - **A string's arguments go in sorted order of their placeholder names** (code-point order, so
   lower camelCase reads alphabetically), a plural's `count` first, whatever their order in the

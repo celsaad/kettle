@@ -118,11 +118,12 @@ mistake here that cannot be fixed for anyone who has already installed it.
   native Home's `reportFullyDrawn` (`ReportDrawnWhen`). It was first measured against the RN app,
   which went at M7, so any baseline it is compared with now is the all-native app's own.
   `scripts/route-check.sh` steers the running `.dev` shell through every route by navigate message
-  and fails on the first screen that isn't the expected one. Run it after touching navigation, and update its matrix whenever a route is
-  added or changes how it presents. `scripts/session-check.sh` runs a session's device checks
-  unattended (timing with the screen off, cues, the step-end alert, process death, the finish) and restores `.dev` after. Run it on the
-  `Medium_Phone_API_37.0` AVD after touching the runner, its service, cues or notifications; the PR
-  template lists the checks it can't do.
+  and fails on the first screen that isn't the expected one. Run it after touching navigation, and
+  update its matrix whenever a route is added or changes how it presents. `scripts/session-check.sh`
+  runs a session's device checks unattended (timing with the screen off, cues, the step-end alert,
+  process death, the finish) and restores `.dev` after. Run it on the `Medium_Phone_API_37.0` AVD
+  after touching the runner, its service, cues or notifications; the PR template lists the checks it
+  can't do.
 
 - `conformance/` — the format's behaviour as data, and its authority: hand-written YAML inputs and
   golden outputs, checked and written by the Kotlin runner in `:shared`; its README is the contract.

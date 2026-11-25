@@ -152,6 +152,22 @@ class RunnerRecordsTest {
         }
 
         @Test
+        fun `personalBestFor takes the best across every finished session`() {
+            val sessions =
+                listOf(finishedSession("newer", repsSets(5L to 95.0)), finishedSession("older", repsSets(5L to 105.0)))
+
+            assertEquals(105.0, personalBestFor(sessions, "pullups").heaviestSetKg)
+        }
+
+        @Test
+        fun `personalBestFor keeps a bodyweight best on reps, apart from load`() {
+            // The split entryBest makes, which the marker and the completion screen have to agree on.
+            val best = personalBestFor(listOf(finishedSession("older", repsSets(14L to null))), "pullups")
+
+            assertEquals(PersonalBest(heaviestSetKg = null, mostReps = 14.0, longestHoldSec = null), best)
+        }
+
+        @Test
         fun `personalBestFor skips unfinished sessions`() {
             val unfinished = finishedSession("inflight", repsSets(6L to 100.0)).copy(endedAt = null)
             val finished = finishedSession("older", repsSets(6L to 20.0))

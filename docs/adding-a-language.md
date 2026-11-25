@@ -42,8 +42,8 @@ against `resources`; M8's build should hold the same check. `docs/ios-plan.md` �
 mechanism.
 
 One thing that is *not* on the list, checked rather than assumed: nothing about date, number,
-weekday or unit formatting needs touching — all of it reads the device locale through Intl in
-`i18n/format.ts`, and native's through the platform locale.
+weekday or unit formatting needs touching — all of it reads the device locale, through
+`shell/i18n/LocaleFormats.kt`.
 
 Nor is the native app's copy: `:strings` generates its `values-<code>/strings.xml` from whatever
 bundles step 1 left in `src/i18n/locales`, on every build, and `GeneratedStringsTest` round-trips

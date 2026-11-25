@@ -73,7 +73,7 @@ private fun Program.localized(strings: LibraryTranslation): Program {
 /**
  * The table for a BCP 47 tag like `pt-BR`, narrowed to its base subtag. Keyed by language, not
  * region, exactly as the locale bundles are. Pass `Locale.toLanguageTag()`, not `toString()`: its
- * `pt_BR` has no `-`, so it would find no table and fall back to English, as the TS does.
+ * `pt_BR` has no `-`, so it would find no table and fall back to English.
  */
 fun translationFor(
     tables: Map<String, LibraryTranslation>,

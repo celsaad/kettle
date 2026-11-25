@@ -113,7 +113,7 @@ The `ios` block in [`app.json`](#what-appjson-held-for-ios) is **shipped**, bar 
   entry has the rule).
 - **`supportsTablet`** — **decide this by looking, not by reasoning.** The tempting argument is that
   the layouts already cap themselves with `MaxContentWidth` so an iPad gets a centred column rather
-  than stretched rows. But `MaxContentWidth` is **480** ([`theme.ts:96`](../src/constants/theme.ts#L96)),
+  than stretched rows. But `MaxContentWidth` is **480** ([`theme.json`](../src/constants/theme.json)),
   and a 480pt column centred on a 13" iPad is mostly empty screen — which then becomes a *required
   screenshot* on the listing. Turning it on may cost more than the App Store filter it buys. Check it
   in the simulator, which is free, and while there confirm whether iPadOS 26's windowing still honours
@@ -246,7 +246,7 @@ writes `ios.infoPlist.CFBundleLocalizations` when it is passed `supportedLocales
 mechanism). So an iOS build declares **no** localizations.
 
 That matters because of where the language comes from. `deviceLanguage()`
-([`i18n/index.ts:39`](../src/i18n/index.ts#L39)) walks `getLocales()` for the first language it ships a
+(RN's `src/i18n/index.ts`, deleted with the TS in #353) walked `getLocales()` for the first language it ships a
 bundle for, and on iOS `getLocales()` is built from `Locale.preferredLanguages`
 (`node_modules/expo-localization/ios/LocalizationModule.swift:149`) — which iOS filters against the
 app bundle's declared localizations. With none declared, a Portuguese or Japanese iPhone very likely

@@ -18,6 +18,19 @@ cases:
       workouts: [{ id: v, name: V, blocks: [{ type: exercise, exercise: c }] }]
       programs: [{ id: p, name: P, weeks: [{ week: 1, workout: w }] }]
 
+  - name: replaces-workouts-and-programs-whole
+    why: the summary names every replaced workout and program, and a replaced one keeps its place
+    existing: |
+      version: 1
+      exercises: [{ id: a, name: A, type: rest, config: { duration_sec: 60 } }]
+      workouts: [{ id: w, name: W, blocks: [{ type: exercise, exercise: a }] }, { id: x, name: X, blocks: [] }]
+      programs: [{ id: p, name: P, weeks: [{ week: 1, workout: w }, { week: 2, workout: w }] }]
+    incoming: |
+      version: 1
+      exercises: []
+      workouts: [{ id: w, name: W2, blocks: [] }]
+      programs: [{ id: p, name: P2, weeks: [{ week: 1, workout: x }] }]
+
   - name: reference-satisfied-by-existing
     existing: |
       version: 1

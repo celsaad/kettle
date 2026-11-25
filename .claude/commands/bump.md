@@ -99,8 +99,8 @@ Check what's in flight before deciding, and say which you're doing:
 1. Edit each chosen platform's version file: for Android, both properties in
    `native/android/gradle.properties`. Show the edit you're making before you make it.
 2. Close out `CHANGELOG.md` as above.
-3. Run `./gradlew :repo-checks:test` from `native/android`, with `JAVA_HOME` on a JDK 21 and
-   `ANDROID_HOME` set (`docs/building-android.md`): its `StoreCopyTest` reads `CHANGELOG.md` and
+3. Run `./gradlew :repo-checks:test` from `native/android`, with `JAVA_HOME` on a JDK 21 (the
+   Gradle build's own; detekt refuses newer) and `ANDROID_HOME` on the Android SDK: its `StoreCopyTest` reads `CHANGELOG.md` and
    fails on a release-note block over 500 characters. Nothing else should move under a version bump;
    if something else fails, it is wrong already and the bump isn't the thing to fix it with. Nothing
    checks the version file: read the diff.
@@ -110,6 +110,6 @@ Check what's in flight before deciding, and say which you're doing:
 5. Push. Open a PR only if you made a new branch; if you added the commit to an existing PR's branch,
    say so rather than opening a second one.
 
-Don't tag, don't run a build, and don't touch the Play listing. Deciding a version and publishing an
+Don't tag, don't build an artefact, and don't touch the Play listing. Deciding a version and publishing an
 artefact are separate concerns, and folding them together means a bump you can't land without also
 being ready to ship a binary — so tagging and the signed APK are `/release`'s, not this command's.

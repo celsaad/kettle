@@ -106,7 +106,7 @@ private fun tierOf(
             TIER_INSIDE_WORD
         }
 
-        // Code points only once both substring checks have failed, as the TS builds them.
+        // Code points only once both substring checks have failed, as `search.yaml` pins.
         else -> {
             codePoints(token)
                 .takeIf(::forgivesTypos)
@@ -151,7 +151,7 @@ fun <T> rankByName(
     nameOf: (T) -> String,
 ): List<T> =
     // `sortedBy` is stable, which is what keeps the original order within a tier, so this needs no
-    // index tie-break like the one the TS sorts on.
+    // index tie-break.
     matches(items, query, nameOf)?.sortedBy { it.tier }?.map { it.item } ?: items
 
 /** The same match as `rankByName`, in the original order — for a list whose order means something. */

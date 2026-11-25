@@ -17,8 +17,9 @@ wanting states and assignees, it wants GitHub issues instead.
 - Everything the original plan covered — persistence, timer engine, import/merge, export, and
   library/build CRUD — is implemented. The workstreams that carried it are in `git log`.
 - **Config key style:** hand-editable YAML stays **snake_case** (`work_sec`, `hold_sec`); in-code
-  domain objects stay **camelCase** (`workSec`, `holdSec`). `src/domain/yaml-mapping.ts` bridges the
-  two at the file boundary, and nowhere else does.
+  domain objects stay **camelCase** (`workSec`, `holdSec`). `:shared`'s readers and writers bridge the
+  two at the file boundary (the `*Schema.kt` readers, `LibraryYaml.kt`, `SessionYaml.kt`), and nowhere
+  else does.
 - The SAF facts the backup folder rests on are the decision log's "SAF: what the backup folder
   relies on" entry.
 
@@ -128,8 +129,8 @@ wanting states and assignees, it wants GitHub issues instead.
     Two have since been split on their own merits — `state/selectors.ts` into one module per concern,
     and `workout-editor.tsx` into its block and picker components (the picker panels were the seam
     named here; the two block editors inside `renderItem` turned out to be the larger half).
-    `yaml-mapping.ts` stays — splitting it separates
-    halves of a bijection that must be edited together.
+    `yaml-mapping.ts` stayed, since splitting it separates halves of a bijection that must be
+    edited together. All three went with the TS (#353).
 
 - **Colour-code the session progress indicator — mostly settled against, kept for the one live
   constraint.** This entry used to argue about the runner's per-block dots: what a dot should be
@@ -174,8 +175,8 @@ wanting states and assignees, it wants GitHub issues instead.
   Either way the compiler names the work: `ExerciseType` feeds the `Exercise` union, `CONFIG_FIELDS`'s
   `Record<ExerciseType, …>`, and the two exhaustive `switch`es over `Exercise` — and a new
   `SessionEntry` variant breaks the three over that — which is the payoff the decision log's
-  "parallel switches stay" entry was banking. `schema.ts`, `yaml-mapping.ts`, `TYPE_OPTIONS` and both
-  locale bundles are the parts it can't catch for you.
+  "parallel switches stay" entry was banking. The `*Schema.kt` readers, `library-schema.json`, the
+  mirrors and the locale bundles are the parts it can't catch for you.
 
 - **The Stats screen made `listSessions()`'s cost real.** The scaling risk is in the decision log
   with the remedies; what changed is that it now has a consumer. Stats is native since #201
@@ -226,8 +227,9 @@ wanting states and assignees, it wants GitHub issues instead.
 - **Name circuit blocks.** A circuit has no name in the YAML, only an optional `id`. So a workout of
   four circuits (a warm-up, two series and a finisher) shows four "CIRCUIT · N ROUNDS" in the runner's
   Coming up sheet, and only the member names tell them apart. An optional `name`, shown verbatim, is
-  the fix the sheet was designed around. It is a format change, so `schema.ts` and all three mirrors
-  land in one PR (see `AGENTS.md`, "Changing the YAML format"). Numbering the circuits was drawn and
+  the fix the sheet was designed around. It is a format change, so the schema readers, a conformance
+  case, `library-schema.json` and all three mirrors land in one PR (see `AGENTS.md`, "Changing the
+  YAML format"). Numbering the circuits was drawn and
   rejected; the reasons are in [`up-next-plan.md`](up-next-plan.md).
 
 - **More languages.** Japanese shipped; the procedure and the two wrinkles it turned up are in
@@ -320,7 +322,7 @@ interpolated rather than translated. Notes on the structural ones:
 - **RN's hold screen's `NaN%`** was guarded the way its interval screen already was. Still worth
   knowing for the next 0-config bug: nothing validates a program week's override config — the schema
   types it as a free record of numbers and the override editor doesn't call `validateConfig` — so the
-  runner screens can't assume the constraints `validateConfig`/`schema.ts` enforce elsewhere.
+  runner screens can't assume the constraints `validateConfig` and the schema readers enforce elsewhere.
 
 One of the three found in the runner audit that produced the resume-race fix above is still here. The
 other two are fixed (see the roll-up above); this one stayed because it is not a defect:

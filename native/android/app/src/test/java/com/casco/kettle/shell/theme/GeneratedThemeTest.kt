@@ -145,10 +145,10 @@ class GeneratedThemeTest {
 
     /**
      * The ratios theme-notes.md records, recomputed from the generated colors. They are the expected values
-     * here, written by hand from its comments: a color that moved in the port would move its ratio.
+     * here, written by hand from that file: a color that moved would move its ratio.
      */
     @Test
-    fun `the contrast ratios recorded in theme ts hold for the generated colors`() {
+    fun `the contrast ratios recorded in theme notes hold for the generated colors`() {
         with(LightColors) {
             assertContrast(6.35, textSecondary, background.surface())
             assertContrast(7.03, textSecondary, backgroundElement.surface())

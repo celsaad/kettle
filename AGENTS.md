@@ -299,7 +299,7 @@ Every one of these opens with a banner saying what it is and whether it's live; 
 are the index, the banner is the contract.
 
 - `docs/decisions.md` — **the decision log.** Why things are the way they are, for reasoning that
-  doesn't fit in one commit. Cited from `AGENTS.md` and eight source files; this is the file they
+  doesn't fit in one commit. Cited from `AGENTS.md` and from source files; this is the file they
   mean.
 - `docs/open-work.md` — the backlog, and only the backlog.
 - `docs/history.md` — write-ups of shipped work, split out so the backlog stays a backlog.

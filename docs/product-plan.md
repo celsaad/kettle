@@ -60,7 +60,7 @@ Type is the heart of the model. Each type carries its own **config** (the plan) 
 | `cardio` | duration or distance | duration and/or distance |
 | `rest` | duration sec | actual rest taken |
 
-The log column is `SessionEntry` in `src/domain/types.ts`, and two entries in it used to promise more
+The log column is `SessionEntry` in `:shared`'s `Session.kt`, and two entries in it used to promise more
 than the runner records: `hiit` logs `roundsCompleted`, not per-round elapsed (round length is fixed by
 config, so the elapsed time was derivable and never worth storing), and `cardio` stores duration and
 distance without a **pace** — nothing computes or displays one.
@@ -174,7 +174,7 @@ the rep/hold *range* fields appear there and only in passing here.
 - **Per-block config overrides** reuse one definition with tweaks (e.g. longer rest on the last block) without duplicating definitions.
 - **An override's `config` is a free map of numbers and strings in the file, but the *merged result* must satisfy the target's own config schema.** The patch shape stays loose so it can be partial and hand-written; the check moved to where the week is resolved. A week whose merge the schema refuses — or that names a key the target doesn't have — imports fine, runs the base definition, and is shown as not applied. The authoring reference carries the rule per type.
 - **Workouts live in the same file** so everything the user authors is in one place. If it grows, split into `workouts.yaml` later — the model doesn't change.
-- **The repeat counts are bounded**, not just positive: `sets` and `rounds` cap at 500, `total_minutes` at 1440, and `emom`'s derived interval count at 500. The session runner materializes one step per set, per round and per interval before it renders, so an unbounded count is a workout that can't be started rather than a long one. The exact numbers live in `schema.ts`; the authoring reference carries them per type.
+- **The repeat counts are bounded**, not just positive: `sets` and `rounds` cap at 500, `total_minutes` at 1440, and `emom`'s derived interval count at 500. The session runner materializes one step per set, per round and per interval before it renders, so an unbounded count is a workout that can't be started rather than a long one. The exact numbers live in `:shared`'s schema readers and `library-schema.json`; the authoring reference carries them per type.
 
 ### 4.2 `sessions/<id>.yaml` — one file per session (app-written)
 
@@ -299,8 +299,8 @@ Implemented as a write-through: an exercise's entry is appended when its first s
 
 > **The original plan's stack, kept as history.** The app moved to Kotlin and Compose
 > (`docs/native-migration-plan.md`), and React Native and Expo left it at M7 (#357). What survives
-> of this table is the YAML and validation half: `js-yaml` and `zod` in the TS domain, and their
-> Kotlin ports in `:shared`.
+> of this table is the YAML and validation half: `js-yaml` and `zod` in the TS domain until #353,
+> and their Kotlin ports in `:shared` since.
 
 | Concern | Choice |
 |---|---|

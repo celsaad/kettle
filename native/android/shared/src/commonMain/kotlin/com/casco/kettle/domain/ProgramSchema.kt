@@ -1,8 +1,8 @@
 package com.casco.kettle.domain
 
 /**
- * A program, read. Every
- * refinement here is gated by [SchemaReader.refined], so which of them a document reports matches zod.
+ * A program, read, held by `conformance/library.yaml`. Every refinement here is gated by
+ * [SchemaReader.refined], so which of them a document reports matches the zod the format began in.
  */
 internal fun SchemaReader.program(
     value: Any?,

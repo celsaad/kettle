@@ -85,17 +85,18 @@ mistake here that cannot be fixed for anyone who has already installed it.
   (week resolution + override application). Every editor is native's since the library flip (#245),
   so the form logic lives in `:shared` (`ExerciseForm.kt`, `SessionEntryForm.kt`) rather than here.
 - `src/storage/` — the readers for the content the app *ships*; every file the app writes is
-  native's since #308, and RN's own readers went with its stores (#309). The readers are
-  `seed-library.ts` (the seed the tests read; native writes the real seed on a first launch,
-  `PreparedLibrary.kt`) and
-  `content-packs.ts` (bundled libraries native Import offers, merged in on a tap, read here for the
-  tests that hold them). The content itself is data in `src/content/`, which native reads too: an
-  English `library.yaml` plus a `<lang>.json` string table per language (`library-translation.ts`),
-  and `packs.json` for the pack order. **New shipped content goes in a pack, not in the seed** — the
-  seed can only ever reach a fresh install. A new pack is a directory, a `packs.json` entry, a line
-  in `content-packs.ts`'s import map, and its import-screen row (`import.packs.<id>.name`/`.detail`
-  in all three bundles); `content-packs.test.ts` fails when any of them is missing. See the decision
-  log for the four rules a pack has to respect; the prefixed-id one is the load-bearing one.
+  native's since #308, and RN's own readers went with its stores (#309). What is left is
+  `seed-library.ts`, the seed `site-examples.test.ts` merges into; native writes the real seed on a
+  first launch (`PreparedLibrary.kt`). The content itself is data in `src/content/`, which native
+  reads through `ShippedContent`: an English `library.yaml` plus a `<lang>.json` string table per
+  language (`:shared`'s `LibraryTranslation.kt`), and `packs.json` for the pack order. `:app`'s
+  `ShippedLibrariesTest`, `ShippedSeedTest` and `ContentPacksTest` hold what the content says, in
+  every language. **New shipped content goes in a pack, not in the seed** — the seed can only ever
+  reach a fresh install. A new pack is a directory, a `packs.json` entry, its import-screen row
+  (`import.packs.<id>.name`/`.detail` in all three bundles), and a line in `StarterPacks.kt`'s
+  `packStrings`; `ContentPacksTest` fails when the first three disagree, `:app` won't compile
+  without the row, and `ImportScreenTest` fails without the line. See the decision log for the four
+  rules a pack has to respect; the prefixed-id one is the load-bearing one.
 - `src/state/selectors/` — derived/display logic split per view (`records`, `logged-sessions`,
   `session-summary`, …), pure and tested. No screen reads it since the stores went (#309); M7 decides
   what of it stays.

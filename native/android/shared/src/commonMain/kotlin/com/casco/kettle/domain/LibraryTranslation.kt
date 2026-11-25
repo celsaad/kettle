@@ -1,10 +1,10 @@
 package com.casco.kettle.domain
 
 /**
- * A per-language string table for a library the app ships: `LibraryTranslation` in
- * `src/storage/library-translation.ts`, which holds the reasoning, held to it by
- * `conformance/localize.yaml`. The tables are the `<language>.json` files beside each library in
- * `src/content/`.
+ * A per-language string table for a library the app ships, held by `conformance/localize.yaml`; the
+ * decision log's seed entry holds the reasoning. The tables are the `<language>.json` files beside
+ * each library in `src/content/`. Only names, notes and day labels are strings: `restDay` above all
+ * is structure, since translating it would turn a training day into a day off.
  *
  * [days] maps an English day label to its replacement, shared by every program in the library.
  * Program week notes are keyed by [libraryWeekKey], since a week has no id.

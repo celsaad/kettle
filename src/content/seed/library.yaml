@@ -6,7 +6,7 @@
 # This is the structural definition, and it is written in English. The names, notes and day labels a
 # non-English user sees come from pt.json and ja.json beside this file, applied at seed time, so an
 # edit here (a new exercise, a changed week) is a content change every language's table then owes a
-# string for. seed-library.test.ts fails the ones that don't.
+# string for. :app's ShippedLibrariesTest fails the ones that don't.
 #
 # Curated starter content, not a format demo: two four-week programs a new user can press start on
 # without building anything first, plus two standalone workouts so every exercise type has a

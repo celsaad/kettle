@@ -681,7 +681,7 @@ decision assembled across several commits. Open work belongs in the sections at 
   **The seed ships per-language, as one English structure plus a string table** (`seed/<lang>.json`)
   — reversing an earlier English-only call, whose reasoning was that a locale-picked seed doubles every
   future content edit. That cost is real and this shape is the answer to it, so the rule an edit has to
-  respect is: **structure changes once, and every language owes it a string.** `seed-library.test.ts`
+  respect is: **structure changes once, and every language owes it a string.** `ShippedLibrariesTest`
   fails the language that didn't get one, in both directions (a missing translation and a stale key
   pointing at content that was renamed away), and runs every structural invariant above against every
   language, because a translated seed is a real library a real first launch lands on. Two constraints
@@ -713,8 +713,8 @@ decision assembled across several commits. Open work belongs in the sections at 
     from the content — inferring it would make the test agree with a typo. `mergeLibraries` replaces
     whole objects by id, so an unprefixed `squat` silently overwrites one somebody has been logging
     against for months. This is the same promise `site/examples/*.yaml` makes, and
-    `content-packs.test.ts` holds it in both directions: prefixed, and colliding with nothing in the
-    seed or in another pack.
+    `ContentPacksTest` holds it in both directions: prefixed, and colliding with nothing in the seed
+    or in another pack.
   - **A pack ships its own rest exercise.** Referencing the seed's `rest` looks like sensible reuse
     and is a defect: a merge validates references against the *merged* library, so the pack would be
     refused outright for anyone who had deleted or renamed it.
@@ -726,8 +726,8 @@ decision assembled across several commits. Open work belongs in the sections at 
     the opposite case and does live in `en.json`/`pt.json`/`ja.json` under `import.packs.<id>` — that
     text is never written anywhere, so it is free to follow the UI language.
 
-  The table shape and `localizeLibrary` moved to `storage/library-translation.ts` when the second body
-  of shipped content appeared. Shared rather than copied, because the field a second implementation
+  The table shape and `localizeLibrary` are one implementation (`:shared`'s `LibraryTranslation.kt`)
+  shared by the seed and the packs rather than copied, because the field a second implementation
   would get wrong is `restDay`: "translatable" versus "structural" there is the difference between a
   day off and a training day.
 

@@ -17,8 +17,8 @@ data class ContentPackEntry(
 
 /**
  * The libraries the app ships, read from `src/content/`, which `:app` packages as assets in place, so
- * RN's bundle and this read one copy. `seed-library.ts` and `content-packs.ts` hold the reasoning for
- * the seed and the packs, and the RN tests hold the content's own invariants.
+ * there is one copy. The decision log holds the reasoning for the seed and the packs, and
+ * `ShippedLibrariesTest`, `ShippedSeedTest` and `ContentPacksTest` hold the content's own invariants.
  *
  * Import's starter packs read from here (#244), and so does the launch's seed (`LibraryGate`).
  *

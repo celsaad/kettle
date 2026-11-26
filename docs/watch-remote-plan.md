@@ -117,10 +117,13 @@ flight. Every action is aimed at the step it was drawn for, and refused anywhere
   late tap from one session land in the next.
 - **The receiver** is a main-source, non-exported `BroadcastReceiver`. It parses the URI, drops a tap
   whose session isn't the running one, and sends the command aimed at the visit it carries. It never
-  reads the current visit at tap time (the debug `RunnerCommandReceiver` does, for its own reasons).
-  The one command the engine doesn't aim, `SetRounds`, the receiver checks itself: it compares the
-  URI's visit with the running snapshot's and drops a mismatch, so a late "Round N done" can't set the
-  next AMRAP's rounds.
+  aims with the current visit at tap time (the debug `RunnerCommandReceiver` does, for its own
+  reasons). The one step command the engine doesn't aim, `SetRounds`, the receiver checks itself: it
+  compares the URI's visit with the running snapshot's and drops a mismatch, so a late "Round N done"
+  can't set the next AMRAP's rounds. That leaves a narrow window, since the snapshot it compares with
+  can lag the engine; aiming `SetRounds` in the engine (#516) closes it. Resume's `TogglePause` can't
+  be aimed by visit at all, since pausing doesn't move it; left as a toggle by decision
+  ([#549](https://github.com/celsaad/kettle/issues/549)).
 - **Actions are broadcasts, never `getService`**: `RunnerService.onStartCommand` enters the foreground
   on any intent before reading its action, so a late tap delivered to a stopped service would bring up
   a placeholder nothing stops. On API 31+ a broadcast can't start an activity, which is also what keeps

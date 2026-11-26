@@ -328,10 +328,10 @@ are the index, the banner is the contract.
 - `docs/building-android.md` — building the Play bundle on GitHub Actions rather than on EAS, and
   the keystore setup it needs first.
 - `docs/testing-a11y-i18n-plan.md` — executed; kept for its rationale, not as a backlog.
-- `docs/watch-remote-plan.md` — **not executed.** Driving a running session from a Wear OS wrist via
-  the notification shade, with no watch app and no data on the watch. Costed against RN's runner and
-  `expo-notifications`, both gone since #308; its banner says which sections that leaves as history,
-  and it is re-planned against `RunnerNotifications.kt` when the work starts.
+- `docs/watch-remote-plan.md` — **not executed; ready to build.** The session-controls spec: action
+  buttons on the runner's ongoing notification, promoted to a Live Update so a Wear OS 7 watch shows
+  them, with no watch app and no data on the watch. Decided on the map #540, whose tickets hold the
+  reasoning; it names the engine change that comes first (`Prev` and `AddRestSeconds` aimed by visit).
 - `docs/native-migration-plan.md` — **M0 executed (go); M1 landed; M2 shipped (0.11.2); M3 shipped
   (0.12.0); M4 shipped (0.13.0); M5 done (0.14.0); M6 done (0.15.0); M7 ticketed (map #335); M8's UI
   decided (Compose Multiplatform).** Moving to Kotlin/Compose (then iOS) inside the shipping

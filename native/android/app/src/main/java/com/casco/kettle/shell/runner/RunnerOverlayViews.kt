@@ -177,7 +177,12 @@ private fun Grabber(
                     if (drag.floatValue > dismissAt || velocity > flingAt) {
                         onDismiss()
                     } else {
-                        springBack = launch { animate(drag.floatValue, 0f) { value, _ -> drag.floatValue = value } }
+                        springBack =
+                            launch {
+                                animate(drag.floatValue, 0f) { value, _ -> drag.floatValue = value }
+                                // A finished Job writes no state, so without this the grabber stays immediate at rest.
+                                springBack = null
+                            }
                     }
                 },
             ),

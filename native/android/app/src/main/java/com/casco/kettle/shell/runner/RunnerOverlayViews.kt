@@ -66,6 +66,8 @@ import com.casco.kettle.shell.theme.KettleType
 import com.casco.kettle.shell.theme.RunnerPalette
 import com.casco.kettle.shell.theme.Spacing
 import com.casco.kettle.shell.theme.TypeIcon
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
 /**
@@ -84,13 +86,14 @@ internal fun OverlaySheet(
     scrolls: Boolean = false,
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    // Written straight from each drag move, so no move can land after the spring back has begun.
+    // Written straight from each drag move; a new grab cancels the spring back ([Grabber]), so the two never
+    // write it at once.
     val drag = remember { mutableFloatStateOf(0f) }
     Box(Modifier.fillMaxSize()) {
         Box(
             Modifier
                 .fillMaxSize()
-                .background(Color.Black.copy(alpha = BACKDROP_ALPHA))
+                .background(Backdrop)
                 .clickable(role = Role.Button, onClick = onDismiss)
                 .then(
                     if (dismissLabel == null) {
@@ -152,6 +155,8 @@ private fun Grabber(
         onDismiss()
         true
     }
+    // Cancelled by the next grab: left running, it wrote over the finger's moves, and the sheet jittered.
+    var springBack by remember { mutableStateOf<Job?>(null) }
     Box(
         Modifier
             .fillMaxWidth()
@@ -165,11 +170,19 @@ private fun Grabber(
             }.draggable(
                 rememberDraggableState { delta -> drag.floatValue = maxOf(0f, drag.floatValue + delta) },
                 Orientation.Vertical,
+                // Mid-spring, a finger landing takes the sheet at once rather than after touch slop, as M3's does.
+                startDragImmediately = springBack?.isActive == true,
+                onDragStarted = { springBack?.cancel() },
                 onDragStopped = { velocity ->
                     if (drag.floatValue > dismissAt || velocity > flingAt) {
                         onDismiss()
                     } else {
-                        animate(drag.floatValue, 0f) { value, _ -> drag.floatValue = value }
+                        springBack =
+                            launch {
+                                animate(drag.floatValue, 0f) { value, _ -> drag.floatValue = value }
+                                // A finished Job writes no state, so without this the grabber stays immediate at rest.
+                                springBack = null
+                            }
                     }
                 },
             ),
@@ -318,7 +331,9 @@ private sealed interface PadKeyKind {
 
 private val DIGITS = ('1'..'9').map(PadKeyKind::Character)
 private const val KEYS_PER_ROW = 3
-private const val BACKDROP_ALPHA = 0.55f
+
+/** Over the whole screen, the system bars included, so [RunnerField.darkBarIcons] reads through it. */
+internal val Backdrop = Color.Black.copy(alpha = 0.55f)
 private val GRABBER_WIDTH = 40.dp
 private val GRABBER_HEIGHT = 4.dp
 

@@ -7,6 +7,7 @@ import com.casco.kettle.domain.RunnerStep
 import com.casco.kettle.domain.StepClock
 import com.casco.kettle.domain.Workout
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Test
 
 /** Which field the runner draws on (#418): what the step's clock is doing, not the exercise type. */
@@ -68,7 +69,7 @@ class RunnerFieldTest {
 
     @Test
     fun `only the orange field darkens the system bars' icons`() {
-        assertEquals(listOf(RunnerField.WORK), RunnerField.entries.filter { it.darkBarIcons })
+        assertEquals(listOf(RunnerField.WORK), RunnerField.entries.filter { it.darkBarIcons(dimmed = false) })
     }
 
     @Test
@@ -81,5 +82,11 @@ class RunnerFieldTest {
         for (entry in listOf(RunnerEntry.Loading, RunnerEntry.Start, RunnerEntry.Waiting, RunnerEntry.Before(plan))) {
             assertEquals("$entry", RunnerField.PACE, runnerField(entry, now = 1_000))
         }
+    }
+
+    @Test
+    fun `a sheet's backdrop takes light bar icons, whichever field is under it`() {
+        // The orange asks for dark icons undimmed; under the backdrop they'd sit on a dark brown (#501).
+        for (field in RunnerField.entries) assertFalse("$field", field.darkBarIcons(dimmed = true))
     }
 }

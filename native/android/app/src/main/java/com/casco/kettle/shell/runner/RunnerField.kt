@@ -3,6 +3,7 @@ package com.casco.kettle.shell.runner
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.luminance
 import com.casco.kettle.domain.RunnerStep
 import com.casco.kettle.domain.StepClock
@@ -35,8 +36,11 @@ internal enum class RunnerField(
     /**
      * Whether the system bars' icons go dark over this field: whichever of black and white contrasts
      * more with it, so a field's bars follow from its colour and a new light one can't get light icons.
+     * [dimmed] while a sheet is open: the status bar then sits over its [Backdrop] on the field, and the
+     * nav bar over the sheet, both dark, so dark icons on the dimmed orange were near-invisible.
      */
-    val darkBarIcons: Boolean get() = palette.background.luminance() > EVEN_LUMINANCE
+    fun darkBarIcons(dimmed: Boolean): Boolean =
+        (if (dimmed) Backdrop.compositeOver(palette.background) else palette.background).luminance() > EVEN_LUMINANCE
 }
 
 /** The luminance black and white contrast equally with: sqrt(1.05 × 0.05) − 0.05, by WCAG's formula. */

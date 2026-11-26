@@ -20,6 +20,7 @@ import androidx.compose.ui.test.swipeDown
 import androidx.compose.ui.unit.dp
 import com.casco.kettle.domain.RunnerCommand
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -152,5 +153,16 @@ class RunnerSheetsTest : RunnerScreenHarness() {
             .onNodeWithContentDescription("Alça de arrastar")
             .performTouchInput { swipeDown(startY = centerY, endY = centerY + 80.dp.toPx(), durationMillis = 60) }
         compose.onNodeWithText("Encerrar o treino agora?").assertDoesNotExist()
+    }
+
+    @Test
+    fun `a sheet open over the orange field lights the bar icons, and closing it darkens them again`() {
+        show(running(plan(block(everyMinute))))
+        assertTrue(runnerBars.darkIcons)
+        button("Encerrar").performClick()
+        compose.waitForIdle()
+        assertFalse(runnerBars.darkIcons)
+        back()
+        assertTrue(runnerBars.darkIcons)
     }
 }

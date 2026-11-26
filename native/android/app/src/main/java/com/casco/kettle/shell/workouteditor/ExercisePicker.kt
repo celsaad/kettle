@@ -234,7 +234,7 @@ private fun PickerRow(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         if (checked != null) CheckBox(checked)
-        Text(exercise.name, Modifier.weight(1f), style = KettleType.smallMedium, color = colors.text)
+        Text(exercise.name, Modifier.weight(1f), style = KettleType.rowTitle, color = colors.text)
         ExerciseBadge(exercise.config)
     }
 }

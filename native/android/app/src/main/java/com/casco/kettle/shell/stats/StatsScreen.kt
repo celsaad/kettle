@@ -360,7 +360,7 @@ private fun ProgressRow(
     ) {
         ListRow {
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text(name, style = KettleType.default.copy(fontWeight = FontWeight.SemiBold), color = colors.text)
+                Text(name, style = KettleType.rowTitle, color = colors.text)
                 Text(
                     buildAnnotatedString {
                         append(reading)

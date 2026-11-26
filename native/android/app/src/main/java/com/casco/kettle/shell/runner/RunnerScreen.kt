@@ -112,7 +112,7 @@ fun RunnerScreen(
         )
     }
     val field = runnerField(entry, now, resting)
-    RunnerBarIcons(field.darkBarIcons)
+    RunnerBarIcons(field.darkBarIcons(dimmed = open.open.isNotEmpty()))
     Box(Modifier.fillMaxSize().background(field.palette.background)) {
         // The body inside the system bars; the sheets below are not, so a sheet's colour and its backdrop
         // can run under them (#474), each sheet keeping its own content clear of them.

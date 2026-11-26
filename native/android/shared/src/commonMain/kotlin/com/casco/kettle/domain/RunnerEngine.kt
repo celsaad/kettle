@@ -134,7 +134,8 @@ data class RunnerTransition(
  * nothing, except that a Finish still ends the session but commits nothing for the step that
  * replaced its own. A ticker and a resume can both land on a step that has just ended, and a tap can
  * land just after a step ended by itself; without that, the second of either commits a step nobody
- * performed, a late Back undoes one nobody saw, and a late +30s stretches the round after a rest.
+ * performed, a late Back throws away the step just started, and a late +30s stretches the round
+ * after a rest.
  */
 sealed interface RunnerCommand {
     /** Log the set, Done, Skip, or log the interval: commit the step on screen and move on. */
@@ -276,7 +277,8 @@ fun reduceRunner(
             }
 
             is RunnerCommand.Prev -> {
-                if (command.visit == state.snapshot.visit) goPrev(state) else unchanged(state)
+                val aimed = command.visit == state.snapshot.visit
+                if (aimed) goPrev(state) else unchanged(state)
             }
 
             RunnerCommand.TogglePause -> {

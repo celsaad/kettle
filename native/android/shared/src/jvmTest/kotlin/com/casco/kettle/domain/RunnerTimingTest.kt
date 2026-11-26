@@ -397,9 +397,10 @@ class RunnerTimingTest {
         }
 
         /**
-         * Back tapped on a rest, landing after the rest ended by itself (#551): it undid the round
-         * under way, which nobody asked for. Remove the visit check on Prev in `reduceRunner` and
-         * this fails.
+         * Back tapped on a rest, landing after the rest ended by itself (#551): it threw away the
+         * round just started and went back to the rest. Nothing logged is undone either way, since a
+         * rest that ends by itself leaves no commit to take back. Remove the visit check on Prev in
+         * `reduceRunner` and this fails.
          */
         @Test
         fun `ignores a back aimed at a rest that has since ended`() {
@@ -412,6 +413,7 @@ class RunnerTimingTest {
 
             assertSame(roundTwo, runner.state)
             assertEquals(2, runner.index)
+            assertEquals(1L, runner.entry<SessionEntry.Hiit>("burpees")?.roundsCompleted)
         }
 
         /**

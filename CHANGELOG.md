@@ -40,6 +40,10 @@ here, next to what it describes.
   workout, Resume now picks it up where the timers would have reached by then, with every timed hold,
   round, minute and rest that ended along the way logged, each at its own length. Before, it moved
   on one step at most (#420).
+- **A late tap stays on its own step**: tapping Back, Undo, +30s or −15s just as a rest ends by
+  itself no longer lands on the step that follows it. Before, a late Back threw away the round
+  you'd just started and sent you back to the rest, and a late +30s stretched that round instead
+  of the rest (#551).
 
 ---
 

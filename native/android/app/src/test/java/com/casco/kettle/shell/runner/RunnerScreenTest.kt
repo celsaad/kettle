@@ -703,7 +703,10 @@ class RunnerScreenTest : RunnerScreenHarness() {
         val resources = compose.activity.resources
         val hold = buildSteps(Workout("w", "W", listOf(block(plank))), exercises).first() as RunnerStep.Hold
         assertEquals("Prancha, série 1 de 2, segure 30 segundos", resources.announcement(hold))
-        val resting = started(plan(block(squat))).advanced().after(RunnerCommand.AddRestSeconds(30.0))
+        val resting =
+            started(plan(block(squat))).advanced().let {
+                it.after(RunnerCommand.AddRestSeconds(30.0, it.snapshot.visit))
+            }
         assertEquals("Descanso, 90 segundos", resources.announcement(resting.snapshot.step!!))
         // A reps set says the reps it opened on, from last time, rather than the bottom of the range.
         val set = buildSteps(Workout("w", "W", listOf(block(bench))), exercises).first() as RunnerStep.Reps

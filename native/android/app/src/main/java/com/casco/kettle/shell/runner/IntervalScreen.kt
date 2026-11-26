@@ -233,9 +233,9 @@ private fun AmrapScreen(
             // Paused, Resume is the main action and the round to the side (#478), as every paused screen
             // has it (#421): a stopped clock has one thing to do next.
             if (context.paused) {
-                BottomRow(pauseAction(context), back = { context.send(RunnerCommand.Prev) }, side = roundDone)
+                BottomRow(pauseAction(context), back = { context.prev() }, side = roundDone)
             } else {
-                BottomRow(roundDone, back = { context.send(RunnerCommand.Prev) }, side = pauseAction(context))
+                BottomRow(roundDone, back = { context.prev() }, side = pauseAction(context))
             }
         },
     )

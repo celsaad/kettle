@@ -20,10 +20,10 @@ import org.json.JSONObject
  * runner on top that dropped every navigate after it.
  *
  * Nothing opens a session from here: a foreground service may only start from the visible runner, so
- * the script opens one with a navigate message, as a tap on Start would. And Advance and Finish take the
- * visit of the session as it stands ([RunnerHost.active]), unless `--el visit` names one: then the
- * engine refuses a stale Advance, and ends a stale Finish's session without logging the step on screen,
- * as it would a late tap, which is what lets the script check it does.
+ * the script opens one with a navigate message, as a tap on Start would. And advance, prev, add30 and
+ * finish take the visit of the session as it stands ([RunnerHost.active]), unless `--el visit` names
+ * one: then the engine refuses a stale Advance, Prev or +30s, and ends a stale Finish's session without
+ * logging the step on screen, as it would a late tap, which is what lets the script check it does.
  *
  * Debug only, and behind the same permission as `NavigateReceiver`. Both scripts parse `report`'s keys
  * and these command names, so a rename goes into both twins.
@@ -40,7 +40,7 @@ class RunnerCommandReceiver : BroadcastReceiver() {
                 }
 
                 "prev" -> {
-                    send(RunnerCommand.Prev)
+                    sendAimed(intent) { RunnerCommand.Prev(it) }
                 }
 
                 "pause" -> {
@@ -48,7 +48,7 @@ class RunnerCommandReceiver : BroadcastReceiver() {
                 }
 
                 "add30" -> {
-                    send(RunnerCommand.AddRestSeconds(REST_BUMP_SEC))
+                    sendAimed(intent) { RunnerCommand.AddRestSeconds(REST_BUMP_SEC, it) }
                 }
 
                 "finish" -> {

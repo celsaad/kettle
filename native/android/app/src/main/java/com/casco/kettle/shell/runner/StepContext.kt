@@ -107,6 +107,12 @@ class StepContext(
 
     /** Log, Done or Skip, aimed at the step on screen so a tap landing as it ends by itself does nothing. */
     fun advance() = send(RunnerCommand.Advance(snapshot.visit))
+
+    /** Back or Undo, aimed likewise: a late one would undo a step the user never saw (#551). */
+    fun prev() = send(RunnerCommand.Prev(snapshot.visit))
+
+    /** The rest's +30s and −15s, aimed likewise: a late one would stretch the round after it (#551). */
+    fun addRestSeconds(seconds: Double) = send(RunnerCommand.AddRestSeconds(seconds, snapshot.visit))
 }
 
 /** [view] read for its step screen. "Last time" and the PR marker read the log as it stood. */

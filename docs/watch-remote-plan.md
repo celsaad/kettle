@@ -117,17 +117,25 @@ flight. Every action is aimed at the step it was drawn for, and refused anywhere
   late tap from one session land in the next.
 - **The receiver** is a main-source, non-exported `BroadcastReceiver`. It parses the URI, drops a tap
   whose session isn't the running one, and sends the command aimed at the visit it carries. It never
-  reads the current visit at tap time (the debug `RunnerCommandReceiver` does, for its own reasons).
+  aims with the current visit at tap time (the debug `RunnerCommandReceiver` does, for its own
+  reasons). The one step command the engine doesn't aim, `SetRounds`, the receiver checks itself: it
+  compares the URI's visit with the running snapshot's and drops a mismatch, so a late "Round N done"
+  can't set the next AMRAP's rounds. That leaves a narrow window, since the snapshot it compares with
+  can lag the engine; aiming `SetRounds` in the engine (#516) closes it. Resume's `TogglePause` can't
+  be aimed by visit at all, since pausing doesn't move it; left as a toggle by decision
+  ([#549](https://github.com/celsaad/kettle/issues/549)).
 - **Actions are broadcasts, never `getService`**: `RunnerService.onStartCommand` enters the foreground
   on any intent before reading its action, so a late tap delivered to a stopped service would bring up
   a placeholder nothing stops. On API 31+ a broadcast can't start an activity, which is also what keeps
   a wrist tap from pulling the phone out of a pocket.
 
-**Engine change (prerequisite, `:shared`):** `Prev` becomes `Prev(visit)` and `AddRestSeconds` becomes
+**Engine change (prerequisite, `:shared`), landed in #553:** `Prev(visit)` and
 `AddRestSeconds(seconds, visit)`, refused when not aimed at the snapshot's visit, as `Advance` and
-`Finish` already are. The screen sends its current visit. Without it, a late Back undoes a step the user
-never saw, and a late +30s from a rest lands on the HIIT round, EMOM minute or AMRAP cap that follows.
-`SetRounds` is absolute, so a repeated "Round N done" is harmless; it is aimed all the same.
+`Finish` already are; the screen sends its current visit. Without it, a late Back threw away the step
+just started, and a late +30s from a rest landed on the HIIT round, EMOM minute or AMRAP cap that
+follows. `SetRounds` is still unaimed in the engine: on the card, the receiver's own visit check
+above covers "Round N done"; aiming it in the engine, which the screen needs, is on the follow-ups
+list.
 
 ## The status-bar chip
 

@@ -23,7 +23,6 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.casco.kettle.domain.RunnerCommand
 import com.casco.kettle.domain.RunnerStep
 import com.casco.kettle.shell.R
 import com.casco.kettle.shell.theme.KettleType
@@ -117,7 +116,7 @@ internal fun ClockRow(
     context: StepContext,
     exit: RowAction,
 ) {
-    BottomRow(pauseAction(context), back = { context.send(RunnerCommand.Prev) }, side = exit)
+    BottomRow(pauseAction(context), back = { context.prev() }, side = exit)
 }
 
 /**
@@ -166,13 +165,13 @@ internal fun RestScreen(context: StepContext) {
                 val width = Modifier.widthIn(min = REST_BUTTON_MIN_WIDTH)
                 OutlineButton(
                     stringResource(R.string.session_rest_minus15),
-                    { context.send(RunnerCommand.AddRestSeconds(-REST_CUT_SEC)) },
+                    { context.addRestSeconds(-REST_CUT_SEC) },
                     width,
                     look = ButtonLook.Compact,
                 )
                 OutlineButton(
                     stringResource(R.string.session_rest_add30),
-                    { context.send(RunnerCommand.AddRestSeconds(REST_BUMP_SEC)) },
+                    { context.addRestSeconds(REST_BUMP_SEC) },
                     width,
                     look = ButtonLook.Compact,
                 )
@@ -180,7 +179,7 @@ internal fun RestScreen(context: StepContext) {
         },
         controls = {
             if (logged != null) LoggedPanel(logged, context)
-            val back = if (logged == null) ({ context.send(RunnerCommand.Prev) }) else null
+            val back = if (logged == null) ({ context.prev() }) else null
             if (context.paused) {
                 BottomRow(pauseAction(context), back, side = skipAction(context))
             } else {

@@ -129,11 +129,13 @@ data class RunnerTransition(
 )
 
 /**
- * What the UI and the service ask of the engine. [Advance], [TimeUpdate] and [Finish] name the
- * [visit] they were aimed at. An Advance or TimeUpdate aimed at a step already left does nothing; a
- * Finish still ends the session but commits nothing for the step that replaced its own. A ticker and
- * a resume can both land on a step that has just ended, and a tap can land just after a step ended by
- * itself; without that, the second of either commits a step nobody performed.
+ * What the UI and the service ask of the engine. [Advance], [TimeUpdate], [Prev], [AddRestSeconds]
+ * and [Finish] name the [visit] they were aimed at. Any of them aimed at a step already left does
+ * nothing, except that a Finish still ends the session but commits nothing for the step that
+ * replaced its own. A ticker and a resume can both land on a step that has just ended, and a tap can
+ * land just after a step ended by itself; without that, the second of either commits a step nobody
+ * performed, a late Back throws away the step just started, and a late +30s stretches the round
+ * after a rest.
  */
 sealed interface RunnerCommand {
     /** Log the set, Done, Skip, or log the interval: commit the step on screen and move on. */
@@ -146,12 +148,16 @@ sealed interface RunnerCommand {
         val visit: Long,
     ) : RunnerCommand
 
-    data object Prev : RunnerCommand
+    /** Back, or Undo just after a logged set: retract the last commit and step back. */
+    data class Prev(
+        val visit: Long,
+    ) : RunnerCommand
 
     data object TogglePause : RunnerCommand
 
     data class AddRestSeconds(
         val seconds: Double,
+        val visit: Long,
     ) : RunnerCommand
 
     /**
@@ -270,8 +276,9 @@ fun reduceRunner(
                 timeUpdate(state, command.visit, now, context)
             }
 
-            RunnerCommand.Prev -> {
-                goPrev(state)
+            is RunnerCommand.Prev -> {
+                val aimed = command.visit == state.snapshot.visit
+                if (aimed) goPrev(state) else unchanged(state)
             }
 
             RunnerCommand.TogglePause -> {
@@ -279,7 +286,8 @@ fun reduceRunner(
             }
 
             is RunnerCommand.AddRestSeconds -> {
-                addRestSeconds(state, command.seconds, now)
+                val aimed = command.visit == state.snapshot.visit
+                if (aimed) addRestSeconds(state, command.seconds, now) else unchanged(state)
             }
 
             is RunnerCommand.Finish -> {

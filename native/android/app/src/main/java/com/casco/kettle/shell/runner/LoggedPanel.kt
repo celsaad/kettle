@@ -16,7 +16,6 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.unit.dp
 import com.casco.kettle.domain.LoggedUnit
-import com.casco.kettle.domain.RunnerCommand
 import com.casco.kettle.shell.R
 import com.casco.kettle.shell.theme.KettleType
 import com.casco.kettle.shell.theme.Spacing
@@ -30,7 +29,7 @@ import com.casco.kettle.shell.theme.Spacing
 internal fun LoggedPanel(
     logged: LoggedUnit,
     context: StepContext,
-) = LoggedPanel(LocalResources.current.loggedText(logged, context.units)) { context.send(RunnerCommand.Prev) }
+) = LoggedPanel(LocalResources.current.loggedText(logged, context.units)) { context.prev() }
 
 /** The panel over [logged]'s words, with [undo] for Undo: an AMRAP's round takes back only its count. */
 @Composable

@@ -42,7 +42,8 @@ internal class Runner(
     /** Log the set, Done, Skip or log the interval, aimed at the step on screen. */
     fun advance() = send(RunnerCommand.Advance(snapshot.visit))
 
-    fun prev() = send(RunnerCommand.Prev)
+    /** Back, aimed at the step on screen. */
+    fun prev() = send(RunnerCommand.Prev(snapshot.visit))
 
     /** Finish, aimed at the step on screen unless [visit] names an earlier one. */
     fun finish(visit: Long = snapshot.visit) = send(RunnerCommand.Finish(visit))

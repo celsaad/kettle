@@ -185,19 +185,11 @@ wanting states and assignees, it wants GitHub issues instead.
   decision log (lazy or paginated loading, or a small index file) still stands — explicitly *not*
   consolidating the per-session files.
 
-- **Drive a running session from the wrist.** Wear OS bridges phone notifications, action buttons
-  included, so an ongoing notification carrying Done / Back / +30s is a watch remote with no watch app,
-  no second APK and no sync layer. Full write-up and the deliberate scope cuts in
-  [`watch-remote-plan.md`](watch-remote-plan.md), which was written against RN's runner and
-  expo-notifications: since the flip release (#308) the ongoing notification is the service's own
-  (`RunnerNotifications.kt`) and the commands are the engine's, so its mechanics are re-planned
-  against those before anything is built. Two things worth knowing before opening it: the
-  standalone Wear OS app was costed and rejected because the library and the log are per-device
-  files, which makes a data-carrying watch a Bluetooth sync project, and an action has to arrive as
-  a broadcast rather than open an activity (the plan's `opensAppToForeground: false`), or every
-  wrist tap yanks the phone open. (The i18n break this used to carry a fix for — the
-  rest notification's hardcoded English — went with the timed-hold auto-end, which needed its own
-  notification copy and wasn't going to add a second hardcoded string beside the first.)
+- **Session controls: drive a running session from the wrist.** Specced and ready to build in
+  [`watch-remote-plan.md`](watch-remote-plan.md): actions on the runner's ongoing notification,
+  promoted to a Live Update, which a Wear OS 7 watch shows with no watch app, no second APK and no
+  sync layer. The engine change it depends on (`Prev` and `AddRestSeconds` aimed by visit) lands
+  first.
 
 - **Images on exercises — the half that is still open.** The bundled set shipped: every exercise the
   app itself ships — seeded, or in one of the bundled content packs — now carries a line drawing keyed

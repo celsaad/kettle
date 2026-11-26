@@ -1,231 +1,170 @@
-# Watch as a step controller — plan
+# Session controls — spec
 
-> **Not executed, and to be re-planned against the native runner when its work starts.** Nothing
-> below has shipped. It was written against the tree at `59a9663`, when the runner was React
-> Native's and its notifications were `expo-notifications`'. That runner went in the flip release
-> (#308) and React Native and Expo left the app at M7 (#357), so the body is left as written and
-> reads as reasoning, not as steps.
+> **Not executed; ready to build.** Action buttons on the runner's ongoing notification, promoted to a
+> Live Update so a Wear OS 7 watch shows them: a running session driven from the wrist with no watch
+> app and no data on the watch. Every decision here was made on the map
+> [Wayfinder: session controls on the notification (watch remote)](https://github.com/celsaad/kettle/issues/540),
+> and each section links the ticket that holds its reasoning; where this file and a ticket disagree,
+> the ticket is the record and this file is the bug. The design canvas linked from
+> [#544](https://github.com/celsaad/kettle/issues/544) is private and **predates the review in
+> [#549](https://github.com/celsaad/kettle/issues/549)**: where they differ (EMOM, AMRAP, Back/Undo),
+> this file wins.
 >
-> **What that superseded, by section:**
->
-> - **"What the remote can and cannot do"** cites RN's `use-session-runner.ts` for the command
->   surface. The commands are the engine's now (`RunnerEngine.kt` in `:shared`); the choice of three
->   buttons, and what stays off the wrist, is the part that carries.
-> - **"Platform facts, verified against the installed source"** is a reading of
->   `node_modules/expo-notifications` and `app.json`, neither of which exists. The native service
->   builds its own notifications (`RunnerNotifications.kt`), so each row wants checking against
->   that. Two are already different: the ongoing notification has a chronometer, which undercuts
->   the "no live ticking timer" rows here and in the out-of-scope list if Wear bridges it, and the
->   runner has channels of its own. `opensAppToForeground` is expo-notifications' name; the fact
->   under it, that an action must arrive as a broadcast and not open an activity, still decides the
->   feature. Its closing paragraph's "no JS runtime" and "don't build a foreground service" are
->   moot: a foreground service owns the session.
-> - **"The seam"**, and Phases 2 to 4 with it, design a module-level ref into a React hook
->   (`src/hooks/session-remote.ts`, a zustand alternative). There is no hook to reach: the service
->   owns the engine. The stale-tap guard is still wanted, in whatever shape that takes.
-> - **"Relationship to the existing rest notification"** and **"The i18n bug this work has to fix"**
->   describe RN code. The step-end alert is the service's, and its copy is in the locale bundles;
->   the hardcoded English went with the timed-hold auto-end.
-> - **"Why this shape rather than a real watch app"** stands, with one rewording: the storage is
->   per-device files whether or not `expo-file-system` writes them. The media-session alternative
->   it rejects was `expo-audio`'s service, which is gone.
-> - **"What the card shows"** starts from "no chronometer", which the native notification has, so
->   its choice of a static rest line for v1 is reopened rather than settled.
-> - **Phase 0** keeps its third question (do the actions bridge to Wear, and does a tap reach the
->   app without opening it). The first two were expo-notifications' and are known behaviour natively:
->   `notify(id)` replaces in place, and `NotificationCompat` actions render. **Phase 1**'s channel
->   exists already; only its importance and the copy want checking. The Settings toggle, "Testing"
->   and "Out of scope" carry.
->
-> **Every link in the body to a `src/...` file is dead**: those RN files are deleted.
->
-> **The first piece is already named.** Pause, Resume and Next on the ongoing notification were
-> deliberately left out of M6 (#296), which kept its builder a function of live state so actions
-> can be added later. Adding them is where this work starts.
+> This replaces a plan written against React Native's runner and `expo-notifications`; that version is
+> in git history, and the parts of its reasoning that still hold are folded in below.
 
-The watch never holds data. It holds no library, writes no session files, and has nothing to merge —
-it only drives the step the phone is already running. That constraint is the entire reason this is a
-few days of work instead of a few weeks, so it is the first thing to defend if the scope starts
-moving.
+**Session controls** are the buttons on the runner's ongoing notification. The phone's shade, its lock
+screen and a Wear OS 7 watch are three places they show up; describe the feature as session controls,
+never as a watch feature, since most people will meet them on a lock screen.
 
-**The transport is the Android notification.** Wear OS bridges phone notifications to the wrist
-automatically, action buttons included, so there is no watch app, no second APK, no Play track, no
-Wear quality review, and no Bluetooth sync layer. The whole feature lives in the phone codebase.
+## The transport
 
-## Why this shape rather than a real watch app
+([#541](https://github.com/celsaad/kettle/issues/541), [#543](https://github.com/celsaad/kettle/issues/543),
+[#545](https://github.com/celsaad/kettle/issues/545))
 
-A standalone Wear OS app was costed first and rejected for v1. Its expensive part is not the UI, it's
-that Kettle's storage is per-device `expo-file-system`: the watch has its own filesystem, so a watch
-that holds data needs the library pushed to it and sessions merged back, over the Wearable Data Layer
-— native Kotlin on both sides, no Expo module — plus a separately-versioned APK and a separate review.
-A cloud relay is not an escape hatch: "nothing may phone home" is a product claim backing the Play
-zero-data-collected declaration, not a preference.
+- **Wear doesn't bridge the notification as it is today.** Bridging skips ongoing notifications, and
+  Android marks every foreground-service notification non-clearable, which is skipped too.
+- **A Live Update does bridge.** Request promotion on the runner's own ongoing notification
+  (`setRequestPromotedOngoing(true)`, and `android.permission.POST_PROMOTED_NOTIFICATIONS` in the main
+  manifest). On a Wear OS 7 emulator it arrived with its text, three actions and a ticking chronometer;
+  taps advanced the phone without bringing the runner forward, locked or not; ending the session
+  cleared it from the wrist.
+- **Everywhere else it degrades with no code path of its own.** Below Android 16, or with Live Updates
+  turned off for Kettle, it stays an ordinary ongoing notification with the same actions in the shade
+  and on the lock screen.
+- **One notification, never two.** A second, ordinary card would reach watches older than Wear OS 7,
+  but it puts a second Kettle notification in every session on every phone; it is out of scope, and
+  returns only as a toggle-gated card if someone on an older watch asks.
+- **No Settings toggle** ([#542](https://github.com/celsaad/kettle/issues/542)): the ongoing
+  notification shows in every session already, and the actions add nothing intrusive.
+- The current notification meets every other promotion requirement (LOW channel, not colorized, no
+  custom view, a title, ongoing, chronometer allowed). Don't add `setColorized`: it blocks promotion.
 
-Reducing the watch to a remote deletes all of that at the cost of one real capability (a live ticking
-timer on the wrist) and one nice-to-have (heart rate, which needs Health Services and therefore a
-native watch app regardless).
+## What the card says
 
-Also considered and rejected: **hijacking the media session.** `expo-audio` already registers an
-`AudioControlsService` with `foregroundServiceType="mediaPlayback"`, and Wear shows transport controls
-for an active media session, so next/prev could map to `advance`/`goPrev` for almost nothing. Don't —
-it steals the media controls from whatever music the user is running the workout to, which is the
-common case, not the edge case.
+([#544](https://github.com/celsaad/kettle/issues/544))
 
-## What the remote can and cannot do
+**The step leads.** Title = the step: the exercise's name, verbatim (user data, never translated), or
+"Rest" or "Get ready". Text = one detail line, or nothing. **The workout name moves to the header**
+(`setSubText`), where it no longer costs the round face two lines: workout names in a real library run
+long enough that a workout-name title alone fills the wrist. Long exercise names are not truncated; the
+wrist card scrolls, and the timer may land below the fold on the longest ones.
 
-The runner's public surface already *is* the remote's vocabulary, verified at
-[`use-session-runner.ts:618-648`](../src/hooks/use-session-runner.ts#L618-L648):
+| Step | Title | Detail line | Chronometer |
+|---|---|---|---|
+| Count-in | "Get ready" | the first exercise's name | down |
+| Reps | exercise | set position · reps, and × weight when there is one | none |
+| Rest | "Rest" | "Next: <exercise>" (`session.header.next`) | down |
+| Hold | exercise | set position | up |
+| HIIT | exercise | round position | down |
+| EMOM | exercise | minute (or interval) position · target reps when there are some | down |
+| AMRAP | exercise | rounds counted so far | down to the cap |
+| Cardio | exercise | none | down with a duration, up without |
+| Paused | the step's title | "Paused" (`session.paused`) | none |
 
-- `advance()` — exported four times over as `doneSet`, `logSet`, `skipRest` and `logInterval`. **It
-  takes no arguments**; it reads `reps` / `weightKg` / `rpe` from runner state, which default to the
-  step's target. This is what makes a data-free remote coherent: "Done" from the wrist logs the
-  prescribed set.
-- `goPrev()` — undoes exactly one `advance()`, un-flushing what it wrote.
-- `addRestSeconds()`, `setPaused()`, `finishSession()`.
+- **Done logs what the card shows** ([#542](https://github.com/celsaad/kettle/issues/542)): the reps
+  line reads the live `snapshot.inputs`, which a phone edit updates, never a recomputed seed. Format
+  weight only through `toDisplayWeight`, and counts through `pluralText`.
+- **Inside a circuit**, the circuit's round replaces the set or round position, never both, as the
+  screen does.
+- **Reuse before adding keys.** `preview.set` and `preview.roundOf` already say "Set 2 of 4" and
+  "Round 3 of 8"; `RunnerText.kt`'s `reps()` and `weightText()` already pluralize and convert;
+  `session.amrap.rounds` is the round count. Any key that is still new goes into `en`, `pt` and `ja`,
+  arguments in sorted placeholder order. `session.notification.setPosition` and
+  `session.notification.paused` go dead and leave all three bundles.
 
-So the wrist gets three buttons: **Done / Next**, **Back**, **+30s**. Deliberately not on the wrist:
+## The actions
 
-- **Any numeric edit** (reps, weight, RPE). That is the "no data on the watch" line, and it's also
-  where the notification transport has nothing to offer — `NotificationAction.textInput` exists but
-  prompting for a typed rep count on a watch is worse than reaching for the phone.
-- **`finishSession()`**, which is destructive and has no confirm affordance in a notification. A
-  mis-tap on the wrist would end a workout with no undo.
-- **Pause.** Available and harmless, but three buttons is already the practical limit of what fits on
-  a bridged notification card; pause loses to `+30s`, which is the one people actually reach for mid-rest.
+([#542](https://github.com/celsaad/kettle/issues/542), [#544](https://github.com/celsaad/kettle/issues/544),
+[#549](https://github.com/celsaad/kettle/issues/549))
 
-## Platform facts, verified against the installed source
+Labels are the runner's own keys, so the actions add no strings, and Voice Control hears the same words
+on the phone and the wrist.
 
-These were read out of `node_modules/expo-notifications` rather than the docs, because two of them
-contradict the docs. Re-check them if the SDK moves.
+| Step | Actions |
+|---|---|
+| Count-in | none |
+| Reps | Log set (`session.reps.logSet`), Back |
+| Rest | Skip rest (`session.rest.skip`), Back, +30s (`session.rest.add30`) |
+| Hold, HIIT, cardio | Done (`session.done`), Back |
+| EMOM | Back only: the minute ends on its clock and logs the reps the card shows. The screen's Done (rest out the minute) and Skip stay on the phone |
+| AMRAP | Round N done (`session.amrap.roundDone`, sending `SetRounds(n)`), Back. No Done: the cap ends it |
+| Paused | Resume (`session.resume`) only |
 
-| Fact | Where | Consequence |
-|---|---|---|
-| `NotificationRequestInput.identifier?: string` exists | `Notifications.types.d.ts:585-589` | A stable id per session, so each step *replaces* the card instead of stacking a new one |
-| `categoryIdentifier` is tagged `@platform ios` in the types but **Android implements it** | `ArgumentsNotificationContentBuilder.java:142`, `ExpoNotificationBuilder.kt:39-74` | Action buttons do work on Android. The doc tag is wrong; the field sits on the shared `NotificationContentInput`, so typecheck passes anyway |
-| Actions are built as `NotificationCompat.Action` | `ExpoNotificationBuilder.kt:77-80` | This is precisely the class Wear OS bridges to the wrist — the reason no watch code is needed |
-| `opensAppToForeground: false` → `PendingIntent.getBroadcast`, no activity. `true` (**the default**) on API 31+ routes through `NotificationForwarderActivity`, which calls `openAppToForeground` | `NotificationsService.kt:478-489`, `NotificationForwarderActivity.kt` | **The single most important flag in the feature.** Left at its default, every wrist tap yanks the phone out of your pocket and onto the session screen |
-| No chronometer / `usesChronometer` binding anywhere in the module | — | No live ticking countdown on the wrist. Shapes the content design below |
-| Nothing in `src/` calls `setNotificationChannelAsync`, and the `app.json` plugin block sets only `icon` and `color` | `app.json`, grep over `src/` | Every step update would land on the default channel at default importance — a heads-up card and a **wrist buzz per step**. A dedicated channel is not optional polish |
+- **Back** reads **Undo** (`session.undo`) on the step right after a logged set, where it retracts that
+  set (`RunnerView.Running.logged` is set); **Back** (`session.prev`) elsewhere. Same command.
+- **Back is left off where there is nothing to go back to** (the first step): a notification action
+  can't be disabled, and one that does nothing is worse than none.
+- **+30s only on a rest**, matching the runner screen, though the engine would take it on a countdown
+  interval.
+- **Never on the card:** reps/weight/RPE editing (no data on the watch) and Finish (no confirm, no
+  undo).
 
-One consequence worth stating plainly rather than burying: with `opensAppToForeground: false` the tap
-arrives as a broadcast, and **if the app process is dead there is no JS runtime to receive it, so the
-tap is silently dropped.** That is the safe direction — a lost tap, never a wrong advance — and during
-a session the process is alive anyway (keep-awake is held, audio is initialised). Accept it; don't
-build a foreground service to work around it in v1.
+## Aiming every tap
 
-## Design
+([#549](https://github.com/celsaad/kettle/issues/549))
 
-### The seam
+A tap can arrive late: the wrist card lags the phone, and a rest can end by itself while a tap is in
+flight. Every action is aimed at the step it was drawn for, and refused anywhere else.
 
-The problem to solve is structural, not algorithmic: the response listener is module-level and global,
-while the runner is a hook owned by the session screen — and `use-session-runner.ts` is the file
-AGENTS.md flags as high-risk and make-or-break.
+- **The aim lives in the intent's identity**, not its extras: a broadcast `PendingIntent` whose data URI
+  carries the session and the visit, e.g. `kettle:session/<sessionId>/<visit>/<cmd>`. Extras aren't
+  part of a `PendingIntent`'s identity, so with a fixed request code and `FLAG_UPDATE_CURRENT` every
+  re-post rewrites the visit inside the token an older card still holds, and a late tap arrives
+  aimed at the current step. The spike built them that way, which is why its taps were all accepted
+  and refusal was never exercised. `openRunner()` in `RunnerService.kt` is the pattern *not* to copy.
+- **The session id is part of the aim**: `visit` restarts at 0 in every session, so a visit alone lets a
+  late tap from one session land in the next.
+- **The receiver** is a main-source, non-exported `BroadcastReceiver`. It parses the URI, drops a tap
+  whose session isn't the running one, and sends the command aimed at the visit it carries. It never
+  reads the current visit at tap time (the debug `RunnerCommandReceiver` does, for its own reasons).
+- **Actions are broadcasts, never `getService`**: `RunnerService.onStartCommand` enters the foreground
+  on any intent before reading its action, so a late tap delivered to a stopped service would bring up
+  a placeholder nothing stops. On API 31+ a broadcast can't start an activity, which is also what keeps
+  a wrist tap from pulling the phone out of a pocket.
 
-**Proposal: `src/hooks/session-remote.ts`**, a module holding a ref to the live runner's command
-handlers. The session screen registers on mount and clears on unmount; the notification listener reads
-the ref and calls through. The runner exports what it already exports and barely changes.
+**Engine change (prerequisite, `:shared`):** `Prev` becomes `Prev(visit)` and `AddRestSeconds` becomes
+`AddRestSeconds(seconds, visit)`, refused when not aimed at the snapshot's visit, as `Advance` and
+`Finish` already are. The screen sends its current visit. Without it, a late Back undoes a step the user
+never saw, and a late +30s from a rest lands on the HIIT round, EMOM minute or AMRAP cap that follows.
+`SetRounds` is absolute, so a repeated "Round N done" is harmless; it is aimed all the same.
 
-Rejected alternative: a zustand slice. Commands are transient events, not state, and a store write
-would re-render the session screen on every wrist tap for nothing.
+## The status-bar chip
 
-**Stale-tap guard.** Stamp each notification's `data` with `{ sessionStartedAt, stepIndex }`; the
-handler drops any response whose `stepIndex` doesn't match the runner's current index. This closes the
-only data-integrity risk in the feature — a queued or delayed tap becoming a double-advance — and it
-is about ten lines. Do it in the same phase as the seam, not as a follow-up.
+([#544](https://github.com/celsaad/kettle/issues/544))
 
-### What the card shows
-
-No chronometer means the body is static for the life of a step. Per kind, keyed off the same data
-`previewFor` already assembles: the exercise name (never translated — it's user data) as title, the
-target as body (`Set 2 of 4 · 12 reps`). Rest is the awkward one, and there are two options:
-
-- **(a) static `Rest · 60s`**, leaning on the existing scheduled rest-complete notification for the
-  end cue. Zero extra cost, and it matches what that fallback already does.
-- **(b) re-present every 10s** for a coarse countdown. Costs a notification write per 10s and risks a
-  wrist buzz per write even on a silent channel.
-
-**Take (a) for v1.** If the wrist ends up feeling dead during rests, (b) is a contained follow-up.
-
-### Relationship to the existing rest notification
-
-[`use-session-runner.ts:504-525`](../src/hooks/use-session-runner.ts#L504-L525) stays as-is — it does a
-different job (a *scheduled future* cue, not a live card). But it must move onto the new channel with
-everything else, or the two notifications will have different buzz behaviour for no reason the user
-can see.
-
-## The i18n bug this work has to fix on the way past
-
-[`use-session-runner.ts:511`](../src/hooks/use-session-runner.ts#L511) passes the literals
-`'Rest complete'` and `` `${workout.name} · back to work` `` straight into the notification. Those are
-user-facing strings outside the locale bundles — against the house rule, and invisible to the suite
-because no test drives that path in `pt`. This plan roughly triples the notification copy surface, so
-fix it in the same PR rather than widening a known break. Budget ~10 new keys, in **both** `en.json`
-and `pt.json`, which are kept at exact parity by hand.
-
-## Phases
-
-Each phase is independently verifiable, and phase 0 exists because two of its three answers would
-change the design rather than just the code.
-
-**Phase 0 — spike (half a day, throwaway branch).** Three questions, in order of how much damage a
-"no" does:
-
-1. Does re-scheduling with the same `identifier` **replace** the card on Android, or stack a second
-   one? The type permits the id; replace-in-place is inferred from Android's `notify(id)` semantics and
-   has not been run. A "no" means rethinking the whole update model.
-2. Do a JS-registered category's actions actually render on Android, given the `@platform ios` tag?
-   The native source says yes; confirm it rather than trusting a code read.
-3. On a paired Wear OS emulator, do those actions appear on the wrist, and does tapping one with
-   `opensAppToForeground: false` reach JS **without** opening the phone?
-
-(3) needs a phone AVD + Wear AVD pair, which is the only unusual setup cost in the whole plan.
-
-**Phase 1 — channel and i18n groundwork.** A dedicated LOW-importance channel with no vibration and
-no sound; move the existing rest notification onto it; key the two hardcoded strings above.
-
-**Phase 2 — the seam.** `session-remote.ts`, registration from the session screen, the stale-tap
-stamp and guard. No notification changes yet; testable on its own.
-
-**Phase 3 — the ongoing card.** A pure `step → { title, body, data }` builder, plus the present/update/
-dismiss lifecycle tied to session start, step change and finish. Put the builder in a pure module in
-the style of `session-steps.ts` — no native imports — or it can't be tested.
-
-**Phase 4 — the actions.** Category registration, `opensAppToForeground: false`, the listener wired to
-the seam.
-
-**Phase 5 — the Settings toggle.** A permanent ongoing notification is intrusive for the majority who
-have no watch. **Default it off**, one switch under Settings, described as what it is ("Show session
-controls in the notification shade") rather than as a watch feature — it's equally useful on a phone
-lock screen, and describing it as "watch" would puzzle everyone without one.
+A promoted notification gets a chip in the Android 16+ status bar: the chronometer for rest, hold,
+count-in and the countdown intervals, and `setShortCriticalText` otherwise: "Set 2/4" on reps (one new
+key, kept to about 7 characters in every locale) and "Paused" while paused. Check both in pt and ja on
+a device; the review flagged pt's "Série 2/4" as over the length the chip guarantees, and that was
+left for the device. The system draws the chip, so its colour isn't Kettle's to set.
 
 ## Testing
 
-Testable in `:app`'s Robolectric tests, and worth it: the seam (register/clear, and a stale stamp being rejected — prove
-that one fails against the bug it pins, per the house rule), the pure content builder, and the copy,
-by driving a session in `pt`. An English-locale assertion cannot catch a hardcoded English string,
-which is exactly how line 511 shipped.
-
-Not testable there, so a manual checklist on the AVD pair: the card appears on the wrist, the three
-buttons appear, a tap advances the phone **without** foregrounding it, the card replaces rather than
-stacks across a whole workout, the wrist doesn't buzz per step, and the card is gone after
-`finishSession`.
+- **`:shared`**: `Prev(visit)` and `AddRestSeconds(seconds, visit)` refused when stale, each proven
+  against the bug it pins: a late Back after a rest ends by itself, and a late +30s landing on a HIIT
+  round.
+- **`:app`** (`RunnerNotificationsTest`, Robolectric): title, detail and actions per step kind, Undo
+  versus Back, Back absent on the first step, EMOM and AMRAP actions, the intent URIs carrying session
+  and visit, and the receiver dropping a foreign session or a stale visit. Drive the copy in `pt`
+  (`@Config(qualifiers = "pt")`): an English assertion can't catch a hardcoded English string.
+- **`scripts/session-check.sh` and `.ps1`**: they parse the ongoing notification's title and text from
+  `dumpsys notification`, so update both twins for the step-first title, and add a check that fires a
+  superseded card's intent after the step has moved and confirms the session didn't.
+- **On a Wear OS 7 emulator paired with the phone AVD**: the card on the wrist with its actions, a tap
+  advancing the phone without foregrounding it (locked and unlocked), the chronometer ticking, no buzz
+  per step, the card gone after the session ends. **Pairing trap:** nothing bridges until the Wear OS
+  companion's listener has notification access, which emulator pairing can leave off:
+  `adb shell "cmd notification allow_listener com.google.android.apps.wear.companion/com.google.android.libraries.wear.companion.notification.service.CompanionNotificationListenerService"`.
 
 ## Out of scope, deliberately
 
-Named here so they're decisions rather than omissions:
-
-- No watch app, no APK, no Play track, no Wear quality review, no Data Layer.
-- No library or session data on the watch, in either direction.
-- No rep / weight / RPE editing, and no finish-session, from the wrist.
-- No live ticking timer — a hard platform limit of this transport, not a cut.
-- No heart rate; Health Services needs a native watch app.
-- **Android only.** Apple Watch bridges notifications too, but Play-only is the current distribution
-  call and the iOS action and audio-session behaviour differ enough that designing for both here would
-  be speculative.
-
-## If it works, what it's worth
-
-The seam and the stale-tap guard are the same two pieces a real Wear OS app would sit on; only the
-transport would change. So the cheap version is a probe, not a dead end — it answers whether driving a
-session from the wrist is something you actually reach for, in days rather than the weeks the
-standalone app would cost to find out the same thing.
+- A standalone Wear OS app: data on the watch means syncing the library and the log over the Data
+  Layer, a second APK and Wear review. Heart rate (Health Services) needs one, so it's out too.
+- The second, ordinary card for watches older than Wear OS 7 (above).
+- Apple Watch: parked in the iOS map's fog until there's an iOS runner to design against.
+- No cloud relay of any kind: nothing may phone home.
+- From the review, by decision ([#549](https://github.com/celsaad/kettle/issues/549)): Resume as a
+  toggle, the card lagging rapid input edits, Log set or Done on the last step finishing the session,
+  the cardio distance on the card, and the edge cases a builder settles in passing (a parked ad-hoc
+  session, an EMOM without target reps, a rest with nothing after it).

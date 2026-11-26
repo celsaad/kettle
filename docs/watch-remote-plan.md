@@ -1,6 +1,6 @@
 # Session controls — spec
 
-> **Not executed; ready to build.** Action buttons on the runner's ongoing notification, promoted to a
+> **Built (#552); its Wear OS 7 device checks, under Testing, are the maintainer's.** Action buttons on the runner's ongoing notification, promoted to a
 > Live Update so a Wear OS 7 watch shows them: a running session driven from the wrist with no watch
 > app and no data on the watch. Every decision here was made on the map
 > [Wayfinder: session controls on the notification (watch remote)](https://github.com/celsaad/kettle/issues/540),

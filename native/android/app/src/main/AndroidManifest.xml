@@ -29,6 +29,12 @@
         android:name="android.permission.HIGH_SAMPLING_RATE_SENSORS"
         tools:ignore="HighSamplingRate" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <!--
+      Session controls (docs/watch-remote-plan.md): the runner's ongoing notification asks to be a Live
+      Update, which is what bridges it to a Wear OS 7 watch. Install-time, no prompt; the user can turn
+      Live Updates off for Kettle, and the notification then stays as it was, actions and all.
+    -->
+    <uses-permission android:name="android.permission.POST_PROMOTED_NOTIFICATIONS" />
 
     <queries>
         <intent>
@@ -107,6 +113,10 @@
         <!-- The rest-day reminder (#236): its alarm and its reschedule after a reboot. -->
         <receiver
             android:name=".reminder.RestDayReminderReceiver"
+            android:exported="false" />
+        <!-- The session controls' taps, from the notification's own PendingIntents and nowhere else. -->
+        <receiver
+            android:name=".runner.SessionControlReceiver"
             android:exported="false" />
         <receiver
             android:name=".reminder.RestDayReminderBootReceiver"

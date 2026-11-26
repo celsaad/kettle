@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Runs the native runner's repeatable device checks unattended against com.casco.kettle.dev (#315):
-# leaving the count-in, a stale advance, cue cadence, the step-end alert's gating and content, the
-# sounds preference, notifications denied, process death, and a rest's timing with the screen off,
-# then the finish path. Each check prints PASS or FAIL on its own line. session-check.ps1 is its twin
+# leaving the count-in, a stale advance and a superseded card's tap, cue cadence, the step-end alert's
+# gating and content, the sounds preference, notifications denied, process death, and a rest's timing
+# with the screen off, then the finish path. Each check prints PASS or FAIL on its own line. session-check.ps1 is its twin
 # for Windows, step for step; the two change together, and the test library they plant is
 # session-check-library.yaml.
 #
@@ -315,6 +315,13 @@ answer=$([ -n "$visit" ] && rc advance --el visit "$visit")
 sleep 1
 [ "$answer" = ok ] && [ "$(step_index)" = 1 ]
 check 'an advance carrying the last visit is refused' $? "answer '$answer', on step $(step_index)"
+# The session-control button a card drawn for the set carries, fired once the session has left the set:
+# delivered through the notification's own tap handling, and the step doesn't move.
+session=$(field "$first" sessionId)
+answer=$([ -n "$visit" ] && rc tap --es uri "kettle://session-control/$session/$visit/prev")
+sleep 1
+[ "$answer" = ok ] && [ "$(step_index)" = 1 ]
+check "a superseded card's Back is refused" $? "answer '$answer', on step $(step_index)"
 close_session
 
 step 'Cue cadence, alert gating and content, sounds on'

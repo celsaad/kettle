@@ -3,9 +3,9 @@
   Runs the native runner's repeatable device checks unattended against com.casco.kettle.dev (#315).
 
 .DESCRIPTION
-  Leaving the count-in, a stale advance, cue cadence, the step-end alert's gating and content, the
-  sounds preference, notifications denied, process death, and a rest's timing with the screen off,
-  then the finish path. Each check prints PASS or FAIL on its own line.
+  Leaving the count-in, a stale advance and a superseded card's tap, cue cadence, the step-end alert's
+  gating and content, the sounds preference, notifications denied, process death, and a rest's timing
+  with the screen off, then the finish path. Each check prints PASS or FAIL on its own line.
 
   The twin of session-check.sh, step for step: the two change together, and that file's header is
   the reference for what this needs, what it reads as evidence, its caveats, and how it leaves the
@@ -278,6 +278,12 @@ try {
   Start-Sleep -Seconds 1
   $at = StepIndex
   Check 'an advance carrying the last visit is refused' ($answer -eq 'ok' -and $at -eq 1) "answer '$answer', on step $at"
+  # The session-control button a card drawn for the set carries, fired once the session has left the set:
+  # delivered through the notification's own tap handling, and the step doesn't move.
+  $answer = if ($first) { Rc tap --es uri "kettle://session-control/$($first.sessionId)/$($first.visit)/prev" } else { '' }
+  Start-Sleep -Seconds 1
+  $at = StepIndex
+  Check "a superseded card's Back is refused" ($answer -eq 'ok' -and $at -eq 1) "answer '$answer', on step $at"
   CloseSession
 
   Step 'Cue cadence, alert gating and content, sounds on'

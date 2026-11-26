@@ -334,9 +334,8 @@
       "cuesChannel": "ワークアウトの合図",
       "ongoingChannel": "ワークアウト中",
       "getReady": "準備してください",
+      "chipSet": "{{index}}/{{total}}セット",
       "rest": "休憩",
-      "paused": "{{step}} · 一時停止中",
-      "setPosition": "{{step}} · {{total}}セット中{{index}}セット目",
       "intervalTitle": "インターバル終了",
       "timeUpTitle": "時間です",
       "workoutComplete": "ワークアウト完了"

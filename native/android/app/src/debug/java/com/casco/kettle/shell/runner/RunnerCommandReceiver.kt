@@ -3,6 +3,7 @@ package com.casco.kettle.shell.runner
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import com.casco.kettle.domain.RunnerCommand
 import org.json.JSONObject
 
@@ -13,7 +14,10 @@ import org.json.JSONObject
  *     adb shell am broadcast --es cmd report \
  *         -n com.casco.kettle.dev/com.casco.kettle.shell.runner.RunnerCommandReceiver
  *
- * `cmd` is one of advance, prev, pause, add30, finish, visible (with `--ez value`) or report. The
+ * `cmd` is one of advance, prev, pause, add30, finish, tap (with `--es uri`), visible (with `--ez value`)
+ * or report. `tap` hands a session-control URI to what the notification's buttons reach
+ * ([sendSessionTap]), answering ok or dropped, so the script can fire the URI a superseded card would
+ * carry and check the session doesn't move: a non-exported receiver can't be reached from adb. The
  * answer comes back as the broadcast's result data, which `am broadcast` prints. There's no Done or
  * leave: each also closes the runner's route, which only the screen can, so the script presses Back,
  * which is Done on the completion and leaves a count-in. Dismissing from here alone left an empty
@@ -53,6 +57,10 @@ class RunnerCommandReceiver : BroadcastReceiver() {
 
                 "finish" -> {
                     sendAimed(intent) { RunnerCommand.Finish(it) }
+                }
+
+                "tap" -> {
+                    if (sendSessionTap(intent.getStringExtra("uri")?.let(Uri::parse))) "ok" else "dropped"
                 }
 
                 "visible" -> {
@@ -117,5 +125,3 @@ class RunnerCommandReceiver : BroadcastReceiver() {
             .toString()
     }
 }
-
-private const val REST_BUMP_SEC = 30.0

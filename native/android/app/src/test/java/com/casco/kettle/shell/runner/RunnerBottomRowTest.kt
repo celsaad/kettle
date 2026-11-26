@@ -35,7 +35,7 @@ class RunnerBottomRowTest : RunnerScreenHarness() {
         button("Registrar série").performClick()
         assertEquals(RunnerCommand.Advance(FIRST_VISIT), sent.last())
         button("Voltar").assertIsTarget().performClick()
-        assertEquals(RunnerCommand.Prev, sent.last())
+        assertEquals(RunnerCommand.Prev(FIRST_VISIT), sent.last())
     }
 
     @Test
@@ -45,7 +45,10 @@ class RunnerBottomRowTest : RunnerScreenHarness() {
         button("Pausar").performClick()
         button("Voltar").performClick()
         button("Concluir").assertIsTarget().performClick()
-        assertEquals(listOf(RunnerCommand.TogglePause, RunnerCommand.Prev, RunnerCommand.Advance(FIRST_VISIT)), sent)
+        assertEquals(
+            listOf(RunnerCommand.TogglePause, RunnerCommand.Prev(FIRST_VISIT), RunnerCommand.Advance(FIRST_VISIT)),
+            sent,
+        )
     }
 
     // At 200% text a paused hold's "Voltar", "Continuar" and "Concluir" can't share one line, and the
@@ -96,28 +99,30 @@ class RunnerBottomRowTest : RunnerScreenHarness() {
         compose.onNodeWithText("restantes", substring = true).assertDoesNotExist()
         button("Pausar").assertDoesNotExist()
         button("+30s").performClick()
-        assertEquals(RunnerCommand.AddRestSeconds(30.0), sent.last())
+        assertEquals(RunnerCommand.AddRestSeconds(30.0, resting.snapshot.visit), sent.last())
         button("Pular descanso").performClick()
         assertEquals(RunnerCommand.Advance(resting.snapshot.visit), sent.last())
     }
 
     @Test
     fun `straight after a set the rest names it with Undo, and has no Back beside it`() {
-        show(running(plan(block(squat)), started(plan(block(squat))).advanced()))
+        val resting = started(plan(block(squat))).advanced()
+        show(running(plan(block(squat)), resting))
         // One line of prose, title and value together (#469): two Texts split into columns at 200%.
         compose.onNodeWithText("Registrado série 1 · 5 × 60 kg").assertExists()
         button("Voltar").assertDoesNotExist()
         button("Desfazer").assertIsTarget().performClick()
-        assertEquals(RunnerCommand.Prev, sent.last())
+        assertEquals(RunnerCommand.Prev(resting.snapshot.visit), sent.last())
     }
 
     @Test
     fun `a rest with nothing to undo has Back in Undo's place`() {
-        show(running(plan(block(squat)), started(plan(block(squat))).advanced(), restored = true))
+        val resting = started(plan(block(squat))).advanced()
+        show(running(plan(block(squat)), resting, restored = true))
         button("Desfazer").assertDoesNotExist()
         compose.onNodeWithText("Registrado", substring = true).assertDoesNotExist()
         button("Voltar").performClick()
-        assertEquals(RunnerCommand.Prev, sent.last())
+        assertEquals(RunnerCommand.Prev(resting.snapshot.visit), sent.last())
     }
 
     // A resume after process death lands paused (#307), and a rest has no Pause of its own: frozen with

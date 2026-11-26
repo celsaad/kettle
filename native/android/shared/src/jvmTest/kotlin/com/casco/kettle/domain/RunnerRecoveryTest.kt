@@ -339,7 +339,7 @@ class RunnerRecoveryTest {
             val runner = Runner(workoutOf(single("pullups")))
             runner.advance()
             val resumed = resumeRunner(promptFor(runner), runner.now)
-            val back = reduceRunner(resumed.state, RunnerCommand.Prev, runner.now)
+            val back = reduceRunner(resumed.state, RunnerCommand.Prev(resumed.state.snapshot.visit), runner.now)
 
             assertEquals(
                 1,

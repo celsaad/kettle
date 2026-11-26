@@ -36,7 +36,7 @@ class PendingAdoptTest {
             ),
         )
         assertFalse(writesLibraryOn(pending, RunnerCommand.Advance(pending.visit + 1), view(picked)))
-        assertFalse(writesLibraryOn(pending, RunnerCommand.Prev, view(picked)))
+        assertFalse(writesLibraryOn(pending, RunnerCommand.Prev(pending.visit), view(picked)))
         assertFalse(writesLibraryOn(null, RunnerCommand.Advance(pending.visit), view(picked)))
         assertFalse(
             writesLibraryOn(pending.copy(exerciseId = "dips"), RunnerCommand.Advance(pending.visit), view(picked)),

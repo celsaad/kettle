@@ -49,7 +49,12 @@ class RunnerNotificationsTest {
                     T0 + 5000,
                 )
             }
-        val longer = reduceRunner(logged.state, RunnerCommand.AddRestSeconds(30.0), T0 + 5000)
+        val longer =
+            reduceRunner(
+                logged.state,
+                RunnerCommand.AddRestSeconds(30.0, logged.state.snapshot.visit),
+                T0 + 5000,
+            )
 
         assertEquals(
             OngoingContent("Morning", "Rest", Chronometer(T0 + 5000 + 120_000, countDown = true)),

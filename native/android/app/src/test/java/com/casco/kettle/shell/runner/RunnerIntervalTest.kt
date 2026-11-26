@@ -111,7 +111,7 @@ class RunnerIntervalTest : RunnerScreenHarness() {
         show(running(amrap))
         button("Aumentar Reps na rodada 1").assertDoesNotExist()
         // Ten minutes capped down to one, as a minute left on the clock.
-        show(running(amrap, started(amrap).after(RunnerCommand.AddRestSeconds(-540.0))))
+        show(running(amrap, started(amrap).let { it.after(RunnerCommand.AddRestSeconds(-540.0, it.snapshot.visit)) }))
         button("Aumentar Reps na rodada 1").performClick()
         assertEquals(RunnerCommand.SetExtraReps(1), sent.last())
     }

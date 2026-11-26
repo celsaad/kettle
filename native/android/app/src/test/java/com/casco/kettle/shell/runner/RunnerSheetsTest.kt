@@ -34,11 +34,12 @@ class RunnerSheetsTest : RunnerScreenHarness() {
     @Test
     fun `a rest's −15s takes fifteen seconds off, beside +30s`() {
         val reps = plan(block(squat))
-        show(running(reps, started(reps).advanced()))
+        val resting = started(reps).advanced()
+        show(running(reps, resting))
         button("−15s").assertIsTarget().performClick()
-        assertEquals(RunnerCommand.AddRestSeconds(-15.0), sent.last())
+        assertEquals(RunnerCommand.AddRestSeconds(-15.0, resting.snapshot.visit), sent.last())
         button("+30s").performClick()
-        assertEquals(RunnerCommand.AddRestSeconds(30.0), sent.last())
+        assertEquals(RunnerCommand.AddRestSeconds(30.0, resting.snapshot.visit), sent.last())
     }
 
     @Test

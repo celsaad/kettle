@@ -396,6 +396,41 @@ class RunnerTimingTest {
             assertEquals(1L, runner.entry<SessionEntry.Hiit>("burpees")?.roundsCompleted)
         }
 
+        /**
+         * Back tapped on a rest, landing after the rest ended by itself (#551): it undid the round
+         * under way, which nobody asked for. Remove the visit check on Prev in `reduceRunner` and
+         * this fails.
+         */
+        @Test
+        fun `ignores a back aimed at a rest that has since ended`() {
+            val runner = Runner(workoutOf(single("burpees")))
+            runner.tick(40)
+            val rest = runner.snapshot.visit
+            runner.tick(20)
+            val roundTwo = runner.state
+            runner.send(RunnerCommand.Prev(rest))
+
+            assertSame(roundTwo, runner.state)
+            assertEquals(2, runner.index)
+        }
+
+        /**
+         * +30s tapped on a rest, landing after it ended by itself (#551): it stretched the 40 s round
+         * that followed to 70 s. Remove the visit check on AddRestSeconds in `reduceRunner` and this
+         * fails.
+         */
+        @Test
+        fun `ignores a +30s aimed at a rest that has since ended`() {
+            val runner = Runner(workoutOf(single("burpees")))
+            runner.tick(40)
+            val rest = runner.snapshot.visit
+            runner.tick(20)
+            runner.send(RunnerCommand.AddRestSeconds(30.0, rest))
+
+            assertEquals(2, runner.index)
+            assertEquals(40.0, runner.snapshot.clock.stepEndSec)
+        }
+
         @Test
         fun `completes once when the last step ends in that same batch`() {
             val runner = Runner(workoutOf(single("burpees")))
@@ -475,7 +510,7 @@ class RunnerTimingTest {
         @Test
         fun `keeps its own end when +30s is pressed`() {
             val runner = Runner(workoutOf(single("lsit")))
-            runner.send(RunnerCommand.AddRestSeconds(30.0))
+            runner.send(RunnerCommand.AddRestSeconds(30.0, runner.snapshot.visit))
             runner.tick(15)
 
             assertTrue(runner.step is RunnerStep.Rest)
@@ -641,7 +676,7 @@ class RunnerTimingTest {
         fun `moves only a countdown's end, never a hold's or a reps step's`() {
             val runner = Runner(workoutOf(single("lsit"), single("pullups")))
             val hold = runner.state
-            runner.send(RunnerCommand.AddRestSeconds(30.0))
+            runner.send(RunnerCommand.AddRestSeconds(30.0, runner.snapshot.visit))
             assertSame(hold, runner.state)
             assertEquals(15.0, runner.snapshot.clock.stepEndSec)
         }
@@ -650,7 +685,7 @@ class RunnerTimingTest {
         fun `extends the countdown`() {
             val runner = Runner(workoutOf(single("burpees")))
             runner.tick(10)
-            runner.send(RunnerCommand.AddRestSeconds(30.0))
+            runner.send(RunnerCommand.AddRestSeconds(30.0, runner.snapshot.visit))
 
             assertEquals(70.0, runner.snapshot.clock.stepEndSec)
             assertEquals(60.0, runner.remaining())
@@ -669,7 +704,7 @@ class RunnerTimingTest {
             val runner = Runner(workoutOf(single("burpees")))
             runner.tick(40)
             runner.tick(18)
-            runner.send(RunnerCommand.AddRestSeconds(-15.0))
+            runner.send(RunnerCommand.AddRestSeconds(-15.0, runner.snapshot.visit))
             runner.send(RunnerCommand.TimeUpdate(runner.snapshot.visit)) // the wake that comes at once
 
             assertEquals(2, runner.index)
@@ -682,7 +717,7 @@ class RunnerTimingTest {
             val runner = Runner(workoutOf(single("plank")))
             runner.tick(25)
             runner.tick(28)
-            repeat(2) { runner.send(RunnerCommand.AddRestSeconds(-15.0)) }
+            repeat(2) { runner.send(RunnerCommand.AddRestSeconds(-15.0, runner.snapshot.visit)) }
             runner.send(RunnerCommand.TimeUpdate(runner.snapshot.visit))
 
             assertFalse(runner.state.finished)
@@ -809,7 +844,7 @@ class RunnerTimingTest {
         @Test
         fun `moves with +30s`() {
             val runner = Runner(workoutOf(single("rest")))
-            runner.send(RunnerCommand.AddRestSeconds(30.0))
+            runner.send(RunnerCommand.AddRestSeconds(30.0, runner.snapshot.visit))
 
             assertEquals(T0 + 87 * MS, nextTimeUpdateAt(runner.snapshot, T0))
         }
@@ -910,7 +945,7 @@ class RunnerTimingTest {
             assertEquals(emptyList<Long>(), upcomingStepEnds(runner.snapshot))
             runner.now += 5 * MS
             runner.send(RunnerCommand.TogglePause)
-            runner.send(RunnerCommand.AddRestSeconds(30.0))
+            runner.send(RunnerCommand.AddRestSeconds(30.0, runner.snapshot.visit))
 
             assertEquals(T0 + 75 * MS, upcomingStepEnds(runner.snapshot).first())
         }

@@ -101,7 +101,7 @@ internal fun RepsScreen(
                     null,
                     context::advance,
                 ),
-                back = { context.send(RunnerCommand.Prev) },
+                back = { context.prev() },
             )
         },
     )

@@ -71,6 +71,9 @@ abstract class ImportHarness {
 
     internal lateinit var latest: LatestFiles
 
+    /** What another app handed over before this Import opened (#514). */
+    internal var sharedIn: Incoming? = null
+
     /** Whether the file sheet's share of the brief failed before this Import opened (#413). */
     internal var shareFailedBefore = false
 
@@ -114,8 +117,7 @@ abstract class ImportHarness {
                                 sheetOpens
                             },
                         ),
-                        start,
-                        shareFailedBefore,
+                        ImportOpening(start, shareFailedBefore, sharedIn),
                     )
                 }
             }

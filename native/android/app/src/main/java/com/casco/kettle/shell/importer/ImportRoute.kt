@@ -37,6 +37,16 @@ fun ImportRoute(params: Map<String, String> = emptyMap()) {
     val view = LocalView.current
     val copied = stringResource(R.string.common_copied)
     val navigator = LocalNavigator.current
+    // Taken once per screen: a recreated one finds the slot empty and opens on its sources as usual.
+    val shared = remember { if (params[IMPORT_SHARED_PARAM] == "true") SharedLibraryInbox.take() else null }
+    val incoming =
+        remember(shared) {
+            when (shared) {
+                is SharedLibrary.Text -> Incoming.Text(shared.text)
+                is SharedLibrary.File -> Incoming.File { withContext(Dispatchers.IO) { activity.read(shared.uri) } }
+                null -> null
+            }
+        }
     ImportScreen(
         LocalLatestFiles.current,
         remember { ShippedContent(activity.assets) },
@@ -49,8 +59,17 @@ fun ImportRoute(params: Map<String, String> = emptyMap()) {
                 share = activity::shareText,
             )
         },
-        ImportStart.of(params[IMPORT_SOURCE_PARAM]),
-        shareFailed = params[IMPORT_SHARE_FAILED_PARAM] == "true",
+        ImportOpening(
+            // Shared text opens on the paste box it fills, a shared file on the file row, so a refusal has
+            // its source to try again from.
+            when (shared) {
+                is SharedLibrary.Text -> ImportStart.Paste
+                is SharedLibrary.File -> ImportStart.File
+                null -> ImportStart.of(params[IMPORT_SOURCE_PARAM])
+            },
+            shareFailed = params[IMPORT_SHARE_FAILED_PARAM] == "true",
+            shared = incoming,
+        ),
     )
 }
 

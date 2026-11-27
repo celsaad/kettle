@@ -91,6 +91,25 @@
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="kettle" />
             </intent-filter>
+            <!--
+              A library another app hands over (#514): YAML shared as text from a chat, or a file opened
+              from Files or a download. Not application/octet-stream, which .yaml often arrives as: it
+              would list Kettle for every binary file, so such a file goes through Import's own picker.
+            -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="content" />
+                <data android:mimeType="text/plain" />
+                <data android:mimeType="application/x-yaml" />
+                <data android:mimeType="application/yaml" />
+                <data android:mimeType="text/yaml" />
+            </intent-filter>
         </activity-alias>
 
         <!-- Export's share sheet (#237): read access to the one file shared, granted per share. -->

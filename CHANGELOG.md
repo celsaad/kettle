@@ -22,6 +22,10 @@ here, next to what it describes.
 
 ### What changed
 
+- **Open a library from another app**: share YAML from a chat, or open a `.yaml` file from Files or a
+  download, and Kettle opens it in Import's preview, ready to check and import. Nothing changes until
+  you tap Import. A file your phone labels only as "binary" still goes through Import's file picker
+  (#514).
 - **Sounds off stops the buzz too**: turning workout sounds off now also stops the vibration on each
   new step during a workout (#301).
 - **Run your workout from the lock screen, or your watch**: the workout notification now has the

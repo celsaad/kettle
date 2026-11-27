@@ -49,24 +49,29 @@ fun ImportScreen(
     files: LatestFiles,
     content: ShippedContent,
     actions: ImportActions,
-    start: ImportStart? = null,
-    shareFailed: Boolean = false,
+    opening: ImportOpening = ImportOpening(),
 ) {
+    val start = opening.start
+    val shared = opening.shared
     val scope = rememberCoroutineScope()
     val importer =
         remember {
             Importer(files, scope, actions).also {
                 it.pasting = start == ImportStart.Paste
                 // The file sheet's Share the brief already failed: say so here, beside the copy that covers it.
-                if (shareFailed) it.handoff.sharedElsewhereFailed()
+                if (opening.shareFailed) it.handoff.sharedElsewhereFailed()
             }
         }
     // The file sheet's "Open a .yaml file" goes straight to the picker, once: not again on a rotation,
     // and not again after it came back cancelled, which leaves the row here to try again.
     var picked by rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(Unit) {
-        if (start == ImportStart.File && !picked) {
-            picked = true
+        if (picked) return@LaunchedEffect
+        picked = true
+        // A library another app handed over is reviewed as it lands (#514), not picked again.
+        if (shared != null) {
+            importer.receive(shared)
+        } else if (start == ImportStart.File) {
             importer.pickFile()
         }
     }
@@ -120,7 +125,7 @@ private fun Body(
         PickBox(
             stringResource(R.string.import_chooseFile),
             stringResource(R.string.import_chooseFileDetail),
-            onClick = importer::pickFile,
+            onClick = { importer.pickFile() },
             busy = importer.busy,
         )
         RefusalAt(RefusalSite.File, importer)
@@ -155,7 +160,7 @@ private fun Sources(
             PickBox(
                 stringResource(R.string.import_chooseFile),
                 stringResource(R.string.import_chooseFileDetail),
-                onClick = importer::pickFile,
+                onClick = { importer.pickFile() },
                 busy = importer.busy,
             )
             RefusalAt(RefusalSite.File, importer)
@@ -219,8 +224,21 @@ internal val BoxShape = RoundedCornerShape(14.dp)
 
 private const val KILOBYTE = 1024
 
+/**
+ * How Import was opened: on one [start] source, after the file sheet's share of the brief failed
+ * ([shareFailed]), or with a library another app handed over ([shared], #514).
+ */
+data class ImportOpening(
+    val start: ImportStart? = null,
+    val shareFailed: Boolean = false,
+    val shared: Incoming? = null,
+)
+
 /** The param that names the one source the Import sheet opens on. */
 const val IMPORT_SOURCE_PARAM = "source"
+
+/** Set when another app handed a library over (#514): Import takes it from [SharedLibraryInbox]. */
+const val IMPORT_SHARED_PARAM = "shared"
 
 /** Set by the file sheet when its share sheet didn't open, so Import opens saying so. */
 const val IMPORT_SHARE_FAILED_PARAM = "shareFailed"

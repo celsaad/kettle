@@ -24,6 +24,11 @@ import com.casco.kettle.shell.files.LocalLatestFiles
 import com.casco.kettle.shell.files.Stamped
 import com.casco.kettle.shell.files.StoragePaths
 import com.casco.kettle.shell.files.adoptTargetWeight
+import com.casco.kettle.shell.importer.IMPORT_SHARED_PARAM
+import com.casco.kettle.shell.importer.SharedLibraryInbox
+import com.casco.kettle.shell.importer.forgetSharedLibrary
+import com.casco.kettle.shell.importer.sharedLibrary
+import com.casco.kettle.shell.nav.Destination
 import com.casco.kettle.shell.nav.LocalNavigator
 import com.casco.kettle.shell.nav.LocalSplashExit
 import com.casco.kettle.shell.nav.LocalTabReselects
@@ -157,7 +162,7 @@ class MainActivity : ComponentActivity() {
         // swipe leaves the session running, and the relaunch comes back to it with no prompt. Before the
         // link, which a running session then drops. A restored stack's link was opened the first time.
         attachRunner(navigator)
-        if (saved == null) navigator.openLink(intent)
+        if (saved == null) navigator.openIncoming(intent)
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -169,7 +174,7 @@ class MainActivity : ComponentActivity() {
         super.onNewIntent(intent)
         setIntent(intent)
         if (intent.takeOpenRunner()) attachRunner(navigator)
-        navigator.openLink(intent)
+        navigator.openIncoming(intent)
     }
 }
 
@@ -180,6 +185,18 @@ class MainActivity : ComponentActivity() {
  */
 private fun Activity.leave() {
     if (!moveTaskToBack(false)) finish()
+}
+
+/** A library another app handed over (#514), opened in Import's preview; else a `kettle://` link. */
+private fun Navigator.openIncoming(intent: Intent) {
+    val shared = intent.sharedLibrary()
+    if (shared == null) {
+        openLink(intent)
+        return
+    }
+    intent.forgetSharedLibrary()
+    SharedLibraryInbox.put(shared)
+    navigate(Route(Destination.Import, mapOf(IMPORT_SHARED_PARAM to "true")))
 }
 
 /**

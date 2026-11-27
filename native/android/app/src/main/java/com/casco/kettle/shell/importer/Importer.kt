@@ -37,6 +37,35 @@ class ImportActions(
 /** Why the clipboard didn't fill the box: nothing came back, or it couldn't be read at all. */
 enum class PasteNote { Empty, Refused }
 
+/** A library handed over by another app (#514), as Import takes it: the text, or a file's read. */
+sealed interface Incoming {
+    data class Text(
+        val text: String,
+    ) : Incoming
+
+    class File(
+        val read: suspend () -> FilePick,
+    ) : Incoming
+}
+
+/**
+ * A library another app handed over (#514), reviewed as a picked file or a paste is. Shared text goes
+ * through the paste box, so the prose a chat sends around the YAML is there to trim when it's refused.
+ */
+internal fun Importer.receive(shared: Incoming) {
+    when (shared) {
+        is Incoming.Text -> {
+            pasting = true
+            edit(shared.text)
+            reviewPaste()
+        }
+
+        is Incoming.File -> {
+            pickFile(shared.read)
+        }
+    }
+}
+
 /** What the system document picker gave back. [Failed] carries the platform's own words. */
 sealed interface FilePick {
     data object Cancelled : FilePick
@@ -205,13 +234,14 @@ internal class Importer(
     /** Cancel and Done. */
     val close = actions.close
 
-    fun pickFile() {
+    /** The system picker's file, or [read], a file another app handed over (#514). */
+    fun pickFile(read: suspend () -> FilePick = actions.pickFile) {
         if (busy) return
         clear()
         busy = true
         scope.launch {
             try {
-                when (val pick = actions.pickFile()) {
+                when (val pick = read()) {
                     FilePick.Cancelled -> Unit
                     is FilePick.Failed -> refuse(ImportRefusal.ReadFailed(pick.detail), RefusalSite.File)
                     FilePick.TooLarge -> refuse(ImportRefusal.TooLarge, RefusalSite.File)

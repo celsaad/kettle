@@ -2,11 +2,15 @@ package com.casco.kettle.shell.importer
 
 import android.content.Intent
 import android.net.Uri
+import android.text.SpannedString
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.RuntimeEnvironment
 
 /**
  * Which intents hand Kettle a library (#514), by the manifest's decided filters: `SEND` of `text/plain`,
@@ -89,9 +93,62 @@ class SharedLibraryTest {
     }
 
     @Test
-    fun `the inbox gives its library once`() {
-        SharedLibraryInbox.put(SharedLibrary.Text("version: 1"))
-        assertEquals(SharedLibrary.Text("version: 1"), SharedLibraryInbox.take())
-        assertNull(SharedLibraryInbox.take())
+    fun `the inbox gives its library once, and only for its token`() {
+        val inbox = SharedLibraryInbox()
+        val token = inbox.put(SharedLibrary.Text("version: 1"))
+        assertNull(inbox.take("true"))
+        assertEquals(SharedLibrary.Text("version: 1"), inbox.take(token))
+        assertNull(inbox.take(token))
+    }
+
+    /** The alias is exported, so an app can skip the filters: a `file:` path would be read as Kettle. */
+    @Test
+    fun `a stream that isn't another app's content file is not taken`() {
+        val own = Uri.parse("content://com.casco.kettle.shell.files/shared/exercises.yaml")
+        for (uri in listOf(Uri.parse("file:///data/data/com.casco.kettle/files/x.yaml"), own)) {
+            val sent = send("text/plain").putExtra(Intent.EXTRA_STREAM, uri)
+            assertNull(uri.toString(), sent.sharedLibrary(ownAuthority = "com.casco.kettle.shell.files"))
+            assertNull(
+                uri.toString(),
+                view(uri, "text/yaml").sharedLibrary(ownAuthority = "com.casco.kettle.shell.files"),
+            )
+        }
+    }
+
+    /** Some apps put a caption beside the file: reviewed instead, it would be refused. */
+    @Test
+    fun `a stream wins over the text beside it`() {
+        val intent = send("text/plain").putExtra(Intent.EXTRA_TEXT, "plan.yaml").putExtra(Intent.EXTRA_STREAM, file)
+        assertEquals(SharedLibrary.File(file), intent.sharedLibrary())
+    }
+
+    /** A styled `CharSequence` comes back null when read as a `String`. */
+    @Test
+    fun `styled shared text is still the library's text`() {
+        val intent = send("text/plain").putExtra(Intent.EXTRA_TEXT, SpannedString("version: 1"))
+        assertEquals(SharedLibrary.Text("version: 1"), intent.sharedLibrary())
+    }
+
+    /** The system matched the filter on the provider's type, and left it out of the intent. */
+    @Test
+    fun `a file opened with no type is taken by the provider's`() {
+        assertEquals(SharedLibrary.File(file), view(file, null).sharedLibrary(typeOf = { "text/yaml" }))
+        assertNull(view(file, null).sharedLibrary(typeOf = { "application/octet-stream" }))
+    }
+
+    /** The manifest's filters and [VIEWED_TYPES] are two copies of one list: held together here. */
+    @Test
+    fun `the manifest routes exactly the decided types to Kettle`() {
+        val packages = RuntimeEnvironment.getApplication().packageManager
+
+        fun resolves(intent: Intent) =
+            packages.queryIntentActivities(intent, 0).any {
+                it.activityInfo.packageName ==
+                    RuntimeEnvironment.getApplication().packageName
+            }
+        for (type in VIEWED_TYPES) assertTrue(type, resolves(view(file, type)))
+        assertTrue(resolves(send("text/plain")))
+        assertFalse(resolves(view(file, "application/octet-stream")))
+        assertFalse(resolves(send("image/png")))
     }
 }

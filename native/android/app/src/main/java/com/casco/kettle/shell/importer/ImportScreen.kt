@@ -20,6 +20,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -37,6 +38,8 @@ import com.casco.kettle.shell.i18n.pluralText
 import com.casco.kettle.shell.theme.KettleTheme
 import com.casco.kettle.shell.theme.KettleType
 import com.casco.kettle.shell.theme.Spacing
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.withTimeoutOrNull
 
 /**
  * Import (#244), as RN's Import screen: a file, a paste or a starter pack, previewed, then merged by id
@@ -62,14 +65,17 @@ fun ImportScreen(
                 if (opening.shareFailed) it.handoff.sharedElsewhereFailed()
             }
         }
-    // The file sheet's "Open a .yaml file" goes straight to the picker, once: not again on a rotation,
-    // and not again after it came back cancelled, which leaves the row here to try again.
-    var picked by rememberSaveable { mutableStateOf(false) }
+    // What Import was opened for happens once: the file sheet's "Open a .yaml file" goes straight to the
+    // picker, not again on a rotation or after it came back cancelled, which leaves the row to try again;
+    // a library another app handed over is reviewed as it lands (#514).
+    var opened by rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(Unit) {
-        if (picked) return@LaunchedEffect
-        picked = true
-        // A library another app handed over is reviewed as it lands (#514), not picked again.
+        if (opened) return@LaunchedEffect
+        opened = true
         if (shared != null) {
+            // A share can cold-start the app, ahead of the library's first read: reviewed then, it would
+            // be refused as not loaded. Past the wait it is anyway, which says so.
+            withTimeoutOrNull(LIBRARY_WAIT_MS) { snapshotFlow { files.library }.first { it != null } }
             importer.receive(shared)
         } else if (start == ImportStart.File) {
             importer.pickFile()
@@ -224,6 +230,9 @@ internal val BoxShape = RoundedCornerShape(14.dp)
 
 private const val KILOBYTE = 1024
 
+/** How long a shared library waits for the library's first read before it's reviewed anyway. */
+private const val LIBRARY_WAIT_MS = 5_000L
+
 /**
  * How Import was opened: on one [start] source, after the file sheet's share of the brief failed
  * ([shareFailed]), or with a library another app handed over ([shared], #514).
@@ -237,7 +246,7 @@ data class ImportOpening(
 /** The param that names the one source the Import sheet opens on. */
 const val IMPORT_SOURCE_PARAM = "source"
 
-/** Set when another app handed a library over (#514): Import takes it from [SharedLibraryInbox]. */
+/** Set when another app handed a library over (#514): its token in [SharedLibraryInbox]. */
 const val IMPORT_SHARED_PARAM = "shared"
 
 /** Set by the file sheet when its share sheet didn't open, so Import opens saying so. */

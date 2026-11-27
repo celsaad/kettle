@@ -38,7 +38,7 @@ fun ImportRoute(params: Map<String, String> = emptyMap()) {
     val copied = stringResource(R.string.common_copied)
     val navigator = LocalNavigator.current
     // Taken once per screen: a recreated one finds the slot empty and opens on its sources as usual.
-    val shared = remember { if (params[IMPORT_SHARED_PARAM] == "true") SharedLibraryInbox.take() else null }
+    val shared = remember { params[IMPORT_SHARED_PARAM]?.let(SharedLibraryInbox.process::take) }
     val incoming =
         remember(shared) {
             when (shared) {

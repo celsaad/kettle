@@ -1,6 +1,7 @@
 package com.casco.kettle.shell.importer
 
 import androidx.compose.ui.test.assertTextContains
+import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.hasContentDescription
 import com.casco.kettle.domain.Library
 import com.casco.kettle.domain.MAX_IMPORT_BYTES
@@ -46,6 +47,31 @@ class ImportSharedTest : ImportHarness() {
 
         compose.onNode(hasContentDescription(PASTE_BOX)).assertTextContains("Sure! Here it is:", substring = true)
         absent("YAML colado")
+        files.nothingWritten()
+    }
+
+    /** A share can cold-start the app ahead of the library's first read: it waits rather than refuse. */
+    @Test
+    fun `a share that lands before the library is read waits for it`() {
+        sharedIn = Incoming.Text(serializeLibraryYaml(incoming))
+        val io = Steps()
+        val files = show(io = io, readFirst = false, start = ImportStart.Paste)
+        absent("YAML colado")
+
+        io.run()
+        compose.waitForIdle()
+
+        shown("YAML colado")
+        files.nothingWritten()
+    }
+
+    /** Past the limit nothing is laid out in the box: it's refused as it arrived. */
+    @Test
+    fun `shared text too large is refused without filling the box`() {
+        val files = share(ImportStart.Paste, Incoming.Text("#".repeat(MAX_IMPORT_BYTES + 1)))
+
+        compose.onNode(hasContentDescription(PASTE_BOX)).assertTextEquals(PASTE_BOX, includeEditableText = false)
+        compose.onNode(hasTextMatching(Regex(".*${MAX_IMPORT_BYTES / 1024}.*"))).assertExists()
         files.nothingWritten()
     }
 

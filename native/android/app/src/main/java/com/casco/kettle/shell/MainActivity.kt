@@ -24,11 +24,9 @@ import com.casco.kettle.shell.files.LocalLatestFiles
 import com.casco.kettle.shell.files.Stamped
 import com.casco.kettle.shell.files.StoragePaths
 import com.casco.kettle.shell.files.adoptTargetWeight
-import com.casco.kettle.shell.importer.IMPORT_SHARED_PARAM
-import com.casco.kettle.shell.importer.SharedLibraryInbox
+import com.casco.kettle.shell.importer.SharedOpener
 import com.casco.kettle.shell.importer.forgetSharedLibrary
 import com.casco.kettle.shell.importer.sharedLibrary
-import com.casco.kettle.shell.nav.Destination
 import com.casco.kettle.shell.nav.LocalNavigator
 import com.casco.kettle.shell.nav.LocalSplashExit
 import com.casco.kettle.shell.nav.LocalTabReselects
@@ -72,6 +70,9 @@ class MainActivity : ComponentActivity() {
     }
 
     private val navigator = Navigator(onReselect = { tabReselects.tryEmit(it) })
+
+    /** Opens a share in Import, or holds it behind a running session until the runner closes (#514). */
+    private val sharedOpener = SharedOpener(navigator)
 
     /** What [LocalTabReselects] carries. One slot, since a tap's scroll replaces the one before it. */
     private val tabReselects =
@@ -153,6 +154,7 @@ class MainActivity : ComponentActivity() {
         onBackPressedDispatcher.addCallback(this, sheet.backCallback)
         listenForWrites(latestFiles)
         hearNavigateReceiver(navigator)
+        sharedOpener.watchRunner(lifecycleScope)
         setContentView(layout)
         // The stack this activity's predecessor saved, when it was made again (a font or display size
         // change, the process brought back).
@@ -162,7 +164,7 @@ class MainActivity : ComponentActivity() {
         // swipe leaves the session running, and the relaunch comes back to it with no prompt. Before the
         // link, which a running session then drops. A restored stack's link was opened the first time.
         attachRunner(navigator)
-        if (saved == null) navigator.openIncoming(intent)
+        if (saved == null) openIncoming(intent, navigator, sharedOpener)
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -174,7 +176,7 @@ class MainActivity : ComponentActivity() {
         super.onNewIntent(intent)
         setIntent(intent)
         if (intent.takeOpenRunner()) attachRunner(navigator)
-        navigator.openIncoming(intent)
+        openIncoming(intent, navigator, sharedOpener)
     }
 }
 
@@ -188,15 +190,18 @@ private fun Activity.leave() {
 }
 
 /** A library another app handed over (#514), opened in Import's preview; else a `kettle://` link. */
-private fun Navigator.openIncoming(intent: Intent) {
-    val shared = intent.sharedLibrary()
+private fun Activity.openIncoming(
+    intent: Intent,
+    navigator: Navigator,
+    opener: SharedOpener,
+) {
+    val shared = intent.sharedLibrary(contentResolver::getType, ownAuthority = "$packageName.shell.files")
     if (shared == null) {
-        openLink(intent)
+        navigator.openLink(intent)
         return
     }
     intent.forgetSharedLibrary()
-    SharedLibraryInbox.put(shared)
-    navigate(Route(Destination.Import, mapOf(IMPORT_SHARED_PARAM to "true")))
+    opener.open(shared)
 }
 
 /**

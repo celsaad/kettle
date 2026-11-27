@@ -1,0 +1,50 @@
+package com.casco.kettle.shell.importer
+
+import com.casco.kettle.shell.nav.Destination
+import com.casco.kettle.shell.nav.Navigator
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotEquals
+import org.junit.Assert.assertNull
+import org.junit.Test
+
+/**
+ * How a share reaches Import (#514): each as a route of its own, so a second share while the first's
+ * Import shows opens a new one, and held behind a running session until the runner closes.
+ */
+class SharedOpenerTest {
+    private val navigator = Navigator()
+    private val inbox = SharedLibraryInbox()
+    private val opener = SharedOpener(navigator, inbox)
+    private val first = SharedLibrary.Text("version: 1 # first")
+    private val second = SharedLibrary.Text("version: 1 # second")
+
+    private fun shownToken() = navigator.sheet?.params?.get(IMPORT_SHARED_PARAM)
+
+    /** An equal route would be no move, and the Import showing would never read the second share. */
+    @Test
+    fun `a second share opens as a route of its own, with its own library`() {
+        opener.open(first)
+        val firstRoute = navigator.sheet
+        opener.open(second)
+
+        assertEquals(Destination.Import, navigator.sheet?.destination)
+        assertNotEquals(firstRoute, navigator.sheet)
+        assertNull(inbox.take(firstRoute?.params?.get(IMPORT_SHARED_PARAM)))
+        assertEquals(second, inbox.take(shownToken()))
+    }
+
+    @Test
+    fun `a share during a session waits for the runner to close, then opens`() {
+        navigator.openRunner(null)
+        opener.open(first)
+        opener.runnerClosed()
+        assertNull(navigator.sheet)
+
+        navigator.closeRunner()
+        opener.runnerClosed()
+
+        assertEquals(first, inbox.take(shownToken()))
+        opener.runnerClosed()
+        assertEquals(Destination.Import, navigator.sheet?.destination)
+    }
+}

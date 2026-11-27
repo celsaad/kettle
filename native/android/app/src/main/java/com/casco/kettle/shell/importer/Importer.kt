@@ -56,8 +56,14 @@ internal fun Importer.receive(shared: Incoming) {
     when (shared) {
         is Incoming.Text -> {
             pasting = true
-            edit(shared.text)
-            reviewPaste()
+            // Past the limit it's refused without filling the box: laying out up to a binder's megabyte
+            // of text, with no tap from the user, would stall the screen for nothing.
+            if (exceedsImportSize(shared.text)) {
+                reviewPaste(shared.text)
+            } else {
+                edit(shared.text)
+                reviewPaste()
+            }
         }
 
         is Incoming.File -> {
@@ -279,10 +285,10 @@ internal class Importer(
     }
 
     /** Trimmed, so the count describes the YAML and not the blank lines a chat window appended. */
-    fun reviewPaste() {
+    fun reviewPaste(text: String = pasted) {
         if (busy) return
         clear()
-        val text = pasted.trim()
+        val text = text.trim()
         // Blank never reaches the parser, whose "the input is empty" would be an accusation before
         // anything was done wrong.
         pasteNote = null

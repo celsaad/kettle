@@ -3,12 +3,19 @@ package com.casco.kettle.shell.importer
 import android.content.ContentResolver
 import android.content.Intent
 import android.net.Uri
+import androidx.compose.runtime.snapshotFlow
 import androidx.core.content.IntentCompat
+import com.casco.kettle.shell.nav.Destination
+import com.casco.kettle.shell.nav.Navigator
+import com.casco.kettle.shell.nav.Route
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
+import java.util.UUID
 
 /**
  * A library another app handed Kettle (#514): YAML shared as text, as it leaves a chat where an assistant
  * wrote it, or a file opened from Files or a download. Either lands in Import's preview, and nothing is
- * written until Merge there, as with a paste or a picked file.
+ * written until Import is tapped there, as with a paste or a picked file.
  */
 sealed interface SharedLibrary {
     data class Text(
@@ -21,31 +28,59 @@ sealed interface SharedLibrary {
 }
 
 /**
- * The library in [this] intent, by the manifest's filters: `SEND` of `text/plain`, its text or else
- * its stream, and `VIEW` of a `content:` file typed as text or YAML. Not `application/octet-stream`,
- * which `.yaml` often arrives as: filtering on it would list Kettle for every binary file, so such a
- * file goes through Import's own picker. Null for anything else, a `kettle://` link included, and for
- * an intent Recents replays, which would import the same thing again.
+ * The library in [this] intent, by the manifest's filters: `SEND` of `text/plain`, its stream or else
+ * its text, and `VIEW` of a file typed as text or YAML. Not `application/octet-stream`, which `.yaml`
+ * often arrives as: filtering on it would list Kettle for every binary file, so such a file goes through
+ * Import's own picker. Null for anything else, a `kettle://` link included, and for an intent Recents
+ * replays, which would import the same thing again.
+ *
+ * The launcher alias is exported, so an app can name it and skip the filters: a file is only ever a
+ * `content:` URI ([fileUri]). [typeOf] is the provider's type for a `VIEW` that carries none, which the
+ * system matched the filter against without putting it in the intent.
  */
-fun Intent.sharedLibrary(): SharedLibrary? {
+fun Intent.sharedLibrary(
+    typeOf: (Uri) -> String? = { null },
+    ownAuthority: String? = null,
+): SharedLibrary? {
     val replayed = flags and Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY != 0
     return when {
         replayed -> null
-        action == Intent.ACTION_SEND && type?.lowercase() == SHARED_TEXT_TYPE -> sentLibrary()
-        action == Intent.ACTION_VIEW -> data?.takeIf { viewable(it) }?.let { SharedLibrary.File(it) }
+        action == Intent.ACTION_SEND && type?.lowercase() == SHARED_TEXT_TYPE -> sentLibrary(ownAuthority)
+        action == Intent.ACTION_VIEW -> viewedLibrary(typeOf, ownAuthority)
         else -> null
     }
 }
 
-/** A `SEND`'s text, or else its stream: a file shared from Files comes as the latter. */
-private fun Intent.sentLibrary(): SharedLibrary? {
-    val text = getStringExtra(Intent.EXTRA_TEXT)
-    if (!text.isNullOrBlank()) return SharedLibrary.Text(text)
-    return IntentCompat.getParcelableExtra(this, Intent.EXTRA_STREAM, Uri::class.java)?.let { SharedLibrary.File(it) }
+/**
+ * A `SEND`'s stream, else its text: a file shared from Files comes as a stream, and some apps put a
+ * caption or the file's name in the text beside it, which reviewed instead would be refused. Read as a
+ * `CharSequence`, since a styled one comes back null as a `String`.
+ */
+private fun Intent.sentLibrary(ownAuthority: String?): SharedLibrary? {
+    val stream = IntentCompat.getParcelableExtra(this, Intent.EXTRA_STREAM, Uri::class.java)
+    fileUri(stream, ownAuthority)?.let { return SharedLibrary.File(it) }
+    val text = getCharSequenceExtra(Intent.EXTRA_TEXT)?.toString()
+    return if (text.isNullOrBlank()) null else SharedLibrary.Text(text)
 }
 
-private fun Intent.viewable(uri: Uri) =
-    uri.scheme == ContentResolver.SCHEME_CONTENT && type?.lowercase() in VIEWED_TYPES
+private fun Intent.viewedLibrary(
+    typeOf: (Uri) -> String?,
+    ownAuthority: String?,
+): SharedLibrary? {
+    val uri = fileUri(data, ownAuthority) ?: return null
+    val viewed = (type ?: typeOf(uri))?.lowercase()
+    return if (viewed in VIEWED_TYPES) SharedLibrary.File(uri) else null
+}
+
+/**
+ * [uri] when it's another app's `content:` file: a `file:` path or `android.resource:` would be read
+ * with Kettle's own access, a private file of its own included, and so would Kettle's own provider, which
+ * no other app can be granted, so only a forged intent names it.
+ */
+private fun fileUri(
+    uri: Uri?,
+    ownAuthority: String?,
+): Uri? = uri?.takeIf { it.scheme == ContentResolver.SCHEME_CONTENT && it.authority != ownAuthority }
 
 /** Taken off [this] intent, so an activity made again with it doesn't import it twice. */
 fun Intent.forgetSharedLibrary() {
@@ -57,20 +92,61 @@ fun Intent.forgetSharedLibrary() {
 
 /**
  * Where a shared library waits between the activity that received it and the Import screen it opens:
- * a route's params are strings saved with the back stack, no place for a whole library. One slot, taken
- * once; lost with the process, when Import opens with its sources as usual.
+ * a route's params are strings saved with the back stack, no place for a whole library. One slot, under
+ * a token the route carries, so each share is a route of its own (one equal to the Import showing would
+ * be no move at all) and a `kettle://import?shared=…` link can't claim what it didn't bring. Lost with
+ * the process, when Import opens with its sources as usual. Main thread only.
  */
-object SharedLibraryInbox {
-    private var waiting: SharedLibrary? = null
+class SharedLibraryInbox {
+    private var waiting: Pair<String, SharedLibrary>? = null
 
-    fun put(shared: SharedLibrary) {
-        waiting = shared
+    /** Holds [shared], replacing any earlier, and returns the token its route carries. */
+    fun put(shared: SharedLibrary): String = UUID.randomUUID().toString().also { waiting = it to shared }
+
+    /** The library under [token], once; null for any other token. */
+    fun take(token: String?): SharedLibrary? {
+        val held = waiting?.takeIf { it.first == token } ?: return null
+        waiting = null
+        return held.second
     }
 
-    fun take(): SharedLibrary? = waiting.also { waiting = null }
+    companion object {
+        /** The process's: the activity that receives a share and the screen that opens it are both in it. */
+        val process = SharedLibraryInbox()
+    }
+}
+
+/**
+ * Opens what another app shared in Import (#514), or holds it while a session runs, since the runner's
+ * slot drops every other move, and opens it once the runner closes: a share is the user's data, and
+ * dropping it as a `kettle://` link is dropped would lose it without a word.
+ */
+class SharedOpener(
+    private val navigator: Navigator,
+    private val inbox: SharedLibraryInbox = SharedLibraryInbox.process,
+) {
+    private var held: Route? = null
+
+    fun open(shared: SharedLibrary) {
+        val route = Route(Destination.Import, mapOf(IMPORT_SHARED_PARAM to inbox.put(shared)))
+        if (navigator.runnerShown) held = route else navigator.navigate(route)
+    }
+
+    /** Opens a held share as the runner's slot empties, for as long as [scope] lives. */
+    fun watchRunner(scope: CoroutineScope) {
+        scope.launch { snapshotFlow { navigator.runnerShown }.collect { shown -> if (!shown) runnerClosed() } }
+    }
+
+    /** Called as the runner's slot empties: a share held behind it opens now. */
+    fun runnerClosed() {
+        if (navigator.runnerShown) return
+        val route = held ?: return
+        held = null
+        navigator.navigate(route)
+    }
 }
 
 private const val SHARED_TEXT_TYPE = "text/plain"
 
 /** The manifest's `VIEW` types: `.yaml` has no registered one, so each that providers use. */
-private val VIEWED_TYPES = setOf("text/plain", "application/x-yaml", "application/yaml", "text/yaml")
+internal val VIEWED_TYPES = setOf("text/plain", "application/x-yaml", "application/yaml", "text/yaml")

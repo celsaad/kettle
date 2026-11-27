@@ -101,6 +101,26 @@ class RunnerCircuitStepTest : RunnerScreenHarness() {
     }
 
     /**
+     * "Rodada 9 feita" fits beside Back and Pause on a 360dp phone at 110% text; "Rodada 10 feita" didn't,
+     * so the tap that reached round 10 restacked the row and put Back and Pause under the finger (#566).
+     */
+    @Test
+    @Config(qualifiers = "pt-w360dp-h800dp")
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    fun `the AMRAP's row doesn't restack on the tap that reaches round 10`() {
+        fontScale = 1.1f
+        val amrap = plan(block(grinder))
+        val start = started(amrap)
+        show(running(amrap, start.after(RunnerCommand.SetRounds(8, start.snapshot.visit))))
+        val nine = button("Rodada 9 feita").getUnclippedBoundsInRoot()
+        val pause = button("Pausar").getUnclippedBoundsInRoot()
+
+        show(running(amrap, start.after(RunnerCommand.SetRounds(9, start.snapshot.visit))))
+        assertEquals(nine, button("Rodada 10 feita").getUnclippedBoundsInRoot())
+        assertEquals(pause, button("Pausar").getUnclippedBoundsInRoot())
+    }
+
+    /**
      * The header scrolls with the step on a short screen at a large text size (#521), so each step has to
      * start at the top: sharing one scroll, the next member arrived with its label and name scrolled off.
      */

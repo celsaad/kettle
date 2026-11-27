@@ -177,7 +177,8 @@ private fun RunnerWindow(
         var spoken: Pair<String, Long>? = null
         RunnerHost.view.collect { shown ->
             val watching = lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)
-            if (haptics.buzzes(shown, watching, finishing.get(), sounds)) view.performHapticFeedback(ADVANCE_HAPTIC)
+            val buzz = haptics.buzzes(shown, watching = watching, finishing = finishing.get(), soundsOn = sounds)
+            if (buzz) view.performHapticFeedback(ADVANCE_HAPTIC)
             val snapshot = (shown as? RunnerView.Running)?.snapshot ?: return@collect
             val step = snapshot.step ?: return@collect
             // Once per visit, not whenever the sentence changes: it carries the reps the set opened on,

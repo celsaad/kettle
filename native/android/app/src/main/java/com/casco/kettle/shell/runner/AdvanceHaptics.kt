@@ -2,16 +2,17 @@ package com.casco.kettle.shell.runner
 
 /**
  * When the runner buzzes: once on each advance of the same session, tapped or automatic, and on the
- * advance that ends the workout, but not on a Finish, as RN's didn't, nor on an advance made while
- * nobody watches, which would buzz nobody. Never with sounds off (#301): one switch makes a session
- * quiet, with no haptics setting of its own. Fed every view the service publishes, in order.
+ * advance that ends the workout. Not on a Finish, which is a decision made on screen rather than a step
+ * the session moved on to; not on an advance made while nobody watches, which would buzz nobody; and
+ * never with sounds off (#301), so one switch quiets the runner, with no haptics setting of its own.
  */
 internal class AdvanceHaptics {
     private var last: Pair<String, Int>? = null
 
     /**
      * Whether [shown], arriving now, buzzes. [watching]: the runner is on screen; [finishing]: it sent
-     * Finish; [soundsOn]: the session's sounds preference, as it is now.
+     * Finish; [soundsOn]: the session's sounds preference, as it is now. Not a query: it records [shown]
+     * as the step the next view is compared with, so it's called once per view the service publishes.
      */
     fun buzzes(
         shown: RunnerView,

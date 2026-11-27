@@ -22,8 +22,8 @@ here, next to what it describes.
 
 ### What changed
 
-- **Sounds off means quiet**: turning workout sounds off now stops the buzz on each new step too,
-  so one switch makes a session silent (#301).
+- **Sounds off stops the buzz too**: turning workout sounds off now also stops the vibration on each
+  new step during a workout (#301).
 - **Run your workout from the lock screen, or your watch**: the workout notification now has the
   buttons you need between sets, such as Log set, Skip rest, +30s, Done, Back (or Undo, right after
   a set) and Resume, and "Round N done" for an AMRAP. It leads with the exercise and what logging

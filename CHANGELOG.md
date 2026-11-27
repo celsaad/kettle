@@ -46,9 +46,10 @@ here, next to what it describes.
   round, minute and rest that ended along the way logged, each at its own length. Before, it moved
   on one step at most (#420).
 - **A late tap stays on its own step**: tapping Back, Undo, +30s or −15s just as a rest ends by
-  itself no longer lands on the step that follows it. Before, a late Back threw away the round
-  you'd just started and sent you back to the rest, and a late +30s stretched that round instead
-  of the rest (#551).
+  itself, or "Round N done" just as an AMRAP's time runs out, no longer lands on the step that
+  follows it. Before, a late Back threw away the round you'd just started and sent you back to the
+  rest, a late +30s stretched that round instead of the rest, and a late "Round N done" counted
+  rounds on the next AMRAP before you'd done any (#551, #555).
 
 ---
 

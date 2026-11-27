@@ -167,7 +167,7 @@ class RunnerNotificationsTest {
             content(running(amrap, GRINDER)).actions,
         )
 
-        val three = amrap.then(RunnerCommand.SetRounds(3))
+        val three = amrap.then(RunnerCommand.SetRounds(3, amrap.state.snapshot.visit))
         assertEquals("3 rodadas", content(running(three, GRINDER)).text)
         assertEquals(SessionControl.Rounds(4), content(running(three, GRINDER)).actions.first().control)
     }

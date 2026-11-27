@@ -52,27 +52,25 @@ class SessionControlsTest {
 
     @Test
     fun `sends the step's commands aimed at the card's visit, for the engine to refuse if stale`() {
-        val later = 9L
-        assertEquals(RunnerCommand.Advance(4), tap(SessionControl.Advance)?.command(aim.sessionId, later, 0))
-        assertEquals(RunnerCommand.Prev(4), tap(SessionControl.Prev)?.command(aim.sessionId, later, 0))
+        assertEquals(RunnerCommand.Advance(4), tap(SessionControl.Advance)?.command(aim.sessionId, 0))
+        assertEquals(RunnerCommand.Prev(4), tap(SessionControl.Prev)?.command(aim.sessionId, 0))
         assertEquals(
             RunnerCommand.AddRestSeconds(30.0, 4),
-            tap(SessionControl.AddRest)?.command(aim.sessionId, later, 0),
+            tap(SessionControl.AddRest)?.command(aim.sessionId, 0),
         )
-        assertEquals(RunnerCommand.TogglePause, tap(SessionControl.Resume)?.command(aim.sessionId, later, 0))
+        assertEquals(RunnerCommand.TogglePause, tap(SessionControl.Resume)?.command(aim.sessionId, 0))
     }
 
     /** Visits start again at 0 in every session, so a visit alone would let a late tap land in the next one. */
     @Test
     fun `drops a tap from another session`() {
-        assertNull(tap(SessionControl.Prev)?.command("2026-11-26T10-00-00-000Z", aim.visit, 0))
+        assertNull(tap(SessionControl.Prev)?.command("2026-11-26T10-00-00-000Z", 0))
     }
 
-    /** The engine doesn't aim SetRounds, so a late "Round N done" would set the next AMRAP's rounds. */
+    /** A "Round N done" goes aimed like the rest, so a late one can't set the next AMRAP's rounds (#516). */
     @Test
-    fun `sets the rounds only on the step the card was drawn for`() {
-        assertEquals(RunnerCommand.SetRounds(3), tap(SessionControl.Rounds(3))?.command(aim.sessionId, aim.visit, 2))
-        assertNull(tap(SessionControl.Rounds(3))?.command(aim.sessionId, aim.visit + 1, 2))
+    fun `aims a round at the card's step`() {
+        assertEquals(RunnerCommand.SetRounds(3, 4), tap(SessionControl.Rounds(3))?.command(aim.sessionId, 2))
     }
 
     /**
@@ -81,8 +79,8 @@ class SessionControlsTest {
      */
     @Test
     fun `never takes back rounds counted since the card was drawn`() {
-        assertNull(tap(SessionControl.Rounds(3))?.command(aim.sessionId, aim.visit, 3))
-        assertNull(tap(SessionControl.Rounds(3))?.command(aim.sessionId, aim.visit, 4))
+        assertNull(tap(SessionControl.Rounds(3))?.command(aim.sessionId, 3))
+        assertNull(tap(SessionControl.Rounds(3))?.command(aim.sessionId, 4))
     }
 
     @Test
@@ -96,23 +94,17 @@ class SessionControlsTest {
         assertEquals(emptyList<RunnerCommand>(), sent)
     }
 
-    /** The receiver checks a round against the step on screen, not against the visit the tap carries. */
+    /** The receiver counts against the step on screen, and aims the round at the card's step. */
     @Test
-    fun `sends a round only while the session is still on the card's step`() {
+    fun `sends the next round aimed at the card's step`() {
         val sent = mutableListOf<RunnerCommand>()
         val amrap = started(GRINDER)
         val view = RunnerView.Running(planOf(GRINDER), amrap.state.snapshot, amrap.state.session)
         val own = SessionAim(amrap.state.session.id, amrap.state.snapshot.visit)
 
         assertTrue(sendSessionTap(sessionControlUri(own, SessionControl.Rounds(1)), view, sent::add))
-        assertFalse(
-            sendSessionTap(
-                sessionControlUri(own.copy(visit = own.visit + 1), SessionControl.Rounds(1)),
-                view,
-                sent::add,
-            ),
-        )
-        assertEquals(listOf<RunnerCommand>(RunnerCommand.SetRounds(1)), sent)
+        assertFalse(sendSessionTap(sessionControlUri(own, SessionControl.Rounds(2)), view, sent::add))
+        assertEquals(listOf<RunnerCommand>(RunnerCommand.SetRounds(1, own.visit)), sent)
     }
 
     /** What a Live Update and the watch read off the built notification, not just the content behind it. */

@@ -24,7 +24,7 @@ class SessionRoundTripTest {
     private fun Runner.runThrough() {
         repeat(snapshot.steps.size) {
             if (state.finished) return
-            if (step?.exerciseId == "grinder") send(RunnerCommand.SetRounds(4))
+            if (step?.exerciseId == "grinder") rounds(4)
             tick(7)
             advance()
         }

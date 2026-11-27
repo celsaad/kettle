@@ -45,7 +45,7 @@ class RunnerWritesTest {
             assertEquals(LoggedUnit.Minute(1), lastLogged(emom.state))
 
             val amrap = Runner(workoutOf(single("grinder"), single("pullups")))
-            amrap.send(RunnerCommand.SetRounds(4))
+            amrap.rounds(4)
             amrap.advance()
             assertEquals(LoggedUnit.Entry("Grinder"), lastLogged(amrap.state))
         }
@@ -137,7 +137,7 @@ class RunnerWritesTest {
             assertEquals(1, emom.entry<SessionEntry.Emom>("swings")?.minutes?.size)
 
             val amrap = Runner(workoutOf(single("grinder"), single("pullups")))
-            amrap.send(RunnerCommand.SetRounds(4))
+            amrap.rounds(4)
             amrap.advance()
             assertEquals(1, amrap.entries.size)
             amrap.prev()
@@ -413,7 +413,7 @@ class RunnerWritesTest {
         @Test
         fun `logs an amrap's rounds and extra reps once`() {
             val runner = Runner(workoutOf(single("grinder")))
-            runner.send(RunnerCommand.SetRounds(5))
+            runner.rounds(5)
             runner.send(RunnerCommand.SetExtraReps(3))
             runner.advance()
 
@@ -423,12 +423,12 @@ class RunnerWritesTest {
         @Test
         fun `a round counted or taken back clears the reps entered into it`() {
             val runner = Runner(workoutOf(single("grinder")))
-            runner.send(RunnerCommand.SetRounds(4))
+            runner.rounds(4)
             runner.send(RunnerCommand.SetExtraReps(8))
-            runner.send(RunnerCommand.SetRounds(5))
+            runner.rounds(5)
             assertEquals(0, runner.snapshot.inputs.extraReps)
             runner.send(RunnerCommand.SetExtraReps(3))
-            runner.send(RunnerCommand.SetRounds(4))
+            runner.rounds(4)
             runner.advance()
 
             assertEquals(listOf(SessionEntry.Amrap("grinder", 4, null)), runner.entries)
@@ -449,7 +449,7 @@ class RunnerWritesTest {
         @Test
         fun `completes the session once the last step is done`() {
             val runner = Runner(workoutOf(single("grinder")))
-            runner.send(RunnerCommand.SetRounds(1))
+            runner.rounds(1)
             runner.tick(10)
             runner.advance()
 

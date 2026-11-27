@@ -42,6 +42,9 @@ internal class Runner(
     /** Log the set, Done, Skip or log the interval, aimed at the step on screen. */
     fun advance() = send(RunnerCommand.Advance(snapshot.visit))
 
+    /** An AMRAP's round count, aimed at the step on screen. */
+    fun rounds(count: Long) = send(RunnerCommand.SetRounds(count, snapshot.visit))
+
     /** Back, aimed at the step on screen. */
     fun prev() = send(RunnerCommand.Prev(snapshot.visit))
 

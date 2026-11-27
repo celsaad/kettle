@@ -1,5 +1,6 @@
 package com.casco.kettle.shell.runner
 
+import com.casco.kettle.domain.CircuitMember
 import com.casco.kettle.domain.CountIn
 import com.casco.kettle.domain.Exercise
 import com.casco.kettle.domain.LoggedUnit
@@ -7,6 +8,9 @@ import com.casco.kettle.domain.RunnerCommand
 import com.casco.kettle.domain.RunnerEffect
 import com.casco.kettle.domain.RunnerPlan
 import com.casco.kettle.domain.RunnerTransition
+import com.casco.kettle.domain.Workout
+import com.casco.kettle.domain.WorkoutBlock
+import com.casco.kettle.domain.buildSteps
 import com.casco.kettle.domain.reduceRunner
 import com.casco.kettle.domain.startRunner
 import org.junit.Assert.assertEquals
@@ -64,7 +68,7 @@ class RunnerNotificationsTest {
         val first = content(running(started(PULLUPS)))
 
         assertEquals("Pull-ups", first.title)
-        assertEquals("Reps · série 1 de 3 · 20 kg · 6 repetições", first.text)
+        assertEquals("Série 1 de 3 · 6 × 20 kg", first.text)
         assertEquals("Morning", first.subText)
         assertNull(first.chronometer)
         assertEquals("Série 1/3", first.shortText)
@@ -75,7 +79,7 @@ class RunnerNotificationsTest {
     fun `follows an input edited on the phone, since Log set logs it`() {
         val edited = started(PULLUPS).then(RunnerCommand.SetReps(8)).then(RunnerCommand.SetWeight(22.5))
 
-        assertEquals("Reps · série 1 de 3 · 22.5 kg · 8 repetições", content(running(edited)).text)
+        assertEquals("Série 1 de 3 · 8 × 22.5 kg", content(running(edited)).text)
     }
 
     @Test
@@ -99,16 +103,48 @@ class RunnerNotificationsTest {
     @Test
     fun `gives a hold, a HIIT round and cardio Done, and their position`() {
         val hold = content(running(started(PLANK), PLANK))
-        assertEquals("Isometria · série 1 de 2", hold.text)
+        assertEquals("Série 1 de 2", hold.text)
         assertEquals(listOf("Concluir"), hold.labels())
 
         val round = content(running(started(BURPEES), BURPEES))
-        assertEquals("Esforço · rodada 1 de 2", round.text)
+        assertEquals("Rodada 1 de 2", round.text)
         assertEquals(listOf("Concluir"), round.labels())
 
         val walk = content(running(started(WALK), WALK))
         assertNull(walk.text)
         assertEquals(listOf("Concluir"), walk.labels())
+    }
+
+    @Test
+    fun `gives a later step Back beside Done`() {
+        val secondHold = started(PLANK).advanced().advanced(T0 + 10_000)
+
+        assertEquals(listOf("Concluir", "Voltar"), content(running(secondHold, PLANK)).labels())
+    }
+
+    /** A member's set is the circuit's round (#473): the line says the round, and the chip says no "set". */
+    @Test
+    fun `gives a circuit member its round, and no set in the chip`() {
+        val circuit =
+            Workout(
+                "c",
+                "Morning",
+                listOf(
+                    WorkoutBlock.Circuit(
+                        id = "c",
+                        rounds = 2,
+                        restBetweenExercisesSec = 15.0,
+                        restBetweenRoundsSec = 60.0,
+                        members = listOf(CircuitMember("pullups"), CircuitMember("plank")),
+                    ),
+                ),
+            )
+        val plan = RunnerPlan.Runnable(circuit, RUNNER_EXERCISES, buildSteps(circuit, RUNNER_EXERCISES))
+        val start = startRunner(plan, null, T0)
+        val member = content(RunnerView.Running(plan, start.state.snapshot, start.state.session))
+
+        assertEquals("Rodada 1 de 2 · 6 × 20 kg", member.text)
+        assertNull(member.shortText)
     }
 
     /** The screen's EMOM Done only rests out the minute; an advance from the card would start the next. */

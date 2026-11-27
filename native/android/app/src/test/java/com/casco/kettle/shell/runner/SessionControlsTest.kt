@@ -1,12 +1,16 @@
 package com.casco.kettle.shell.runner
 
+import android.app.Notification
 import android.app.PendingIntent
 import android.content.Intent
 import android.net.Uri
+import androidx.core.app.NotificationCompat
+import com.casco.kettle.domain.CountIn
 import com.casco.kettle.domain.RunnerCommand
 import com.casco.kettle.domain.RunnerTransition
 import com.casco.kettle.domain.reduceRunner
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -49,26 +53,81 @@ class SessionControlsTest {
     @Test
     fun `sends the step's commands aimed at the card's visit, for the engine to refuse if stale`() {
         val later = 9L
-        assertEquals(RunnerCommand.Advance(4), tap(SessionControl.Advance)?.command(aim.sessionId, later))
-        assertEquals(RunnerCommand.Prev(4), tap(SessionControl.Prev)?.command(aim.sessionId, later))
+        assertEquals(RunnerCommand.Advance(4), tap(SessionControl.Advance)?.command(aim.sessionId, later, 0))
+        assertEquals(RunnerCommand.Prev(4), tap(SessionControl.Prev)?.command(aim.sessionId, later, 0))
         assertEquals(
             RunnerCommand.AddRestSeconds(30.0, 4),
-            tap(SessionControl.AddRest)?.command(aim.sessionId, later),
+            tap(SessionControl.AddRest)?.command(aim.sessionId, later, 0),
         )
-        assertEquals(RunnerCommand.TogglePause, tap(SessionControl.Resume)?.command(aim.sessionId, later))
+        assertEquals(RunnerCommand.TogglePause, tap(SessionControl.Resume)?.command(aim.sessionId, later, 0))
     }
 
     /** Visits start again at 0 in every session, so a visit alone would let a late tap land in the next one. */
     @Test
     fun `drops a tap from another session`() {
-        assertNull(tap(SessionControl.Prev)?.command("2026-11-26T10-00-00-000Z", aim.visit))
+        assertNull(tap(SessionControl.Prev)?.command("2026-11-26T10-00-00-000Z", aim.visit, 0))
     }
 
     /** The engine doesn't aim SetRounds, so a late "Round N done" would set the next AMRAP's rounds. */
     @Test
     fun `sets the rounds only on the step the card was drawn for`() {
-        assertEquals(RunnerCommand.SetRounds(3), tap(SessionControl.Rounds(3))?.command(aim.sessionId, aim.visit))
-        assertNull(tap(SessionControl.Rounds(3))?.command(aim.sessionId, aim.visit + 1))
+        assertEquals(RunnerCommand.SetRounds(3), tap(SessionControl.Rounds(3))?.command(aim.sessionId, aim.visit, 2))
+        assertNull(tap(SessionControl.Rounds(3))?.command(aim.sessionId, aim.visit + 1, 2))
+    }
+
+    /**
+     * Inside an AMRAP the visit doesn't move, so a card that lagged the phone's own counting would send its
+     * absolute count and take back rounds counted since. Remove the count check in `command` and this fails.
+     */
+    @Test
+    fun `never takes back rounds counted since the card was drawn`() {
+        assertNull(tap(SessionControl.Rounds(3))?.command(aim.sessionId, aim.visit, 3))
+        assertNull(tap(SessionControl.Rounds(3))?.command(aim.sessionId, aim.visit, 4))
+    }
+
+    @Test
+    fun `sends nothing without a running session, as in the count-in`() {
+        val sent = mutableListOf<RunnerCommand>()
+        val countIn = RunnerView.CountingIn(planOf(GRINDER), null, CountIn(T0))
+        val uri = sessionControlUri(aim, SessionControl.Advance)
+
+        assertFalse(sendSessionTap(uri, countIn, sent::add))
+        assertFalse(sendSessionTap(uri, null, sent::add))
+        assertEquals(emptyList<RunnerCommand>(), sent)
+    }
+
+    /** The receiver checks a round against the step on screen, not against the visit the tap carries. */
+    @Test
+    fun `sends a round only while the session is still on the card's step`() {
+        val sent = mutableListOf<RunnerCommand>()
+        val amrap = started(GRINDER)
+        val view = RunnerView.Running(planOf(GRINDER), amrap.state.snapshot, amrap.state.session)
+        val own = SessionAim(amrap.state.session.id, amrap.state.snapshot.visit)
+
+        assertTrue(sendSessionTap(sessionControlUri(own, SessionControl.Rounds(1)), view, sent::add))
+        assertFalse(
+            sendSessionTap(
+                sessionControlUri(own.copy(visit = own.visit + 1), SessionControl.Rounds(1)),
+                view,
+                sent::add,
+            ),
+        )
+        assertEquals(listOf<RunnerCommand>(RunnerCommand.SetRounds(1)), sent)
+    }
+
+    /** What a Live Update and the watch read off the built notification, not just the content behind it. */
+    @Test
+    fun `asks to be a Live Update, with the chip, the workout and the buttons in order`() {
+        val (_, rest) = setThenRest(started(PULLUPS))
+        val open = PendingIntent.getActivity(context, 0, Intent(), PendingIntent.FLAG_IMMUTABLE)
+        val notification = ongoingNotification(context, rest, open)
+        val set = ongoingNotification(context, ongoingContent(context.resources, view(started(PULLUPS))), open)
+
+        assertTrue(NotificationCompat.isRequestPromotedOngoing(notification))
+        assertTrue(NotificationCompat.hasPromotableCharacteristics(notification))
+        assertEquals("Morning", notification.extras.getCharSequence(Notification.EXTRA_SUB_TEXT)?.toString())
+        assertEquals(listOf("Skip rest", "Back", "+30s"), notification.actions.map { it.title.toString() })
+        assertEquals("Set 1/3", NotificationCompat.getShortCriticalText(set))
     }
 
     /**

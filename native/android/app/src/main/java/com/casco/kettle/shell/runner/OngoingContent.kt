@@ -1,6 +1,7 @@
 package com.casco.kettle.shell.runner
 
 import android.content.res.Resources
+import com.casco.kettle.domain.CircuitPosition
 import com.casco.kettle.domain.IntervalVariant
 import com.casco.kettle.domain.RunnerSnapshot
 import com.casco.kettle.domain.RunnerStep
@@ -8,9 +9,6 @@ import com.casco.kettle.domain.UnitSystem
 import com.casco.kettle.domain.WorkStep
 import com.casco.kettle.shell.R
 import com.casco.kettle.shell.i18n.pluralText
-
-// What the runner's ongoing notification says, and the session controls on it (docs/watch-remote-plan.md):
-// a function of the runner's state, which RunnerNotifications.kt builds into the notification.
 
 /** A chronometer in the shade: counting down to [baseWallMs], or up from it. */
 data class Chronometer(
@@ -107,9 +105,10 @@ private fun Resources.stepContent(
                 Chronometer(started, false)
             }
         }
-    // A reps step has no clock to put in the chip, so it says the set.
+    // A reps step has no clock to put in the chip, so it says the set; not in a circuit, where its "set" is
+    // the circuit's round (#473), and the detail line already says so.
     val chip =
-        (step as? RunnerStep.Reps)?.let {
+        (step as? RunnerStep.Reps)?.takeIf { it.circuit == null }?.let {
             getString(R.string.session_notification_chipSet, "${it.setIndex}", "${it.setTotal}")
         }
     val back = backAction(snapshot.stepIndex, view.logged != null)
@@ -126,8 +125,9 @@ private fun Resources.stepContent(
 
 /**
  * The step's one detail line. Reps say what Log set will log, the live inputs and not a recomputed seed,
- * so a phone edit reaches the card; an AMRAP its rounds so far, which "Round N done" counts from the
- * wrist. Positions are the screen's own header line, which a circuit's round already replaces.
+ * so a phone edit reaches the card, in the Logged panel's words ("6 × 20 kg"); an AMRAP its rounds so
+ * far, which "Round N done" counts from the wrist. Positions are the rest preview's ("Set 2 of 4"),
+ * short for a round face, but for an EMOM's, which keeps the screen's line for its "minute".
  */
 private fun Resources.detail(
     step: RunnerStep,
@@ -144,21 +144,23 @@ private fun Resources.detail(
         }
 
         is RunnerStep.Reps -> {
-            listOfNotNull(
-                stepLabel(step, inputs),
-                inputs.weightKg.takeIf { it > 0 }?.let { weightText(it, units) },
-                reps(inputs.reps),
-            ).joinToString(" · ")
+            val logs =
+                inputs.weightKg.takeIf { it > 0 }?.let {
+                    getString(R.string.format_loadedSet, "${inputs.reps}", weightText(it, units))
+                } ?: reps(inputs.reps)
+            "${setPosition(step.setIndex, step.setTotal, step.circuit)} · $logs"
         }
 
         is RunnerStep.Hold -> {
-            stepLabel(step, inputs)
+            setPosition(step.setIndex, step.setTotal, step.circuit)
         }
 
         is RunnerStep.Interval -> {
             when (step.variant) {
+                // Its own round, as the rest preview says it: a HIIT member runs all of them on each
+                // circuit visit, so the circuit's round would misname it.
                 IntervalVariant.HIIT -> {
-                    stepLabel(step, inputs)
+                    getString(R.string.preview_roundOf, "${step.setIndex}", "${step.setTotal}")
                 }
 
                 IntervalVariant.EMOM -> {
@@ -178,6 +180,15 @@ private fun Resources.detail(
         }
     }
 }
+
+/** "Set 2 of 4", or a circuit's round, which a member's set is there (#473). */
+private fun Resources.setPosition(
+    setIndex: Long,
+    setTotal: Long,
+    circuit: CircuitPosition?,
+): String =
+    circuit?.let { getString(R.string.preview_roundOf, "${it.round}", "${it.rounds}") }
+        ?: getString(R.string.preview_set, "$setIndex", "$setTotal")
 
 /**
  * Back, or Undo where it takes back a set just logged, as the rest screen labels it; none on the first

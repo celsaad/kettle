@@ -278,12 +278,12 @@ try {
   Start-Sleep -Seconds 1
   $at = StepIndex
   Check 'an advance carrying the last visit is refused' ($answer -eq 'ok' -and $at -eq 1) "answer '$answer', on step $at"
-  # The session-control button a card drawn for the set carries, fired once the session has left the set:
-  # delivered through the notification's own tap handling, and the step doesn't move.
-  $answer = if ($first) { Rc tap --es uri "kettle://session-control/$($first.sessionId)/$($first.visit)/prev" } else { '' }
+  # The set's card's Log set, fired once the session has left the set: delivered through the notification's
+  # own tap handling (a non-exported receiver can't be reached from adb), and the step doesn't move.
+  $answer = if ($first) { Rc tap --es uri "kettle://session-control/$($first.sessionId)/$($first.visit)/advance" } else { '' }
   Start-Sleep -Seconds 1
   $at = StepIndex
-  Check "a superseded card's Back is refused" ($answer -eq 'ok' -and $at -eq 1) "answer '$answer', on step $at"
+  Check "a superseded card's Log set is refused" ($answer -eq 'ok' -and $at -eq 1) "answer '$answer', on step $at"
   CloseSession
 
   Step 'Cue cadence, alert gating and content, sounds on'

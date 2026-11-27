@@ -95,31 +95,61 @@ private fun controlOf(path: List<String>): SessionControl? =
     }
 
 /**
- * The command a tap sends to the session running as [sessionId] on step [visit], or null to drop it. A
- * tap from another session is dropped here, since visits start again at 0 in every one. The engine
- * refuses a stale Advance, Prev or +30s itself; `SetRounds` it doesn't aim, so its visit is checked
- * here, which leaves the narrow window of a snapshot lagging the engine (#516). Resume can't be aimed:
- * pausing doesn't move the visit.
+ * The command a tap sends to the session running as [sessionId] on step [visit] with [roundsCompleted]
+ * counted, or null to drop it. A tap from another session is dropped here, since visits start again at 0
+ * in every one. The engine refuses a stale Advance, Prev or +30s itself; `SetRounds` it doesn't aim, so
+ * it is checked here, against the visit and the count the button was drawn for: the visit doesn't move
+ * inside an AMRAP, and an absolute count from a lagging card would take back rounds counted since. That
+ * leaves the narrow window of a snapshot lagging the engine (#516). Resume can't be aimed: pausing
+ * doesn't move the visit.
  */
 fun SessionTap.command(
     sessionId: String,
     visit: Long,
+    roundsCompleted: Long,
 ): RunnerCommand? {
     if (aim.sessionId != sessionId) return null
     return when (control) {
-        SessionControl.Advance -> RunnerCommand.Advance(aim.visit)
-        SessionControl.Prev -> RunnerCommand.Prev(aim.visit)
-        SessionControl.AddRest -> RunnerCommand.AddRestSeconds(REST_BUMP_SEC, aim.visit)
-        SessionControl.Resume -> RunnerCommand.TogglePause
-        is SessionControl.Rounds -> RunnerCommand.SetRounds(control.rounds).takeIf { aim.visit == visit }
+        SessionControl.Advance -> {
+            RunnerCommand.Advance(aim.visit)
+        }
+
+        SessionControl.Prev -> {
+            RunnerCommand.Prev(aim.visit)
+        }
+
+        SessionControl.AddRest -> {
+            RunnerCommand.AddRestSeconds(REST_BUMP_SEC, aim.visit)
+        }
+
+        SessionControl.Resume -> {
+            RunnerCommand.TogglePause
+        }
+
+        is SessionControl.Rounds -> {
+            RunnerCommand
+                .SetRounds(
+                    control.rounds,
+                ).takeIf { aim.visit == visit && control.rounds == roundsCompleted + 1 }
+        }
     }
 }
 
-/** Sends the tap [uri] carries to the running session; whether it went, for the debug receiver's check. */
-fun sendSessionTap(uri: Uri?): Boolean {
-    val snapshot = (RunnerHost.active as? RunnerView.Running)?.snapshot
-    val command = snapshot?.let { uri?.let(::parseSessionTap)?.command(it.sessionId, it.visit) }
-    command?.let(RunnerHost::send)
+/**
+ * Sends the tap [uri] carries to the session [view] shows, through [send]; whether it went, for the debug
+ * receiver's check. Nothing goes without a running session: a count-in has no step to aim at.
+ */
+fun sendSessionTap(
+    uri: Uri?,
+    view: RunnerView? = RunnerHost.active,
+    send: (RunnerCommand) -> Unit = RunnerHost::send,
+): Boolean {
+    val snapshot = (view as? RunnerView.Running)?.snapshot
+    val command =
+        snapshot?.let {
+            uri?.let(::parseSessionTap)?.command(it.sessionId, it.visit, it.inputs.roundsCompleted)
+        }
+    command?.let(send)
     return command != null
 }
 

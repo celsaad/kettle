@@ -384,9 +384,8 @@
       "cuesChannel": "Avisos do treino",
       "ongoingChannel": "Treino em andamento",
       "getReady": "Prepare-se",
+      "chipSet": "Série {{index}}/{{total}}",
       "rest": "Descanso",
-      "paused": "{{step}} · Pausado",
-      "setPosition": "{{step}} · Série {{index}} de {{total}}",
       "intervalTitle": "Intervalo concluído",
       "timeUpTitle": "Tempo esgotado",
       "workoutComplete": "Treino concluído"

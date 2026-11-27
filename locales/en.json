@@ -359,9 +359,8 @@
       "cuesChannel": "Workout cues",
       "ongoingChannel": "Workout in progress",
       "getReady": "Get ready",
+      "chipSet": "Set {{index}}/{{total}}",
       "rest": "Rest",
-      "paused": "{{step}} · Paused",
-      "setPosition": "{{step}} · Set {{index}} of {{total}}",
       "intervalTitle": "Interval complete",
       "timeUpTitle": "Time's up",
       "workoutComplete": "Workout complete"

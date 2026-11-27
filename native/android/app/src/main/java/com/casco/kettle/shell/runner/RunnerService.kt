@@ -399,6 +399,7 @@ private fun Context.placeholder(): Notification {
                 applicationInfo.loadLabel(packageManager).toString(),
                 getString(R.string.session_notification_getReady),
                 null,
+                null,
             )
     return ongoingNotification(this, content, openRunner())
 }

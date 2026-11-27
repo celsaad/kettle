@@ -185,12 +185,6 @@ wanting states and assignees, it wants GitHub issues instead.
   decision log (lazy or paginated loading, or a small index file) still stands — explicitly *not*
   consolidating the per-session files.
 
-- **Session controls: drive a running session from the wrist.** Specced and ready to build in
-  [`watch-remote-plan.md`](watch-remote-plan.md): actions on the runner's ongoing notification,
-  promoted to a Live Update, which a Wear OS 7 watch shows with no watch app, no second APK and no
-  sync layer. The engine change it depends on (`Prev` and `AddRestSeconds` aimed by visit) lands
-  first.
-
 - **Images on exercises — the half that is still open.** The bundled set shipped: every exercise the
   app itself ships — seeded, or in one of the bundled content packs — now carries a line drawing keyed
   by its id, described in every locale bundle and rendered in the exercise editor.

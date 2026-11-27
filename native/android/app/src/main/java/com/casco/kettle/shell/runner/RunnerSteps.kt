@@ -190,7 +190,7 @@ internal fun RestScreen(context: StepContext) {
 }
 
 private val REST_NUMERAL = 100.sp
-private const val REST_BUMP_SEC = 30.0
+internal const val REST_BUMP_SEC = 30.0
 
 /** −15s (#417): cut past what's left, the rest ends on the next tick, as it would have at its end. */
 private const val REST_CUT_SEC = 15.0

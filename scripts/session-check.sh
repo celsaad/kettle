@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # Runs the native runner's repeatable device checks unattended against com.casco.kettle.dev (#315):
-# leaving the count-in, a stale advance, cue cadence, the step-end alert's gating and content, the
-# sounds preference, notifications denied, process death, and a rest's timing with the screen off,
-# then the finish path. Each check prints PASS or FAIL on its own line. session-check.ps1 is its twin
-# for Windows, step for step; the two change together, and the test library they plant is
-# session-check-library.yaml.
+# leaving the count-in, a stale advance and a superseded card's tap, cue cadence, the step-end
+# alert's gating and content, the sounds preference, notifications denied, process death, and a
+# rest's timing with the screen off, then the finish path. Each check prints PASS or FAIL on its own
+# line. session-check.ps1 is its twin for Windows, step for step; the two change together, and the
+# test library they plant is session-check-library.yaml.
 #
 # Needs the .dev APK built (scripts/native-dev.sh, or `gradlew :app:assembleDebug`), and a target
 # that's booted, unlocked and running no session. It installs the APK (after checking the cue sounds
@@ -315,6 +315,13 @@ answer=$([ -n "$visit" ] && rc advance --el visit "$visit")
 sleep 1
 [ "$answer" = ok ] && [ "$(step_index)" = 1 ]
 check 'an advance carrying the last visit is refused' $? "answer '$answer', on step $(step_index)"
+# The set's card's Log set, fired once the session has left the set: delivered through the notification's
+# own tap handling (a non-exported receiver can't be reached from adb), and the step doesn't move.
+session=$(field "$first" sessionId)
+answer=$([ -n "$visit" ] && rc tap --es uri "kettle://session-control/$session/$visit/advance")
+sleep 1
+[ "$answer" = ok ] && [ "$(step_index)" = 1 ]
+check "a superseded card's Log set is refused" $? "answer '$answer', on step $(step_index)"
 close_session
 
 step 'Cue cadence, alert gating and content, sounds on'

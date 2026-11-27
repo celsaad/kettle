@@ -91,9 +91,13 @@ fun RunnerRoute(start: RunnerStart?) {
     }
     // Set when this screen sends Finish, so the completion it leads to doesn't buzz as an advance would.
     val finishing = remember { AtomicBoolean(false) }
-    RunnerWindow(keepAwake = entry is RunnerEntry.Attach || entry is RunnerEntry.Complete, finishing)
     val locale = LocalConfiguration.current.locales[0]
     val preferences = preferencesOrDefault(files.preferences, deviceUnitSystem(locale))
+    RunnerWindow(
+        keepAwake = entry is RunnerEntry.Attach || entry is RunnerEntry.Complete,
+        finishing,
+        soundsOn = preferences.sessionSounds,
+    )
     RunnerScreen(
         entry,
         RunnerEnvironment(
@@ -149,15 +153,18 @@ private fun leave(close: () -> Unit) {
 
 /**
  * The window and the device while a session is up: the screen stays on from the count-in through
- * completion; one medium haptic on each advance, whatever the sounds setting (#301 is separate); and a
- * screen reader hears each new step once (§3.10).
+ * completion; one medium haptic on each advance, while sounds are on ([AdvanceHaptics]); and a screen
+ * reader hears each new step once (§3.10).
  */
 @Composable
 private fun RunnerWindow(
     keepAwake: Boolean,
     finishing: AtomicBoolean,
+    soundsOn: Boolean,
 ) {
     val view = LocalView.current
+    // Read at each view, not when the collection started: Settings can turn sounds off mid-session.
+    val sounds by rememberUpdatedState(soundsOn)
     DisposableEffect(view, keepAwake) {
         view.keepScreenOn = keepAwake
         onDispose { view.keepScreenOn = false }
@@ -166,24 +173,13 @@ private fun RunnerWindow(
     LaunchedEffect(view) {
         // Collected here rather than read in composition, which pauses while the app is stopped and then
         // sees every advance since at once: an advance made while nobody watches buzzes nobody.
-        var last: Pair<String, Int>? = null
+        val haptics = AdvanceHaptics()
         var spoken: Pair<String, Long>? = null
         RunnerHost.view.collect { shown ->
-            // The advance that ends the workout buzzes like any other; a Finish doesn't, as RN's didn't.
-            if (shown is RunnerView.Completed && last != null) {
-                val watching = lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)
-                if (watching && !finishing.get()) view.performHapticFeedback(ADVANCE_HAPTIC)
-                last = null
-            }
-            val running = shown as? RunnerView.Running ?: return@collect
-            val snapshot = running.snapshot
-            val position = snapshot.sessionId to snapshot.stepIndex
-            val before = last
-            last = position
             val watching = lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)
-            if (watching && advanced(before, position)) {
-                view.performHapticFeedback(ADVANCE_HAPTIC)
-            }
+            val buzz = haptics.buzzes(shown, watching = watching, finishing = finishing.get(), soundsOn = sounds)
+            if (buzz) view.performHapticFeedback(ADVANCE_HAPTIC)
+            val snapshot = (shown as? RunnerView.Running)?.snapshot ?: return@collect
             val step = snapshot.step ?: return@collect
             // Once per visit, not whenever the sentence changes: it carries the reps the set opened on,
             // and keyed on the words, every −/+ tap would read the whole line again.
@@ -199,12 +195,6 @@ private fun RunnerWindow(
         }
     }
 }
-
-/** The same session's step index went up: an advance, not a Prev, a swap or a new session. */
-private fun advanced(
-    before: Pair<String, Int>?,
-    after: Pair<String, Int>,
-): Boolean = before != null && before.first == after.first && after.second > before.second
 
 /**
  * The wall-clock time, moved on at each of the step's own second boundaries, so the seconds drawn turn

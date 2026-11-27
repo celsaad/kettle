@@ -125,7 +125,7 @@ fun beatsPersonalBest(
     val inputs = state.snapshot.inputs
     val best = (step as? WorkStep)?.let { personalBestFor(priorSessions, it.exerciseId) }
     val logged = step?.let { state.memberEntry(it.memberKey) }
-    // As RN's `raise`: the session's own sets set a bar even with no history, so a heavier second set
+    // The session's own sets set a bar too, even with no history, so a heavier second set
     // of a first-ever session marks.
     val beats = { value: Double, best: Double?, own: List<Double> ->
         listOfNotNull(best, own.maxOrNull()).maxOrNull()?.let { value > it } ?: false

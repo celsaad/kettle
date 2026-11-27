@@ -3,8 +3,8 @@ package com.casco.kettle.domain
 import kotlin.time.Instant
 
 /**
- * What a logged entry competes on, held by `conformance/records.yaml`. [json] is the kind as RN spells it,
- * which [recordKey] writes into every key.
+ * What a logged entry competes on, held by `conformance/records.yaml`. [json] is the kind as the corpus
+ * names it, which [recordKey] writes into every key.
  */
 enum class RecordKind(
     val json: String,
@@ -46,7 +46,7 @@ fun entryBest(entry: SessionEntry): EntryBest? =
         }
     }
 
-/** Split on whether a load was logged at all, not on its size, as RN's is. */
+/** Split on whether a load was logged at all, not on its size: any load competes on load, not reps. */
 private fun repsBest(sets: List<RepsSetLog>): EntryBest? {
     val loaded = sets.filter { (it.weightKg ?: 0.0) > 0 }
     return when {
@@ -59,7 +59,7 @@ private fun repsBest(sets: List<RepsSetLog>): EntryBest? {
         }
 
         else -> {
-            // The first of equals, as RN's reduce keeps it.
+            // The first of equals: the set that reached the weight first is the one that set it.
             val heaviest = loaded.reduce { best, set -> if (set.weightKg!! > best.weightKg!!) set else best }
             val oneRepMaxKg = loaded.mapNotNull { estimatedOneRepMaxKg(it.weightKg, it.reps) }.maxOrNull()
             EntryBest(RecordKind.HeaviestSet, heaviest.weightKg!!, heaviest.reps, oneRepMaxKg)
@@ -68,7 +68,7 @@ private fun repsBest(sets: List<RepsSetLog>): EntryBest? {
 }
 
 /**
- * Every best's key, by exercise and kind. Serialized as RN's `JSON.stringify([id, kind])` rather than
+ * Every best's key, by exercise and kind. Serialized as the JSON array `[id, kind]` rather than
  * joined: ids are hand-written, so any separator is one two ids could collide on.
  */
 fun recordKey(
@@ -155,7 +155,7 @@ fun sessionRecords(
         session.entries
             .mapNotNull { entry -> entryBest(entry)?.let { entry.exercise to it } }
             .filter { (exercise, best) -> before[recordKey(exercise, best.kind)]?.let { best.value > it } == true }
-    // The first of equals, as RN's keeps the record it collected first.
+    // The first of equals: the block that reached it first keeps the record.
     val strongest = linkedMapOf<String, Pair<String, EntryBest>>()
     for ((exercise, best) in beaten) {
         val key = recordKey(exercise, best.kind)

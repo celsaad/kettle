@@ -70,8 +70,9 @@ fun withTipRecorded(
  * the file is the app's, so there's no user to report to, and being wrong forgets a past tip rather
  * than any workout data.
  *
- * Read with the YAML loader, as `parsePreferences` is: RN wrote it with `JSON.stringify`, and that
- * output is YAML 1.2. All three keys are required, null or not, as zod's `nullable` requires them.
+ * Read with the YAML loader, as `parsePreferences` is: the file is JSON, which is YAML 1.2, so
+ * one loader reads what [serializeSupporterState] writes and what an older install left. All three
+ * keys are required, null or not.
  */
 fun parseSupporterState(text: String): SupporterState {
     val fields = (loadYaml(text) as? YamlLoad.Loaded)?.value as? Map<*, *>
@@ -92,7 +93,7 @@ private fun supporterStateOf(fields: Map<*, *>): SupporterState? {
     return if (valid) SupporterState(count.toLong(), at, TIERS[tier]) else null
 }
 
-/** The file as RN's `JSON.stringify` wrote it, key for key, so either side reads what the other wrote. */
+/** JSON with every key, null or not, since [parseSupporterState] refuses a file missing one. */
 fun serializeSupporterState(state: SupporterState): String {
     val at = state.lastTipAt?.let(::jsonString) ?: "null"
     val tier = state.lastTier?.let { jsonString(it.name.lowercase()) } ?: "null"

@@ -1,7 +1,7 @@
 # Stats redesign — plan
 
 > **Executed; kept for its rationale, not as a backlog.** The approach for reworking the Stats screen
-> ("Your numbers", [`analytics.tsx`](../src/app/analytics.tsx)), written down and agreed before any
+> ("Your numbers", [`analytics.tsx`](https://github.com/celsaad/kettle/blob/f58e2a929501b1b9203d2aa4b2259580a2b5f9db/src/app/analytics.tsx)), written down and agreed before any
 > code. The target layout was Option A of the design canvas, at four weeks rather than the eight it
 > was drawn with (https://claude.ai/code/artifact/18cbce3e-f39b-431c-af3b-3e1064c43c60 — the owner's
 > private link). The canvas's other two options are recorded under "Not doing" so they aren't
@@ -24,7 +24,7 @@ of the first fifteen "Getting stronger" rows read `45s · no change`, and will r
 
 - **Most of the rows are structurally unable to move.** A `timed_hold` with a fixed target ends
   itself at `holdSecMax ?? holdSecMin`, and the logged `holdSec` is clamped to that end
-  ([`use-session-runner.ts:489`](../src/hooks/use-session-runner.ts#L489)). So a 45s stretch logs 45s
+  ([`use-session-runner.ts:489`](https://github.com/celsaad/kettle/blob/f58e2a929501b1b9203d2aa4b2259580a2b5f9db/src/hooks/use-session-runner.ts#L489)). So a 45s stretch logs 45s
   every time; the only direction it can go is down, by ending early. That is the same reason
   `entryBest` already excludes `hiit` and `emom` — the number is bounded by the exercise's own config
   — and fixed-target holds never got the same treatment. A mobility routine is made of them.

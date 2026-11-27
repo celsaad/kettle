@@ -57,7 +57,7 @@ fun parseBackupTargets(text: String): Map<String, String> {
     return strings?.associate { (key, value) -> key as String to value as String }.orEmpty()
 }
 
-/** The record as RN's `JSON.stringify` wrote it, so an upgrade reads what the last RN backup remembered. */
+/** The record as JSON, which `parseBackupTargets` reads with the YAML loader, as it reads an older install's. */
 fun serializeBackupTargets(targets: Map<String, String>): String =
     targets.entries.joinToString(",", "{", "}") { (name, uri) -> "${jsonString(name)}:${jsonString(uri)}" }
 

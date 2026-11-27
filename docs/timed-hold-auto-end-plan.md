@@ -14,7 +14,7 @@
 > with no duration to interpolate.
 
 A `timed_hold` step counts up and never ends on its own: the only way out is the Done button
-([`session-hold.tsx:150`](../src/components/session-hold.tsx#L150)). This plan gives a hold with a
+([`session-hold.tsx:150`](https://github.com/celsaad/kettle/blob/1ad2e82588c2a5dce7963c1972e32a0d9ce1839e/src/components/session-hold.tsx#L150)). This plan gives a hold with a
 configured target an end of its own, and gives the untargeted "hold as long as you can" case a way to
 be expressed for the first time.
 
@@ -27,18 +27,18 @@ Three arguments, in the order they matter.
 
 **The log is currently wrong for hands-occupied holds.** In a dead hang or an L-sit you cannot reach
 the phone. The milestone chime fires at target
-([`use-session-runner.ts:469`](../src/hooks/use-session-runner.ts#L469)) and the clock then keeps
+([`use-session-runner.ts:469`](https://github.com/celsaad/kettle/blob/1ad2e82588c2a5dce7963c1972e32a0d9ce1839e/src/hooks/use-session-runner.ts#L469)) and the clock then keeps
 running while you dismount and pick the phone up, so `holdSec` is recorded with several seconds of
 dismount in it. That is a data-quality bug, not only an ergonomic one, and it is the reason to do
 this at all.
 
 **The codebase already made this decision once.**
-[`session-steps.ts:227`](../src/hooks/session-steps.ts#L227) sets `countUp: !hasDuration` for cardio:
+[`session-steps.ts:227`](https://github.com/celsaad/kettle/blob/1ad2e82588c2a5dce7963c1972e32a0d9ce1839e/src/hooks/session-steps.ts#L227) sets `countUp: !hasDuration` for cardio:
 a configured duration auto-advances, an absent one counts up. A hold with a target is structurally
 the same step. This plan applies an existing decision rather than introducing a new one.
 
 **The progress bar becomes honest.**
-[`session-hold.tsx:72`](../src/components/session-hold.tsx#L72) already scales the fill to
+[`session-hold.tsx:72`](https://github.com/celsaad/kettle/blob/1ad2e82588c2a5dce7963c1972e32a0d9ce1839e/src/components/session-hold.tsx#L72) already scales the fill to
 `holdSecMax ?? holdSecMin`. Today that bar can sit pegged at 100% indefinitely. Ending the step when
 the bar fills makes the bar mean something, and it is why the end is the *top* of the range rather
 than the bottom — no second concept is introduced, the end is the number the bar was already drawn
@@ -72,7 +72,7 @@ Named up front so the scope cut is a decision rather than a discovery.
 `hold_sec_min` becomes optional. This is a YAML format change and takes the four-mirror gate in
 `AGENTS.md`.
 
-[`schema.ts:41-50`](../src/domain/schema.ts#L41-L50):
+[`schema.ts:41-50`](https://github.com/celsaad/kettle/blob/1ad2e82588c2a5dce7963c1972e32a0d9ce1839e/src/domain/schema.ts#L41-L50):
 
 - `hold_sec_min: z.number().positive().optional()`.
 - The existing refine (`hold_sec_max >= hold_sec_min`) has to stop comparing against `undefined`.
@@ -82,10 +82,10 @@ Named up front so the scope cut is a decision rather than a discovery.
 So the three legal shapes are: neither (open-ended, counts up forever), min only (ends at min), min
 and max (ends at max, chimes at min).
 
-[`types.ts:20-21`](../src/domain/types.ts#L20-L21) — `holdSecMin?: number`, and the doc comment above
+[`types.ts:20-21`](https://github.com/celsaad/kettle/blob/1ad2e82588c2a5dce7963c1972e32a0d9ce1839e/src/domain/types.ts#L20-L21) — `holdSecMin?: number`, and the doc comment above
 it now has two optional fields to explain.
 
-[`yaml-mapping.ts:103-104, 179-180`](../src/domain/yaml-mapping.ts#L103-L104) — pass-through both
+[`yaml-mapping.ts:103-104, 179-180`](https://github.com/celsaad/kettle/blob/1ad2e82588c2a5dce7963c1972e32a0d9ce1839e/src/domain/yaml-mapping.ts#L103-L104) — pass-through both
 ways and already undefined-tolerant, but **verify the export round-trip omits the key** rather than
 emitting `hold_sec_min: null`. Cardio's optional `duration_sec` goes through the same path, so the
 behaviour should already be right; confirm rather than assume.
@@ -95,7 +95,7 @@ behaviour should already be right; confirm rather than assume.
 ### Step model — `session-steps.ts`
 
 `holdTargetSec` becomes optional, and the step gains `holdEndSec?: number`, computed in
-`expandExercise` ([lines 85-113](../src/hooks/session-steps.ts#L85-L113)) as
+`expandExercise` ([lines 85-113](https://github.com/celsaad/kettle/blob/1ad2e82588c2a5dce7963c1972e32a0d9ce1839e/src/hooks/session-steps.ts#L85-L113)) as
 `holdSecMax ?? holdSecMin`. Undefined means no auto-end.
 
 Precomputing it on the step rather than deriving it in the runner follows cardio's `countUp`, which
@@ -104,7 +104,7 @@ is decided in this same function for the same reason.
 ### Runner — `use-session-runner.ts`
 
 The high-risk file. Three effects gate on `isCountdownStep`
-([line 164](../src/hooks/use-session-runner.ts#L164)) and an auto-ending hold needs two of the three
+([line 164](https://github.com/celsaad/kettle/blob/1ad2e82588c2a5dce7963c1972e32a0d9ce1839e/src/hooks/use-session-runner.ts#L164)) and an auto-ending hold needs two of the three
 but not the first, so the concept has to split rather than widen:
 
 - **`isCountdownStep` keeps its current meaning** — it drives the countdown *display* through
@@ -114,47 +114,47 @@ but not the first, so the concept has to split rather than widen:
 
 Then:
 
-- **Ticking effect** ([462-486](../src/hooks/use-session-runner.ts#L462-L486)): the hold branch
+- **Ticking effect** ([462-486](https://github.com/celsaad/kettle/blob/1ad2e82588c2a5dce7963c1972e32a0d9ce1839e/src/hooks/use-session-runner.ts#L462-L486)): the hold branch
   already computes `elapsed`. Add `advance()` when `elapsed >= holdEndSec`, and `playTick()` in the
   final three seconds — the same 3-2-1 rest and countdown intervals already get
-  ([line 481](../src/hooks/use-session-runner.ts#L481)). For a hold with the phone on the floor the
+  ([line 481](https://github.com/celsaad/kettle/blob/1ad2e82588c2a5dce7963c1972e32a0d9ce1839e/src/hooks/use-session-runner.ts#L481)). For a hold with the phone on the floor the
   ticks are worth more than the auto-advance itself: they are how you know to prepare the dismount.
-- **Milestone chime** ([469](../src/hooks/use-session-runner.ts#L469)): guard the now-optional target,
+- **Milestone chime** ([469](https://github.com/celsaad/kettle/blob/1ad2e82588c2a5dce7963c1972e32a0d9ce1839e/src/hooks/use-session-runner.ts#L469)): guard the now-optional target,
   and **fire it only when `holdTargetSec < holdEndSec`.** On a min-only hold the chime and the
   auto-end land on the same instant, and two sounds in one second reads as a glitch.
-- **AppState catch-up** ([490-502](../src/hooks/use-session-runner.ts#L490-L502)): the hold branch
+- **AppState catch-up** ([490-502](https://github.com/celsaad/kettle/blob/1ad2e82588c2a5dce7963c1972e32a0d9ce1839e/src/hooks/use-session-runner.ts#L490-L502)): the hold branch
   currently only refreshes `holdElapsedSec`. It must also `advance()` when the hold's end passed while
   backgrounded, the way the countdown branch does. **This is the correctness core of the feature** —
   phone on the floor with the screen asleep is the normal case for a hold, not an edge case, and
   without this a hold that ends off-screen simply overruns.
-- **Notification fallback** ([505-525](../src/hooks/use-session-runner.ts#L505-L525)): extend to
+- **Notification fallback** ([505-525](https://github.com/celsaad/kettle/blob/1ad2e82588c2a5dce7963c1972e32a0d9ce1839e/src/hooks/use-session-runner.ts#L505-L525)): extend to
   auto-ending holds, with `remaining` computed from `holdEndSec` instead of `restTargetSecRef`. Note
-  the dependency-array comment at [521](../src/hooks/use-session-runner.ts#L521) — the ref is
+  the dependency-array comment at [521](https://github.com/celsaad/kettle/blob/1ad2e82588c2a5dce7963c1972e32a0d9ce1839e/src/hooks/use-session-runner.ts#L521) — the ref is
   deliberately not a dependency and the *state* is the change signal. Whatever carries the hold's end
   has to satisfy the same contract or the notification fires at the wrong time.
 - **Its copy is hardcoded English** — `'Rest complete'` / `'back to work'` at
-  [511](../src/hooks/use-session-runner.ts#L511), against the house rule. Route both through `t()`
+  [511](https://github.com/celsaad/kettle/blob/1ad2e82588c2a5dce7963c1972e32a0d9ce1839e/src/hooks/use-session-runner.ts#L511), against the house rule. Route both through `t()`
   while adding the hold's own copy; adding a second hardcoded string beside the first is not on.
-  `scheduleRestCompleteNotification` ([`safe-notifications.ts:49`](../src/hooks/safe-notifications.ts#L49))
+  `scheduleRestCompleteNotification` ([`safe-notifications.ts:49`](https://github.com/celsaad/kettle/blob/1ad2e82588c2a5dce7963c1972e32a0d9ce1839e/src/hooks/safe-notifications.ts#L49))
   takes title and body as arguments, so only the name is rest-specific — rename to
   `scheduleStepCompleteNotification`. **[`watch-remote-plan.md`](watch-remote-plan.md) carries the same
   fix**; whichever lands first takes it, and the other's entry gets pruned rather than both editing the
   same line.
 - **No change to logging.** Auto-advance goes through `advance()`, which commits the hold at
-  [348-350](../src/hooks/use-session-runner.ts#L348-L350) from `computeElapsedSec()`. An auto-ended
+  [348-350](https://github.com/celsaad/kettle/blob/1ad2e82588c2a5dce7963c1972e32a0d9ce1839e/src/hooks/use-session-runner.ts#L348-L350) from `computeElapsedSec()`. An auto-ended
   hold logs itself exactly as a tapped one does. Worth a test, not worth a change.
 
 ### UI — `session-hold.tsx`
 
 - `targetSec` becomes optional; thread `holdEndSec` from
-  [`session.tsx:262-271`](../src/app/session.tsx#L262-L271).
+  [`session.tsx:262-271`](https://github.com/celsaad/kettle/blob/1ad2e82588c2a5dce7963c1972e32a0d9ce1839e/src/app/session.tsx#L262-L271).
 - **Open-ended hold: no bar and no marker at all**, not an empty track — there is no scale to draw.
-  The `NaN%` guards at [60-76](../src/components/session-hold.tsx#L60-L76) stay: they cover a program
+  The `NaN%` guards at [60-76](https://github.com/celsaad/kettle/blob/1ad2e82588c2a5dce7963c1972e32a0d9ce1839e/src/components/session-hold.tsx#L60-L76) stay: they cover a program
   override writing `hold_sec_min: 0`, which is still unvalidated from either direction. The
   open-ended case is now a first-class path *above* them rather than a second thing they catch.
 - **Draw the minimum marker only when there is a range.** With the end at the top, a min-only hold's
   marker sits at 100% — the end of the track, where the fill already arrives. Drop it there.
-- **The Done-button comment at [143-149](../src/components/session-hold.tsx#L143-L149) becomes
+- **The Done-button comment at [143-149](https://github.com/celsaad/kettle/blob/1ad2e82588c2a5dce7963c1972e32a0d9ce1839e/src/components/session-hold.tsx#L143-L149) becomes
   false.** It states in as many words that a hold "never auto-advances" and that the button is "the
   *only* way out of the step". It has to be rewritten, and its actual point — that Done is the primary
   action and outranks Pause — survives, since Done is still how you end a hold early or end an
@@ -173,20 +173,20 @@ Then:
 
 Both hold estimates read `holdSecMin` directly and will not compile once it is optional:
 
-- `estimateExerciseSeconds` ([38](../src/state/selectors.ts#L38)) — estimate from `holdSecMax ??
+- `estimateExerciseSeconds` ([38](https://github.com/celsaad/kettle/blob/1ad2e82588c2a5dce7963c1972e32a0d9ce1839e/src/state/selectors.ts#L38)) — estimate from `holdSecMax ??
   holdSecMin`, since that is now how long the step actually runs, and contribute `0` for an
   open-ended hold. Cardio without a duration already contributes `0` at
-  [45](../src/state/selectors.ts#L45), so this is the existing convention rather than a new one.
-- `memberVisitSeconds` ([56](../src/state/selectors.ts#L56)) — same treatment.
+  [45](https://github.com/celsaad/kettle/blob/1ad2e82588c2a5dce7963c1972e32a0d9ce1839e/src/state/selectors.ts#L45), so this is the existing convention rather than a new one.
+- `memberVisitSeconds` ([56](https://github.com/celsaad/kettle/blob/1ad2e82588c2a5dce7963c1972e32a0d9ce1839e/src/state/selectors.ts#L56)) — same treatment.
 
 ### In-app editor — `exercise-form.ts`
 
 The forms never touch the zod schema, so the constraints have to be mirrored here by hand.
 
-- [79](../src/domain/exercise-form.ts#L79) — `holdSecMin` gains `optional: true`, exactly as cardio's
-  `durationSec` has at [84](../src/domain/exercise-form.ts#L84).
-- [195](../src/domain/exercise-form.ts#L195) — `num('holdSecMin')` → `optionalNum('holdSecMin')`.
-- `validateConfig` ([100-114](../src/domain/exercise-form.ts#L100-L114)) needs the max-requires-min
+- [79](https://github.com/celsaad/kettle/blob/1ad2e82588c2a5dce7963c1972e32a0d9ce1839e/src/domain/exercise-form.ts#L79) — `holdSecMin` gains `optional: true`, exactly as cardio's
+  `durationSec` has at [84](https://github.com/celsaad/kettle/blob/1ad2e82588c2a5dce7963c1972e32a0d9ce1839e/src/domain/exercise-form.ts#L84).
+- [195](https://github.com/celsaad/kettle/blob/1ad2e82588c2a5dce7963c1972e32a0d9ce1839e/src/domain/exercise-form.ts#L195) — `num('holdSecMin')` → `optionalNum('holdSecMin')`.
+- `validateConfig` ([100-114](https://github.com/celsaad/kettle/blob/1ad2e82588c2a5dce7963c1972e32a0d9ce1839e/src/domain/exercise-form.ts#L100-L114)) needs the max-requires-min
   rule, which is its **first cross-field check** — the loop is per-field today. Note while in there
   that it has never enforced `hold_sec_max >= hold_sec_min` either, though the schema does; that gap
   predates this work. Fix it in the same pass if the shape allows, and say so in the commit.
@@ -250,7 +250,7 @@ No migration code. The old files stay valid, they just mean something slightly n
   auto-advance for a targetless hold; the milestone chime suppressed when it would coincide with the
   end; an auto-ended hold logging the same `holdSec` a tapped one does; the backgrounded hold that
   ended while away advancing on foreground return. The suite already drives fake timers and asserts on
-  `holdElapsedSec` ([480-492](../src/hooks/__tests__/use-session-runner.test.tsx#L480-L492)), so the
+  `holdElapsedSec` ([480-492](https://github.com/celsaad/kettle/blob/1ad2e82588c2a5dce7963c1972e32a0d9ce1839e/src/hooks/__tests__/use-session-runner.test.tsx#L480-L492)), so the
   shape to copy is there.
 - `session-hold.test.tsx` — no bar and no marker without a target; no marker on a min-only hold.
 - Schema tests — `hold_sec_max` without `hold_sec_min` rejected; all three shapes accepted.

@@ -32,7 +32,7 @@ On screen the sheet is titled **Coming up**, not "Up next": Home already says NE
 ## Decisions taken
 
 1. **It opens from the workout name, marked by a chevron and nothing else.** The name in the runner
-   header ([`session.tsx:429`](../src/app/session.tsx#L429)) becomes a `Pressable` wrapping the name
+   header ([`session.tsx:429`](https://github.com/celsaad/kettle/blob/2c70582293a488eb0f5c93e6734b1b25d1245950/src/app/session.tsx#L429)) becomes a `Pressable` wrapping the name
    and a 12px chevron in the same muted tone. A chip and a brightened title were both drawn and
    rejected as too loud for a header read mid-set. `hitSlop` brings it to 44px so the row doesn't
    grow. It gets `accessibilityRole="button"`, `accessibilityState={{ expanded }}`, and an
@@ -41,14 +41,14 @@ On screen the sheet is titled **Coming up**, not "Up next": Home already says NE
 
    The header is on every step screen and never drops at large text sizes. That's why it beat making
    the Next card tappable: the card disappears above 1.5× text
-   ([`session-next-card.tsx:16`](../src/components/session-next-card.tsx#L16)), which would have taken
+   ([`session-next-card.tsx:16`](https://github.com/celsaad/kettle/blob/2c70582293a488eb0f5c93e6734b1b25d1245950/src/components/session-next-card.tsx#L16)), which would have taken
    the feature away from exactly the people who most need a list they can read.
 
 2. **A sheet inside the runner, not an expo-router modal route.** The step list is `useState` inside
    `useSessionRunner` and changes mid-session (add set, drop set, swap, ad-hoc add). A route could
    only read it if runner state moved into a store, which rewires the highest-risk file in the app
    for a view that only reads. The swap picker made the same call for the same reasons
-   ([`session-exercise-picker.tsx:31`](../src/components/session-exercise-picker.tsx#L31)).
+   ([`session-exercise-picker.tsx:31`](https://github.com/celsaad/kettle/blob/2c70582293a488eb0f5c93e6734b1b25d1245950/src/components/session-exercise-picker.tsx#L31)).
    `ActiveSession` renders it at the `SafeAreaView` level rather than inside `content`, so the dim
    covers the whole screen and the sheet reaches the bottom edge.
 
@@ -120,7 +120,7 @@ On screen the sheet is titled **Coming up**, not "Up next": Home already says NE
   level, and a circuit's steps are interleaved. A row that moved the runner would be a second way to
   break all three.
 - **No time-remaining estimate.** A reps set has no duration, so
-  [`workout-shape.ts`](../src/state/selectors/workout-shape.ts) counts only its rest. "About 12 min
+  [`workout-shape.ts`](https://github.com/celsaad/kettle/blob/2c70582293a488eb0f5c93e6734b1b25d1245950/src/state/selectors/workout-shape.ts) counts only its rest. "About 12 min
   left" would undercount most on strength days, which is when people would ask.
 - **No flat step list.** 5×5 is 25 rows, and a 3×4 circuit repeats every name three times.
 - **No drawing per row.** Twenty 56px drawings would double the list's height for decoration. The Next
@@ -156,7 +156,7 @@ On screen the sheet is titled **Coming up**, not "Up next": Home already says NE
      step belongs to that member, which is what picks "2 more sets" over "2 sets".
    - **Inside circuits, count rounds from `step.circuit.round`, never by counting a member's steps.**
      A `hiit` member runs its own full round count on every visit
-     ([`session-steps.ts:125`](../src/hooks/session-steps.ts#L125)), so counting steps turns three
+     ([`session-steps.ts:125`](https://github.com/celsaad/kettle/blob/2c70582293a488eb0f5c93e6734b1b25d1245950/src/hooks/session-steps.ts#L125)), so counting steps turns three
      visits of an 8-round HIIT into "24". Consecutive steps of one member within a visit fold into
      one entry. The rounds are the ones *present in the list*, so a truncated workout counts only
      what will run.
@@ -166,12 +166,12 @@ On screen the sheet is titled **Coming up**, not "Up next": Home already says NE
      block renders a translated "Rest", not the library's name for it.
    - **Never throws.** `stepIndex` past the end is how a parked ad-hoc session looks
      ([decision log](decisions.md)), and it returns an empty outline. A throw here ends the session:
-     [`session.tsx`'s error boundary](../src/app/session.tsx#L47) abandons it.
+     [`session.tsx`'s error boundary](https://github.com/celsaad/kettle/blob/2c70582293a488eb0f5c93e6734b1b25d1245950/src/app/session.tsx#L47) abandons it.
    - **The END OF WORKOUT node is the sheet's call**, from `runner.isAdHoc`, not the outline's. An
      ad-hoc session parks rather than ending when its queue runs out, so it gets no END node.
 
 2. **Move `formatHoldTarget` and `formatRepsTarget` out of
-   [`use-session-runner.ts`](../src/hooks/use-session-runner.ts#L118)** and into `session-steps.ts`,
+   [`use-session-runner.ts`](https://github.com/celsaad/kettle/blob/2c70582293a488eb0f5c93e6734b1b25d1245950/src/hooks/use-session-runner.ts#L118)** and into `session-steps.ts`,
    exported. The sheet has to format targets exactly as the Next card does, and importing the runner
    initialises `expo-audio` on import, which is why `session-steps.ts` exists at all.
 
@@ -240,7 +240,7 @@ members at `rounds: 1`, single-round warm-up and finisher. It does not copy anyo
 - a truncated step list, ending where the runner stops
 - a circuit with a member whose exercise is missing, with member counts over the resolved members
 
-In [`session.test.tsx`](../src/app/__tests__/session.test.tsx):
+In [`session.test.tsx`](https://github.com/celsaad/kettle/blob/2c70582293a488eb0f5c93e6734b1b25d1245950/src/app/__tests__/session.test.tsx):
 
 - tapping the name opens the sheet
 - it closes when the rest ends (fake timers, `async` `act`)
@@ -268,10 +268,10 @@ In [`session.test.tsx`](../src/app/__tests__/session.test.tsx):
 ## Found while planning — outside this scope
 
 **Leaving the runner by back or swipe strands the session unfinished.** The session is a
-`presentation: 'modal'` route ([`_layout.tsx:113`](../src/app/_layout.tsx#L113)). Nothing in `src`
+`presentation: 'modal'` route ([`_layout.tsx:113`](https://github.com/celsaad/kettle/blob/2c70582293a488eb0f5c93e6734b1b25d1245950/src/app/_layout.tsx#L113)). Nothing in `src`
 intercepts Android hardware back, and nothing sets `gestureEnabled: false`, so iOS's swipe-down
 dismiss is on. The runner has no unmount cleanup: only its completion paths call `completeSession`
-([`use-session-runner.ts:609`](../src/hooks/use-session-runner.ts#L609), `:827`), and only the
+([`use-session-runner.ts:609`](https://github.com/celsaad/kettle/blob/2c70582293a488eb0f5c93e6734b1b25d1245950/src/hooks/use-session-runner.ts#L609), `:827`), and only the
 error boundary calls `abandonActiveSession`. So a session left that way keeps no `endedAt`. Its sets
 are on disk, but by the error boundary's own account it counts as zero minutes and `exerciseHistory`
 skips it.

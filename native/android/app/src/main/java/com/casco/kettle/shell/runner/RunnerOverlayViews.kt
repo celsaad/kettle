@@ -40,7 +40,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawOutline
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipRect
@@ -93,7 +92,7 @@ internal fun OverlaySheet(
         Box(
             Modifier
                 .fillMaxSize()
-                .background(Backdrop)
+                .background(runnerColors.backdrop)
                 .clickable(role = Role.Button, onClick = onDismiss)
                 .then(
                     if (dismissLabel == null) {
@@ -332,8 +331,6 @@ private sealed interface PadKeyKind {
 private val DIGITS = ('1'..'9').map(PadKeyKind::Character)
 private const val KEYS_PER_ROW = 3
 
-/** Over the whole screen, the system bars included, so [RunnerField.darkBarIcons] reads through it. */
-internal val Backdrop = Color.Black.copy(alpha = 0.55f)
 private val GRABBER_WIDTH = 40.dp
 private val GRABBER_HEIGHT = 4.dp
 

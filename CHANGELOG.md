@@ -46,11 +46,11 @@ here, next to what it describes.
   round, minute and rest that ended along the way logged, each at its own length. Before, it moved
   on one step at most (#420).
 - **A late tap stays on its own step**: tapping Back, Undo, +30s or −15s just as a rest ends by
-  itself, or "Round N done" or a reps stepper just as an AMRAP's time or an EMOM's minute runs out,
-  no longer lands on the step that follows it. Before, a late Back threw away the round you'd just
-  started and sent you back to the rest, a late +30s stretched that round instead of the rest, and a
-  late "Round N done" or stepper set the next AMRAP's rounds or extra reps, or the next minute's
-  reps, before you'd done any (#551, #555, #556).
+  itself, "Round N done" or a reps stepper just as an AMRAP's time or an EMOM's minute runs out, or
+  the load or effort just as you log a set with no rest after it, no longer lands on the step that
+  follows it. Before, a late Back threw away the round you'd just started and sent you back to the
+  rest, a late +30s stretched that round instead of the rest, and a late round, stepper, load or
+  effort was counted on the next step before you'd done any of it (#551, #555, #556).
 
 ---
 

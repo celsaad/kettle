@@ -45,6 +45,12 @@ internal class Runner(
     /** A step's reps, aimed at the step on screen. */
     fun reps(count: Long) = send(RunnerCommand.SetReps(count, snapshot.visit))
 
+    /** A set's load, aimed at the step on screen. */
+    fun weight(kg: Double) = send(RunnerCommand.SetWeight(kg, snapshot.visit))
+
+    /** A set's effort, aimed at the step on screen. */
+    fun rpe(value: Double?) = send(RunnerCommand.SetRpe(value, snapshot.visit))
+
     /** An AMRAP's extra reps into the round under way, aimed at the step on screen. */
     fun extraReps(count: Long) = send(RunnerCommand.SetExtraReps(count, snapshot.visit))
 

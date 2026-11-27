@@ -23,7 +23,7 @@ class RunnerRecoveryTest {
         runner.advance()
         runner.send(RunnerCommand.Swap(runner.exercise("dips"))) // set 3 becomes dips
         runner.reps(11)
-        runner.send(RunnerCommand.SetWeight(12.5))
+        runner.weight(12.5)
         runner.send(RunnerCommand.TogglePause)
         return runner
     }

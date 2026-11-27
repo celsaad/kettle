@@ -117,8 +117,18 @@ class StepContext(
     /** An AMRAP's round count, aimed likewise: a late one would set the next AMRAP's (#555). */
     fun setRounds(rounds: Long) = send(RunnerCommand.SetRounds(rounds, snapshot.visit))
 
-    /** The reps stepper's count, aimed likewise: a late one would set the next EMOM minute's (#556). */
+    /**
+     * The step's reps, load and effort, aimed likewise (#556): a late one would edit the next EMOM minute,
+     * or the next set where a reps set has no rest after it.
+     */
     fun setReps(reps: Long) = send(RunnerCommand.SetReps(reps, snapshot.visit))
+
+    fun setWeight(weightKg: Double) = send(RunnerCommand.SetWeight(weightKg, snapshot.visit))
+
+    fun setRpe(rpe: Double?) = send(RunnerCommand.SetRpe(rpe, snapshot.visit))
+
+    /** An AMRAP's extra reps into the round under way, aimed likewise: a late one would land on the next. */
+    fun setExtraReps(extraReps: Long) = send(RunnerCommand.SetExtraReps(extraReps, snapshot.visit))
 }
 
 /** [view] read for its step screen. "Last time" and the PR marker read the log as it stood. */

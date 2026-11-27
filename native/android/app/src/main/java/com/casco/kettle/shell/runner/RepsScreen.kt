@@ -40,7 +40,6 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.casco.kettle.domain.PreviousSet
-import com.casco.kettle.domain.RunnerCommand
 import com.casco.kettle.domain.RunnerStep
 import com.casco.kettle.domain.UnitSystem
 import com.casco.kettle.domain.fromDisplayWeight
@@ -229,7 +228,7 @@ private fun LoadControl(context: StepContext) {
         } else {
             stringResource(R.string.session_reps_loadAccessibilityBodyweight)
         }
-    val set = { value: Double -> context.send(RunnerCommand.SetWeight(fromDisplayWeight(maxOf(0.0, value), units))) }
+    val set = { value: Double -> context.setWeight(fromDisplayWeight(maxOf(0.0, value), units)) }
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.two)) {
         SymbolButton(R.drawable.icon_remove, stringResource(R.string.session_reps_decreaseLoad), {
             set(display - weightStep(units))
@@ -291,7 +290,7 @@ private fun EffortTrack(context: StepContext) {
             EFFORT_OPTIONS.forEachIndexed { index, option ->
                 if (index > 0) Box(Modifier.fillMaxHeight().width(1.dp).background(runnerColors.border))
                 EffortOption(option, option == picked, Modifier.weight(1f)) {
-                    context.send(RunnerCommand.SetRpe(if (option == picked) null else option))
+                    context.setRpe(if (option == picked) null else option)
                 }
             }
         }

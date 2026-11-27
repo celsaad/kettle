@@ -327,8 +327,8 @@ class RunnerWritesTest {
         fun `records reps, weight and rpe on each logged set`() {
             val runner = Runner(workoutOf(single("pullups")))
             runner.reps(8)
-            runner.send(RunnerCommand.SetWeight(22.5))
-            runner.send(RunnerCommand.SetRpe(9.0))
+            runner.weight(22.5)
+            runner.rpe(9.0)
             repeat(5) { runner.advance() }
 
             assertEquals(3, runner.pullupSets().size)
@@ -341,7 +341,7 @@ class RunnerWritesTest {
             assertEquals(6L, runner.inputs.reps)
             assertEquals(20.0, runner.inputs.weightKg)
 
-            runner.send(RunnerCommand.SetWeight(30.0))
+            runner.weight(30.0)
             runner.reps(4)
             runner.advance()
             runner.advance()
@@ -353,7 +353,7 @@ class RunnerWritesTest {
         @Test
         fun `falls back to the target load after a bodyweight set`() {
             val runner = Runner(workoutOf(single("pullups")))
-            runner.send(RunnerCommand.SetWeight(0.0))
+            runner.weight(0.0)
             runner.advance()
             runner.advance()
 
@@ -364,13 +364,13 @@ class RunnerWritesTest {
         fun `starts effort empty on every set, logging only what was picked on it`() {
             val runner = Runner(workoutOf(single("pullups"), single("dips")))
             assertNull(runner.inputs.rpe)
-            runner.send(RunnerCommand.SetRpe(7.0))
+            runner.rpe(7.0)
             runner.advance() // set 1, then its rest
             assertNull(runner.inputs.rpe)
             runner.advance()
             assertNull(runner.inputs.rpe) // set 2: the 7 isn't carried
-            runner.send(RunnerCommand.SetRpe(9.0))
-            runner.send(RunnerCommand.SetRpe(null)) // picked, then cleared
+            runner.rpe(9.0)
+            runner.rpe(null) // picked, then cleared
             repeat(4) { runner.advance() }
 
             assertEquals("dips", runner.step?.exerciseId)
@@ -404,7 +404,7 @@ class RunnerWritesTest {
         @Test
         fun `logs bodyweight as an absent weight rather than a zero load`() {
             val runner = Runner(workoutOf(single("pullups")))
-            runner.send(RunnerCommand.SetWeight(0.0))
+            runner.weight(0.0)
             runner.advance()
 
             assertNull(runner.pullupSets()[0].weightKg)

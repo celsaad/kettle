@@ -130,12 +130,12 @@ data class RunnerTransition(
 
 /**
  * What the UI and the service ask of the engine. [Advance], [TimeUpdate], [Prev], [AddRestSeconds],
- * [Finish] and the [AimedEdit]s name the [visit] they were aimed at. Any of them aimed at a step already
+ * [Finish] and every [InputEdit] name the [visit] they were aimed at. Any of them aimed at a step already
  * left does nothing, except that a Finish still ends the session but commits nothing for the step that
  * replaced its own. A ticker and a resume can both land on a step that has just ended, and a tap can
  * land just after a step ended by itself; without that, the second of either commits a step nobody
  * performed, a late Back throws away the step just started, a late +30s stretches the round after a
- * rest, and a late "Round N done" or stepper sets the next step's count.
+ * rest, and a late round, stepper, load or effort edits the next step.
  */
 sealed interface RunnerCommand {
     /** Log the set, Done, Skip, or log the interval: commit the step on screen and move on. */
@@ -168,44 +168,42 @@ sealed interface RunnerCommand {
         val visit: Long,
     ) : RunnerCommand
 
-    sealed interface InputEdit : RunnerCommand
-
     /**
-     * An edit to a step that can end by itself while the tap is on its way, so it names the [visit] it
-     * was aimed at and is refused once that step is gone: an AMRAP's round count and extra reps, and an
-     * EMOM minute's reps, would otherwise land on the next one (#555, #556). [SetReps] is one command for
-     * a reps set too, aimed alike. [SetWeight] and [SetRpe] aren't: only a reps set edits them, which
-     * ends only when its own Log set is tapped, and the rest a late one lands on doesn't seed the next
-     * set from them.
+     * An edit to the step on screen. Every one names the [visit] it was aimed at and is refused once that
+     * step is gone (#555, #556): an AMRAP's cap and an EMOM's minute end by themselves while a tap is on
+     * its way, and a reps set with no rest after it hands straight to the next set, so a late round,
+     * stepper, load or effort would otherwise land on the next step.
      */
-    sealed interface AimedEdit : InputEdit {
+    sealed interface InputEdit : RunnerCommand {
         val visit: Long
     }
 
     data class SetReps(
         val reps: Long,
         override val visit: Long,
-    ) : AimedEdit
+    ) : InputEdit
 
     data class SetWeight(
         val weightKg: Double,
+        override val visit: Long,
     ) : InputEdit
 
     /** The set's effort; null clears it, which picking the selected value again does. */
     data class SetRpe(
         val rpe: Double?,
+        override val visit: Long,
     ) : InputEdit
 
     /** An AMRAP's round count, absolute. */
     data class SetRounds(
         val rounds: Long,
         override val visit: Long,
-    ) : AimedEdit
+    ) : InputEdit
 
     data class SetExtraReps(
         val extraReps: Long,
         override val visit: Long,
-    ) : AimedEdit
+    ) : InputEdit
 
     sealed interface StepEdit : RunnerCommand
 
@@ -433,7 +431,7 @@ private fun editInputs(
     state: RunnerState,
     edit: RunnerCommand.InputEdit,
 ): RunnerTransition {
-    if (edit is RunnerCommand.AimedEdit && edit.visit != state.snapshot.visit) return unchanged(state)
+    if (edit.visit != state.snapshot.visit) return unchanged(state)
     val inputs = state.snapshot.inputs
     val edited =
         when (edit) {

@@ -435,8 +435,8 @@ class RunnerTimingTest {
         }
 
         /**
-         * "Round 3 done" tapped as one AMRAP's cap ran out, landing on the AMRAP after it (#516): it set
-         * that one's rounds before a single one was done. Remove the visit check on SetRounds in
+         * "Round 3 done" tapped as one AMRAP's cap ran out, landing on the AMRAP after it: it set
+         * that one's rounds before a single one was done (#555). Remove the visit check on SetRounds in
          * `editInputs` and this fails.
          */
         @Test
@@ -480,6 +480,21 @@ class RunnerTimingTest {
 
             assertNotEquals(minuteOne, runner.snapshot.visit)
             assertEquals(10L, runner.inputs.reps)
+        }
+
+        /**
+         * A load tapped as Log set went, on a set with no rest after it (#556): it landed on the next set
+         * and was logged with it. Remove the visit check in `editInputs` and this fails.
+         */
+        @Test
+        fun `ignores a load aimed at a set already logged, with no rest between`() {
+            val runner = Runner(workoutOf(single("dips")))
+            val setOne = runner.snapshot.visit
+            runner.advance()
+            runner.send(RunnerCommand.SetWeight(20.0, setOne))
+
+            assertEquals(1, runner.index)
+            assertEquals(0.0, runner.inputs.weightKg)
         }
 
         @Test

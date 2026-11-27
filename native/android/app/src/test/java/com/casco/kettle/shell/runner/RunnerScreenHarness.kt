@@ -101,6 +101,13 @@ abstract class RunnerScreenHarness {
     /** The reps on screen set to [reps], aimed at this state's step. */
     protected fun RunnerState.withReps(reps: Long): RunnerState = after(RunnerCommand.SetReps(reps, snapshot.visit))
 
+    /** The load on screen set to [weightKg], aimed at this state's step. */
+    protected fun RunnerState.withWeight(weightKg: Double): RunnerState =
+        after(RunnerCommand.SetWeight(weightKg, snapshot.visit))
+
+    /** The effort on screen set to [rpe], aimed at this state's step. */
+    protected fun RunnerState.withRpe(rpe: Double?): RunnerState = after(RunnerCommand.SetRpe(rpe, snapshot.visit))
+
     /** [state] as the session shows it, Undo's record included unless [restored] drops it, as a rebuild does. */
     protected fun running(
         plan: RunnerPlan.Runnable,

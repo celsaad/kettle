@@ -12,6 +12,10 @@ plugins {
     alias(libs.plugins.ktlint)
 }
 
+// The repo this build sits two levels inside. Every module's data paths (content, locales, the corpus)
+// hang off it, so moving the build is this one edit. Read as `val repoRoot: Directory by rootProject.extra`.
+val repoRoot by extra(layout.projectDirectory.dir("../.."))
+
 // The catalog accessor is the root project's; inside `allprojects` it would resolve per subproject.
 val ktlintVersion = libs.versions.ktlint.get()
 val detektKotlinVersion = libs.versions.detektKotlin.get()

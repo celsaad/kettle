@@ -13,6 +13,12 @@ android {
     namespace = "com.casco.kettle.shell"
     compileSdk = 37
 
+    androidResources {
+        // AGP's default pattern plus the art README, which `content/` being the asset root would ship
+        // as `assets/art/README.md`. Setting the pattern replaces the default, so it is restated.
+        ignoreAssetsPattern = "!.svn:!.git:!.ds_store:!*.scc:.*:<dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~:!README.md"
+    }
+
     defaultConfig {
         applicationId = "com.casco.kettle"
         minSdk = 26
@@ -109,11 +115,13 @@ kotlin {
     }
 }
 
+val repoRoot: Directory by rootProject.extra
+
 /** The session's three sounds, `assets/sounds/` at the repo root. */
-val soundsDir: Directory = rootProject.layout.projectDirectory.dir("../../assets/sounds")
+val soundsDir: Directory = repoRoot.dir("assets/sounds")
 
 /** The locale bundles, read in place so there is only one copy of every translation. */
-val localesDir: Directory = rootProject.layout.projectDirectory.dir("../../locales")
+val localesDir: Directory = repoRoot.dir("locales")
 
 /** What a generator task runs on: a project's runtime jar, resolved here and never published. */
 fun generatorClasspath(name: String): Configuration =
@@ -173,10 +181,10 @@ abstract class GenerateTheme : JavaExec() {
 val themeGenerator = generatorClasspath("themeGenerator")
 
 /** The shipped seed and content packs (`ShippedContent`), at the asset root. */
-val contentDir: Directory = rootProject.layout.projectDirectory.dir("../../content")
+val contentDir: Directory = repoRoot.dir("content")
 
 /** The theme, read in place, so a color has one home. */
-val themeFile: RegularFile = rootProject.layout.projectDirectory.file("../../theme.json")
+val themeFile: RegularFile = repoRoot.file("theme.json")
 
 /**
  * The faces theme.json names, committed with their OFL licences, since the build reads nothing a JS

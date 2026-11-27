@@ -49,12 +49,14 @@ class ConformanceCorpus(
     override fun asArguments() = listOf("-Dkettle.conformanceDir=${dir.asFile.absolutePath}")
 }
 
+val repoRoot: Directory by rootProject.extra
+
 tasks.named<Test>("jvmTest") {
     useJUnitPlatform()
-    jvmArgumentProviders.add(ConformanceCorpus(rootProject.layout.projectDirectory.dir("../../conformance")))
+    jvmArgumentProviders.add(ConformanceCorpus(repoRoot.dir("conformance")))
     // `source:` cases read these in place too, so an edit to the shipped content reruns the tests.
-    listOf("../../content", "../../site/examples").forEach {
-        inputs.dir(rootProject.layout.projectDirectory.dir(it)).withPathSensitivity(PathSensitivity.RELATIVE)
+    listOf("content", "site/examples").forEach {
+        inputs.dir(repoRoot.dir(it)).withPathSensitivity(PathSensitivity.RELATIVE)
     }
     // `-PupdateConformance` rewrites every suite's golden from Kotlin, the corpus's only writer since
     // #348; never up to date, so it always runs.

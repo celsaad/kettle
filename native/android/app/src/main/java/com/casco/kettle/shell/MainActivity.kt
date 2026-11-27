@@ -71,7 +71,7 @@ class MainActivity : ComponentActivity() {
 
     private val navigator = Navigator(onReselect = { tabReselects.tryEmit(it) })
 
-    /** Opens a share in Import, or holds it behind a running session until the runner closes (#514). */
+    /** Opens a share in Import, or holds it behind a running session until nothing covers the screen (#514). */
     private val sharedOpener = SharedOpener(navigator)
 
     /** What [LocalTabReselects] carries. One slot, since a tap's scroll replaces the one before it. */
@@ -154,7 +154,7 @@ class MainActivity : ComponentActivity() {
         onBackPressedDispatcher.addCallback(this, sheet.backCallback)
         listenForWrites(latestFiles)
         hearNavigateReceiver(navigator)
-        sharedOpener.watchRunner(lifecycleScope)
+        sharedOpener.watch(lifecycleScope)
         setContentView(layout)
         // The stack this activity's predecessor saved, when it was made again (a font or display size
         // change, the process brought back).

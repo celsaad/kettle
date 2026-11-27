@@ -105,7 +105,8 @@ class SharedLibraryTest {
     @Test
     fun `a stream that isn't another app's content file is not taken`() {
         val own = Uri.parse("content://com.casco.kettle.shell.files/shared/exercises.yaml")
-        for (uri in listOf(Uri.parse("file:///data/data/com.casco.kettle/files/x.yaml"), own)) {
+        val ownAsUser = Uri.parse("content://0@com.casco.kettle.shell.files/shared/exercises.yaml")
+        for (uri in listOf(Uri.parse("file:///data/data/com.casco.kettle/files/x.yaml"), own, ownAsUser)) {
             val sent = send("text/plain").putExtra(Intent.EXTRA_STREAM, uri)
             assertNull(uri.toString(), sent.sharedLibrary(ownAuthority = "com.casco.kettle.shell.files"))
             assertNull(

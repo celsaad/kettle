@@ -80,7 +80,11 @@ private fun Intent.viewedLibrary(
 private fun fileUri(
     uri: Uri?,
     ownAuthority: String?,
-): Uri? = uri?.takeIf { it.scheme == ContentResolver.SCHEME_CONTENT && it.authority != ownAuthority }
+): Uri? =
+    uri?.takeIf {
+        // A user id before the authority, `0@…`, is stripped before the provider is found.
+        it.scheme == ContentResolver.SCHEME_CONTENT && it.authority?.substringAfterLast('@') != ownAuthority
+    }
 
 /** Taken off [this] intent, so an activity made again with it doesn't import it twice. */
 fun Intent.forgetSharedLibrary() {
@@ -100,6 +104,12 @@ fun Intent.forgetSharedLibrary() {
 class SharedLibraryInbox {
     private var waiting: Pair<String, SharedLibrary>? = null
 
+    /**
+     * The token of a share waiting for the screen to be free ([SharedOpener]): here rather than in the
+     * activity, so an activity made again mid-session still opens it.
+     */
+    var held: String? = null
+
     /** Holds [shared], replacing any earlier, and returns the token its route carries. */
     fun put(shared: SharedLibrary): String = UUID.randomUUID().toString().also { waiting = it to shared }
 
@@ -117,33 +127,34 @@ class SharedLibraryInbox {
 }
 
 /**
- * Opens what another app shared in Import (#514), or holds it while a session runs, since the runner's
- * slot drops every other move, and opens it once the runner closes: a share is the user's data, and
- * dropping it as a `kettle://` link is dropped would lose it without a word.
+ * Opens what another app shared in Import (#514), or holds it while something covers the screen and
+ * opens it once nothing does: a running session, whose slot drops every other move, or a sheet the user
+ * opened, such as the session editor straight after Done, which the share's sheet would replace. A share
+ * is the user's data; dropping it as a `kettle://` link is dropped would lose it without a word.
  */
 class SharedOpener(
     private val navigator: Navigator,
     private val inbox: SharedLibraryInbox = SharedLibraryInbox.process,
 ) {
-    private var held: Route? = null
-
     fun open(shared: SharedLibrary) {
-        val route = Route(Destination.Import, mapOf(IMPORT_SHARED_PARAM to inbox.put(shared)))
-        if (navigator.runnerShown) held = route else navigator.navigate(route)
+        val token = inbox.put(shared)
+        if (navigator.runnerShown) inbox.held = token else navigator.navigate(route(token))
     }
 
-    /** Opens a held share as the runner's slot empties, for as long as [scope] lives. */
-    fun watchRunner(scope: CoroutineScope) {
-        scope.launch { snapshotFlow { navigator.runnerShown }.collect { shown -> if (!shown) runnerClosed() } }
+    /** Opens a held share as soon as nothing covers the screen, for as long as [scope] lives. */
+    fun watch(scope: CoroutineScope) {
+        scope.launch { snapshotFlow { navigator.runnerShown || navigator.sheet != null }.collect { openHeld() } }
     }
 
-    /** Called as the runner's slot empties: a share held behind it opens now. */
-    fun runnerClosed() {
-        if (navigator.runnerShown) return
-        val route = held ?: return
-        held = null
-        navigator.navigate(route)
+    /** A share held until now opens, if nothing covers the screen. */
+    fun openHeld() {
+        if (navigator.runnerShown || navigator.sheet != null) return
+        val token = inbox.held ?: return
+        inbox.held = null
+        navigator.navigate(route(token))
     }
+
+    private fun route(token: String) = Route(Destination.Import, mapOf(IMPORT_SHARED_PARAM to token))
 }
 
 private const val SHARED_TEXT_TYPE = "text/plain"

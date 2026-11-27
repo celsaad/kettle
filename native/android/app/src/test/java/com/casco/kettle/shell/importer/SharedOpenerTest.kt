@@ -2,6 +2,7 @@ package com.casco.kettle.shell.importer
 
 import com.casco.kettle.shell.nav.Destination
 import com.casco.kettle.shell.nav.Navigator
+import com.casco.kettle.shell.nav.Route
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNull
@@ -9,7 +10,7 @@ import org.junit.Test
 
 /**
  * How a share reaches Import (#514): each as a route of its own, so a second share while the first's
- * Import shows opens a new one, and held behind a running session until the runner closes.
+ * Import shows opens a new one, and held behind a running session or a sheet until nothing covers the screen.
  */
 class SharedOpenerTest {
     private val navigator = Navigator()
@@ -37,14 +38,40 @@ class SharedOpenerTest {
     fun `a share during a session waits for the runner to close, then opens`() {
         navigator.openRunner(null)
         opener.open(first)
-        opener.runnerClosed()
+        opener.openHeld()
         assertNull(navigator.sheet)
 
         navigator.closeRunner()
-        opener.runnerClosed()
+        opener.openHeld()
 
         assertEquals(first, inbox.take(shownToken()))
-        opener.runnerClosed()
-        assertEquals(Destination.Import, navigator.sheet?.destination)
+        assertNull(inbox.held)
+    }
+
+    /** Done's Edit log opens the session editor as the runner closes: the share mustn't replace it. */
+    @Test
+    fun `a held share waits for a sheet the user opened, too`() {
+        navigator.openRunner(null)
+        opener.open(first)
+        navigator.closeRunner()
+        navigator.navigate(Route(Destination.SessionEditor, mapOf("id" to "s1")))
+        opener.openHeld()
+        assertEquals(Destination.SessionEditor, navigator.sheet?.destination)
+
+        navigator.back()
+        opener.openHeld()
+        assertEquals(first, inbox.take(shownToken()))
+    }
+
+    /** The hold is the process's: an activity made again mid-session, with a new opener, still opens it. */
+    @Test
+    fun `a held share survives a new opener`() {
+        navigator.openRunner(null)
+        opener.open(first)
+        navigator.closeRunner()
+
+        SharedOpener(navigator, inbox).openHeld()
+
+        assertEquals(first, inbox.take(shownToken()))
     }
 }

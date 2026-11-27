@@ -223,12 +223,12 @@ private fun AmrapScreen(
         controls = {
             if (rounds > 0) {
                 LoggedPanel(stringResource(R.string.session_logged_round, "$rounds")) {
-                    context.send(RunnerCommand.SetRounds(rounds - 1))
+                    context.setRounds(rounds - 1)
                 }
             }
             val roundDone =
                 RowAction(stringResource(R.string.session_amrap_roundDone, "$round"), null) {
-                    context.send(RunnerCommand.SetRounds(round))
+                    context.setRounds(round)
                 }
             // Paused, Resume is the main action and the round to the side (#478), as every paused screen
             // has it (#421): a stopped clock has one thing to do next.

@@ -64,26 +64,26 @@ class RunnerIntervalTest : RunnerScreenHarness() {
         button("Desfazer").assertDoesNotExist()
         button("Pausar").assertIsTarget()
         button("Rodada 1 feita").performClick()
-        assertEquals(RunnerCommand.SetRounds(1), sent.last())
+        assertEquals(RunnerCommand.SetRounds(1, FIRST_VISIT), sent.last())
     }
 
     @Test
     fun `Undo takes back only the last round, and the pace line reads last time`() {
         prior = listOf(finished(SessionEntry.Amrap(grinder.id, 7, null)))
         val amrap = plan(block(grinder))
-        show(running(amrap, started(amrap).after(RunnerCommand.SetRounds(2))))
+        show(running(amrap, started(amrap).let { it.after(RunnerCommand.SetRounds(2, it.snapshot.visit)) }))
         compose.onNodeWithText("AMRAP · rodada 3").assertExists()
         compose.onNodeWithText("2 rodadas · última vez 7").assertExists()
         compose.onNodeWithText("Registrado rodada 2").assertExists()
         button("Desfazer").performClick()
-        assertEquals(RunnerCommand.SetRounds(1), sent.last())
+        assertEquals(RunnerCommand.SetRounds(1, FIRST_VISIT), sent.last())
     }
 
     // A round logged is work Save and end writes, so the AMRAP on screen isn't "not started" (#520).
     @Test
     fun `End's sheet counts an AMRAP with a round logged as done`() {
         val amrap = plan(block(grinder))
-        show(running(amrap, started(amrap).after(RunnerCommand.SetRounds(1))))
+        show(running(amrap, started(amrap).let { it.after(RunnerCommand.SetRounds(1, it.snapshot.visit)) }))
         button("Encerrar").performClick()
         compose.onNodeWithText("feito").assertExists()
         compose.onNodeWithText("não iniciado").assertDoesNotExist()

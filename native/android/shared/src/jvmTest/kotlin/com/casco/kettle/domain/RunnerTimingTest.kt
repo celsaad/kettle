@@ -2,6 +2,7 @@ package com.casco.kettle.domain
 
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Nested
@@ -431,6 +432,23 @@ class RunnerTimingTest {
 
             assertEquals(2, runner.index)
             assertEquals(40.0, runner.snapshot.clock.stepEndSec)
+        }
+
+        /**
+         * "Round 3 done" tapped as one AMRAP's cap ran out, landing on the AMRAP after it (#516): it set
+         * that one's rounds before a single one was done. Remove the visit check on SetRounds in
+         * `reduceRunner` and this fails.
+         */
+        @Test
+        fun `ignores a round aimed at an AMRAP that has since ended`() {
+            val runner = Runner(workoutOf(single("grinder"), single("grinder")))
+            runner.rounds(2)
+            val first = runner.snapshot.visit
+            runner.tick(300)
+            runner.send(RunnerCommand.SetRounds(3, first))
+
+            assertNotEquals(first, runner.snapshot.visit)
+            assertEquals(0L, runner.inputs.roundsCompleted)
         }
 
         @Test

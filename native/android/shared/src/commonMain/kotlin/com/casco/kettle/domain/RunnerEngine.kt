@@ -129,13 +129,13 @@ data class RunnerTransition(
 )
 
 /**
- * What the UI and the service ask of the engine. [Advance], [TimeUpdate], [Prev], [AddRestSeconds]
- * and [Finish] name the [visit] they were aimed at. Any of them aimed at a step already left does
- * nothing, except that a Finish still ends the session but commits nothing for the step that
+ * What the UI and the service ask of the engine. [Advance], [TimeUpdate], [Prev], [AddRestSeconds],
+ * [SetRounds] and [Finish] name the [visit] they were aimed at. Any of them aimed at a step already
+ * left does nothing, except that a Finish still ends the session but commits nothing for the step that
  * replaced its own. A ticker and a resume can both land on a step that has just ended, and a tap can
  * land just after a step ended by itself; without that, the second of either commits a step nobody
- * performed, a late Back throws away the step just started, and a late +30s stretches the round
- * after a rest.
+ * performed, a late Back throws away the step just started, a late +30s stretches the round after a
+ * rest, and a late "Round N done" sets the next AMRAP's count.
  */
 sealed interface RunnerCommand {
     /** Log the set, Done, Skip, or log the interval: commit the step on screen and move on. */
@@ -183,8 +183,10 @@ sealed interface RunnerCommand {
         val rpe: Double?,
     ) : InputEdit
 
+    /** An AMRAP's round count, absolute; aimed, unlike the other edits, since a tap sets it (#516). */
     data class SetRounds(
         val rounds: Long,
+        val visit: Long,
     ) : InputEdit
 
     data class SetExtraReps(
@@ -417,6 +419,8 @@ private fun editInputs(
     state: RunnerState,
     edit: RunnerCommand.InputEdit,
 ): RunnerTransition {
+    // A round count is a tap, which can land after its AMRAP ended (#516); the steppers edit in place.
+    if (edit is RunnerCommand.SetRounds && edit.visit != state.snapshot.visit) return unchanged(state)
     val inputs = state.snapshot.inputs
     val edited =
         when (edit) {

@@ -113,6 +113,9 @@ class StepContext(
 
     /** The rest's +30s and −15s, aimed likewise: a late one would stretch the round after it (#551). */
     fun addRestSeconds(seconds: Double) = send(RunnerCommand.AddRestSeconds(seconds, snapshot.visit))
+
+    /** An AMRAP's round count, aimed likewise: a late one would set the next AMRAP's (#516). */
+    fun setRounds(rounds: Long) = send(RunnerCommand.SetRounds(rounds, snapshot.visit))
 }
 
 /** [view] read for its step screen. "Last time" and the PR marker read the log as it stood. */

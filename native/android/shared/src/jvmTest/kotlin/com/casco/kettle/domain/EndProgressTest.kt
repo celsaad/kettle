@@ -61,7 +61,7 @@ class EndProgressTest {
         assertEquals(listOf("Grinder 0/1 ONCE"), runner.progress())
         runner.send(RunnerCommand.SetExtraReps(4))
         assertEquals(listOf("Grinder 1/1 ONCE"), runner.progress())
-        runner.send(RunnerCommand.SetRounds(1))
+        runner.rounds(1)
         assertEquals(listOf("Grinder 1/1 ONCE"), runner.progress())
     }
 }

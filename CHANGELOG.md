@@ -49,7 +49,7 @@ here, next to what it describes.
   itself, or "Round N done" just as an AMRAP's time runs out, no longer lands on the step that
   follows it. Before, a late Back threw away the round you'd just started and sent you back to the
   rest, a late +30s stretched that round instead of the rest, and a late "Round N done" counted
-  rounds on the next AMRAP before you'd done any (#551, #516).
+  rounds on the next AMRAP before you'd done any (#551, #555).
 
 ---
 

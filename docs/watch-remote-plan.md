@@ -128,7 +128,7 @@ flight. Every action is aimed at the step it was drawn for, and refused anywhere
   a placeholder nothing stops. On API 31+ a broadcast can't start an activity, which is also what keeps
   a wrist tap from pulling the phone out of a pocket.
 
-**Engine change (prerequisite, `:shared`), landed in #553 and #516:** `Prev(visit)`,
+**Engine change (prerequisite, `:shared`), landed in #553 and #555:** `Prev(visit)`,
 `AddRestSeconds(seconds, visit)` and `SetRounds(rounds, visit)`, refused when not aimed at the
 snapshot's visit, as `Advance` and `Finish` already are; the screen sends its current visit. Without
 it, a late Back threw away the step just started, a late +30s from a rest landed on the HIIT round,
@@ -146,12 +146,12 @@ left for the device. The system draws the chip, so its colour isn't Kettle's to 
 
 ## Testing
 
-- **`:shared`**: `Prev(visit)` and `AddRestSeconds(seconds, visit)` refused when stale, each proven
-  against the bug it pins: a late Back after a rest ends by itself, and a late +30s landing on a HIIT
-  round.
+- **`:shared`**: `Prev(visit)`, `AddRestSeconds(seconds, visit)` and `SetRounds(rounds, visit)`
+  refused when stale, each proven against the bug it pins: a late Back after a rest ends by itself, a
+  late +30s landing on a HIIT round, and a late "Round N done" landing on the next AMRAP.
 - **`:app`** (`RunnerNotificationsTest`, Robolectric): title, detail and actions per step kind, Undo
   versus Back, Back absent on the first step, EMOM and AMRAP actions, the intent URIs carrying session
-  and visit, and the receiver dropping a foreign session or a stale visit. Drive the copy in `pt`
+  and visit, and the receiver dropping a foreign session or a round that isn't the next one. Drive the copy in `pt`
   (`@Config(qualifiers = "pt")`): an English assertion can't catch a hardcoded English string.
 - **`scripts/session-check.sh` and `.ps1`**: they parse the ongoing notification's title and text from
   `dumpsys notification`, so update both twins for the step-first title, and add a check that fires a

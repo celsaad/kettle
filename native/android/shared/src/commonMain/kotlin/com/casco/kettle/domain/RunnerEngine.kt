@@ -183,7 +183,10 @@ sealed interface RunnerCommand {
         val rpe: Double?,
     ) : InputEdit
 
-    /** An AMRAP's round count, absolute; aimed, unlike the other edits, since a tap sets it (#516). */
+    /**
+     * An AMRAP's round count, absolute, and aimed (#555): a late "Round N done" set the next AMRAP's.
+     * The other edits aren't aimed yet, though the AMRAP and EMOM steppers have the same late tap (#516).
+     */
     data class SetRounds(
         val rounds: Long,
         val visit: Long,
@@ -419,7 +422,7 @@ private fun editInputs(
     state: RunnerState,
     edit: RunnerCommand.InputEdit,
 ): RunnerTransition {
-    // A round count is a tap, which can land after its AMRAP ended (#516); the steppers edit in place.
+    // A round count can land after its AMRAP ended (#555). The other edits aren't aimed yet (#516).
     if (edit is RunnerCommand.SetRounds && edit.visit != state.snapshot.visit) return unchanged(state)
     val inputs = state.snapshot.inputs
     val edited =

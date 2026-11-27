@@ -437,7 +437,7 @@ class RunnerTimingTest {
         /**
          * "Round 3 done" tapped as one AMRAP's cap ran out, landing on the AMRAP after it (#516): it set
          * that one's rounds before a single one was done. Remove the visit check on SetRounds in
-         * `reduceRunner` and this fails.
+         * `editInputs` and this fails.
          */
         @Test
         fun `ignores a round aimed at an AMRAP that has since ended`() {

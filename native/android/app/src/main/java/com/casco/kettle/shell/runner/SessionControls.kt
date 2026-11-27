@@ -100,7 +100,9 @@ private fun controlOf(path: List<String>): SessionControl? =
  * refuses it once that step is gone. Two checks are left to here: a tap from another session, since
  * visits start again at 0 in every one; and a "Round N done" whose N isn't the next round, since the
  * visit doesn't move inside an AMRAP and an absolute count from a lagging card would take back rounds
- * counted since. Resume can't be aimed: pausing doesn't move the visit.
+ * counted since. That check is only as fresh as [RunnerHost.active], so a round counted on the phone in
+ * the instant before the tap lands can still be taken back. Resume can't be aimed: pausing doesn't move
+ * the visit.
  */
 fun SessionTap.command(
     sessionId: String,

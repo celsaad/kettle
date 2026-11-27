@@ -24,9 +24,9 @@ here, next to what it describes.
 
 - **Run your workout from the lock screen, or your watch**: the workout notification now has the
   buttons you need between sets, such as Log set, Skip rest, +30s, Done, Back (or Undo, right after
-  a set) and Resume, and "Round N done" for an AMRAP. It leads with the exercise and what logging will record, so you can see what a tap
-  does. On Android 16 and a Wear OS 7 watch it shows on your wrist too, with the timer, and with no
-  watch app to install. None of it goes online (#552).
+  a set) and Resume, and "Round N done" for an AMRAP. It leads with the exercise and what logging
+  will record, so you can see what a tap does. On Android 16 and a Wear OS 7 watch it shows on your
+  wrist too, with the timer, and with no watch app to install. None of it goes online (#552).
 - **No more freeze opening your file as YAML**: "Open as YAML", which showed the whole library as
   text, is gone. On a large library it froze the app for several seconds before it appeared. Share
   file still hands over the whole file, and one exercise's YAML is still on its own page (#526).

@@ -86,7 +86,7 @@ internal fun IntervalScreen(
                     stringResource(R.string.session_interval_repsThisMinute),
                     context.snapshot.inputs.reps,
                     context,
-                ) { RunnerCommand.SetReps(it) }
+                ) { RunnerCommand.SetReps(it, context.snapshot.visit) }
             }
         },
         controls = {
@@ -217,7 +217,7 @@ private fun AmrapScreen(
                     stringResource(R.string.session_interval_repsIntoRound, "$round"),
                     inputs.extraReps,
                     context,
-                ) { RunnerCommand.SetExtraReps(it) }
+                ) { RunnerCommand.SetExtraReps(it, context.snapshot.visit) }
             }
         },
         controls = {

@@ -15,14 +15,14 @@ class RunnerRecoveryTest {
     /** A session part-way through: a circuit ahead, a logged set, a swap, inputs entered and a pause. */
     private fun busyRunner(): Runner {
         val runner = Runner(workoutOf(single("pullups"), circuitOf("plank", "burpees", between = 15.0), single("lsit")))
-        runner.send(RunnerCommand.SetReps(0))
+        runner.reps(0)
         runner.advance() // a dropped set, and its rest
         runner.tick(20)
         runner.advance()
         runner.advance() // set 2, logged
         runner.advance()
         runner.send(RunnerCommand.Swap(runner.exercise("dips"))) // set 3 becomes dips
-        runner.send(RunnerCommand.SetReps(11))
+        runner.reps(11)
         runner.send(RunnerCommand.SetWeight(12.5))
         runner.send(RunnerCommand.TogglePause)
         return runner
@@ -202,7 +202,7 @@ class RunnerRecoveryTest {
         @Test
         fun `commits nothing more on a Finish from the prompt`() {
             val runner = Runner(workoutOf(single("pullups")))
-            runner.send(RunnerCommand.SetReps(4))
+            runner.reps(4)
 
             val prompt = recoverRunner(encodeRunnerSnapshot(runner.snapshot), stored(runner)) as RunnerRecovery.Prompt
             assertTrue(prompt.finished.entries.isEmpty())
@@ -315,7 +315,7 @@ class RunnerRecoveryTest {
         @Test
         fun `lands paused on a step that hadn't ended, keeping the inputs entered`() {
             val runner = Runner(workoutOf(single("pullups")))
-            runner.send(RunnerCommand.SetReps(9))
+            runner.reps(9)
             val resumed = resumeRunner(promptFor(runner), T0 + 600 * MS)
 
             assertEquals(0, resumed.state.snapshot.stepIndex)

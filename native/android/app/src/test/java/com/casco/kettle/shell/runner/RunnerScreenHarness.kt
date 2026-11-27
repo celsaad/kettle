@@ -98,6 +98,9 @@ abstract class RunnerScreenHarness {
     /** The step on screen logged or skipped, aimed at it as a tap would be. */
     protected fun RunnerState.advanced(): RunnerState = after(RunnerCommand.Advance(snapshot.visit))
 
+    /** The reps on screen set to [reps], aimed at this state's step. */
+    protected fun RunnerState.withReps(reps: Long): RunnerState = after(RunnerCommand.SetReps(reps, snapshot.visit))
+
     /** [state] as the session shows it, Undo's record included unless [restored] drops it, as a rebuild does. */
     protected fun running(
         plan: RunnerPlan.Runnable,

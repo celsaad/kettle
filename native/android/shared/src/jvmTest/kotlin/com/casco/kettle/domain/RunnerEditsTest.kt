@@ -160,7 +160,7 @@ class RunnerEditsTest {
         @Test
         fun `never drops the set on screen after a zero set`() {
             val runner = Runner(workoutOf(single("pullups")))
-            runner.send(RunnerCommand.SetReps(0))
+            runner.reps(0)
             runner.advance()
             runner.advance()
             assertEquals(2, runner.index)
@@ -178,7 +178,7 @@ class RunnerEditsTest {
             val runner = Runner(workoutOf(single("pullups")))
             runner.advance()
             runner.advance()
-            runner.send(RunnerCommand.SetReps(0))
+            runner.reps(0)
             runner.advance()
             assertTrue(runner.step is RunnerStep.Rest)
 
@@ -191,7 +191,7 @@ class RunnerEditsTest {
         @Test
         fun `does not retract a logged set when Prev follows a mutation`() {
             val runner = Runner(workoutOf(single("pullups")))
-            runner.send(RunnerCommand.SetReps(9))
+            runner.reps(9)
             runner.advance()
             runner.send(RunnerCommand.AddSet) // from the rest step, as RN's case does
             runner.prev()
@@ -318,7 +318,7 @@ class RunnerEditsTest {
         @Test
         fun `runs a non-set substitute in its own shape and logs it as its own entry`() {
             val runner = Runner(workoutOf(single("pullups"), single("plank")))
-            runner.send(RunnerCommand.SetReps(7))
+            runner.reps(7)
             runner.advance()
             runner.advance()
             runner.swap("burpees")
@@ -364,11 +364,11 @@ class RunnerEditsTest {
         @Test
         fun `keeps the work already done in its own entry and appends a new one`() {
             val runner = Runner(workoutOf(single("pullups")))
-            runner.send(RunnerCommand.SetReps(7))
+            runner.reps(7)
             runner.advance()
             runner.advance()
             runner.swap("dips")
-            runner.send(RunnerCommand.SetReps(11))
+            runner.reps(11)
             runner.advance()
 
             assertEquals(2, runner.entries.size)
@@ -429,7 +429,7 @@ class RunnerEditsTest {
         @Test
         fun `swaps even to the exercise on screen, under a fresh key, as RN's hook does`() {
             val runner = Runner(workoutOf(single("pullups")))
-            runner.send(RunnerCommand.SetReps(7))
+            runner.reps(7)
             runner.advance()
             runner.advance()
             runner.swap("pullups")
@@ -506,7 +506,7 @@ class RunnerEditsTest {
         fun `is finished by hand, committing the set in progress`() {
             val runner = Runner(null)
             runner.add("pullups")
-            runner.send(RunnerCommand.SetReps(9))
+            runner.reps(9)
             runner.finish()
 
             assertTrue(runner.state.finished)
@@ -570,7 +570,7 @@ class RunnerEditsTest {
         @Test
         fun `leaves the set in progress alone when the set count changes`() {
             val runner = Runner(workoutOf(single("pullups")))
-            runner.send(RunnerCommand.SetReps(14))
+            runner.reps(14)
             runner.send(RunnerCommand.AddSet)
             assertEquals(14L, runner.inputs.reps)
         }

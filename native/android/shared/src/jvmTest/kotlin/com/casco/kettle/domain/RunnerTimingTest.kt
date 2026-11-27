@@ -451,6 +451,37 @@ class RunnerTimingTest {
             assertEquals(0L, runner.inputs.roundsCompleted)
         }
 
+        /**
+         * The extra-reps stepper tapped as one AMRAP's cap ran out, landing on the AMRAP after it (#556):
+         * that one opened with extra reps nobody did. Remove the visit check in `editInputs` and this fails.
+         */
+        @Test
+        fun `ignores extra reps aimed at an AMRAP that has since ended`() {
+            val runner = Runner(workoutOf(single("grinder"), single("grinder")))
+            val first = runner.snapshot.visit
+            runner.tick(300)
+            runner.send(RunnerCommand.SetExtraReps(3, first))
+
+            assertNotEquals(first, runner.snapshot.visit)
+            assertEquals(0L, runner.inputs.extraReps)
+        }
+
+        /**
+         * An EMOM's reps stepper tapped as its minute ran out, landing on the next minute (#556): that
+         * minute's reps, which it logs as it ends, were the late tap's. Remove the visit check in
+         * `editInputs` and this fails.
+         */
+        @Test
+        fun `ignores reps aimed at an EMOM minute that has since ended`() {
+            val runner = Runner(workoutOf(single("swings")))
+            val minuteOne = runner.snapshot.visit
+            runner.tick(60)
+            runner.send(RunnerCommand.SetReps(15, minuteOne))
+
+            assertNotEquals(minuteOne, runner.snapshot.visit)
+            assertEquals(10L, runner.inputs.reps)
+        }
+
         @Test
         fun `completes once when the last step ends in that same batch`() {
             val runner = Runner(workoutOf(single("burpees")))
@@ -1029,7 +1060,7 @@ class RunnerTimingTest {
             while ((step as? RunnerStep.Reps)?.let { it.exerciseId == exerciseId && it.circuit?.round == round } !=
                 true
             ) {
-                (step as? RunnerStep.Reps)?.let { send(RunnerCommand.SetReps(reps(it))) }
+                (step as? RunnerStep.Reps)?.let { send(RunnerCommand.SetReps(reps(it), snapshot.visit)) }
                 advance()
             }
         }

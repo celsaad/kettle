@@ -43,7 +43,7 @@ class SessionRoundTripTest {
     @Test
     fun `a circuit, with a weight, reps and effort entered by hand`() {
         val runner = Runner(workoutOf(circuitOf("pullups", "lsit", between = 15.0, betweenRounds = 60.0)))
-        runner.send(RunnerCommand.SetReps(7))
+        runner.reps(7)
         runner.send(RunnerCommand.SetWeight(22.5))
         runner.send(RunnerCommand.SetRpe(8.0))
         runner.runThrough()

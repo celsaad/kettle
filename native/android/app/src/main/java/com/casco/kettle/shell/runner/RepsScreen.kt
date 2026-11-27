@@ -173,7 +173,7 @@ private fun RepsCounter(
     val reps = context.snapshot.inputs.reps
     val label = stringResource(R.string.session_reps_repsLabel)
     val padLabel = stringResource(R.string.session_reps_repsDone)
-    val set = { value: Long -> context.send(RunnerCommand.SetReps(maxOf(0, value))) }
+    val set = { value: Long -> context.setReps(maxOf(0, value)) }
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         // The target above the stepper, as the canvas draws it, not inside it: between − and + it widened the
         // middle with the text size and, at 2× on the AVD, crushed + into a sliver at the screen's edge.

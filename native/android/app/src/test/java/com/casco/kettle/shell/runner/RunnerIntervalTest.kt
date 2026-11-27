@@ -40,7 +40,7 @@ class RunnerIntervalTest : RunnerScreenHarness() {
         button("Concluir").assertDoesNotExist()
         // The reps stay editable while it rests.
         button("Aumentar Reps neste minuto").performClick()
-        assertEquals(RunnerCommand.SetReps(11), sent.last())
+        assertEquals(RunnerCommand.SetReps(11, FIRST_VISIT), sent.last())
         button("Pular").performClick()
         assertEquals(RunnerCommand.Advance(FIRST_VISIT), sent.last())
     }
@@ -113,7 +113,7 @@ class RunnerIntervalTest : RunnerScreenHarness() {
         // Ten minutes capped down to one, as a minute left on the clock.
         show(running(amrap, started(amrap).let { it.after(RunnerCommand.AddRestSeconds(-540.0, it.snapshot.visit)) }))
         button("Aumentar Reps na rodada 1").performClick()
-        assertEquals(RunnerCommand.SetExtraReps(1), sent.last())
+        assertEquals(RunnerCommand.SetExtraReps(1, FIRST_VISIT), sent.last())
     }
 
     /** While a minute rests out its notes go (#477): the countdown to the next minute is what matters then. */

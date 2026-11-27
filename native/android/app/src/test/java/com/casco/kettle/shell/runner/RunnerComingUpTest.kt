@@ -3,7 +3,6 @@ package com.casco.kettle.shell.runner
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import com.casco.kettle.domain.CircuitMember
-import com.casco.kettle.domain.RunnerCommand
 import com.casco.kettle.domain.WorkoutBlock
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -32,7 +31,7 @@ class RunnerComingUpTest : RunnerScreenHarness() {
             started(two)
                 .advanced()
                 .advanced()
-                .after(RunnerCommand.SetReps(7))
+                .withReps(7)
                 .advanced()
         show(running(two, state))
         button("Pernas").performClick()
@@ -97,13 +96,12 @@ class RunnerComingUpTest : RunnerScreenHarness() {
     fun `an exercise that logged nothing is ticked off without a count of work it didn't do`() {
         val two = plan(block(squat), block(plank))
         // Both squat sets at 0 reps, which logs no entry: the exercise skipped.
-        val zero = RunnerCommand.SetReps(0)
         val state =
             started(two)
-                .after(zero)
+                .withReps(0)
                 .advanced()
                 .advanced()
-                .after(zero)
+                .withReps(0)
                 .advanced()
         show(running(two, state))
         button("Pernas").performClick()

@@ -77,7 +77,8 @@ class RunnerNotificationsTest {
 
     @Test
     fun `follows an input edited on the phone, since Log set logs it`() {
-        val edited = started(PULLUPS).then(RunnerCommand.SetReps(8)).then(RunnerCommand.SetWeight(22.5))
+        val set = started(PULLUPS)
+        val edited = set.then(RunnerCommand.SetReps(8, set.state.snapshot.visit)).then(RunnerCommand.SetWeight(22.5))
 
         assertEquals("Série 1 de 3 · 8 × 22.5 kg", content(running(edited)).text)
     }

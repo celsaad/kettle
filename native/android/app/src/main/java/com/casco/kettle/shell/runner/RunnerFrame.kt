@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.key
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -73,11 +74,15 @@ internal fun Frame(
         workProgress(view.snapshot.steps, view.snapshot.stepIndex).let { ProgressTrack(it.done, it.total) }
         Spacer(Modifier.height(Spacing.three))
         Box(Modifier.weight(1f)) {
-            when (step) {
-                is RunnerStep.Hold -> HoldScreen(step, context)
-                is RunnerStep.Reps -> RepsScreen(step, context)
-                is RunnerStep.Interval -> IntervalScreen(step, context)
-                is RunnerStep.Rest -> RestScreen(context)
+            // Each step starts at the top (#521): since its header scrolls with the middle, two steps of a
+            // kind in a row (circuit members, Back) shared a scroll, and the next arrived with its name off.
+            key(view.snapshot.visit) {
+                when (step) {
+                    is RunnerStep.Hold -> HoldScreen(step, context)
+                    is RunnerStep.Reps -> RepsScreen(step, context)
+                    is RunnerStep.Interval -> IntervalScreen(step, context)
+                    is RunnerStep.Rest -> RestScreen(context)
+                }
             }
         }
     }

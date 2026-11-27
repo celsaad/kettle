@@ -51,6 +51,11 @@ here, next to what it describes.
   follows it. Before, a late Back threw away the round you'd just started and sent you back to the
   rest, a late +30s stretched that round instead of the rest, and a late round, stepper, load or
   effort was counted on the next step before you'd done any of it (#551, #555, #556).
+- **Steadier workout screens**: pausing an AMRAP no longer moves its buttons, so a quick second tap
+  where Pause was resumes instead of logging a round. A rest you come back to after Kettle closed
+  now says Paused, as every other paused timer does. In a circuit, "Add load" lets you put a weight
+  on a bodyweight move, such as a vest on push-ups. On a small phone with large text, the top of a
+  set scrolls, so Back and Log set stay full size (#521).
 
 ---
 

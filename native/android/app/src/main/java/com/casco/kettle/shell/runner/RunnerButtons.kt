@@ -42,6 +42,11 @@ internal class RowAction(
     val label: String,
     @DrawableRes val icon: Int?,
     val onClick: () -> Unit,
+    /**
+     * Every label the slot can show, sized for the widest: a toggle's slot that fitted only its current
+     * word moved, or restacked the row at a large text size, on the very tap that changed it (#521).
+     */
+    val sizedFor: List<String> = listOf(label),
 )
 
 internal val MinTarget = 48.dp

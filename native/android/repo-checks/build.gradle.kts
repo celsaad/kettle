@@ -45,9 +45,11 @@ class RepoFiles(
     override fun asArguments() = listOf("-Dkettle.repoRoot=${root.asFile.absolutePath}")
 }
 
+val repoRoot: Directory by rootProject.extra
+
 tasks.test {
     useJUnitPlatform()
-    val root = rootProject.layout.projectDirectory.dir("../..")
+    val root = repoRoot
     val read =
         files(
             root.dir("docs"),

@@ -10,12 +10,12 @@ import com.casco.kettle.shell.R
 import com.casco.kettle.shell.i18n.weightUnit
 
 /**
- * An exercise's target in one line, its weight in the reader's [units]: RN's `exerciseSummary`. Zeros
- * read as absent, as RN's truthiness reads them, so a 0 kg target and a 0 m distance say nothing.
+ * An exercise's target in one line, its weight in the reader's [units]. Zeros read as absent, so a 0 kg
+ * target and a 0 m distance say nothing.
  *
- * A port, not a `:shared` selector with conformance cases: the words come from the same locale
- * bundles, so only which string and which numbers can drift, and RN's copy has one reader left, the
- * workout editor, which M5 ports (#242). The two share no code, so change both until then.
+ * A Composable here rather than a `:shared` selector with conformance cases: the words come from the
+ * locale bundles, so only which string and which numbers can drift, and its readers, Exercise detail
+ * and a block's targets, share this one copy.
  */
 @Composable
 fun exerciseSummary(

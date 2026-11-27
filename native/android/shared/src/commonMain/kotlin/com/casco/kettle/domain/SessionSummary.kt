@@ -7,8 +7,8 @@ import kotlin.time.Instant
  * held by `conformance/records.yaml`. An unfinished
  * session is 0, and so is one that ended before it started, which a clock set back mid-session does.
  *
- * Rounded as JS's `Math.round`, through [roundHalfUp]. A time that isn't an instant counts as 0 where RN's would
- * be NaN; nothing RN writes is either.
+ * Rounded as JS's `Math.round`, through [roundHalfUp]. A time that isn't an instant counts as 0: nothing
+ * the app writes is one, but a hand-edited file can be.
  */
 fun sessionDurationMinutes(session: Session): Int {
     val started = session.startedInstant()
@@ -47,7 +47,7 @@ fun sessionSetCount(session: Session): Int =
         }
     }
 
-/** When [Session.startedAt] is, or null where it isn't an instant, as RN's invalid `Date` is left out. */
+/** When [Session.startedAt] is, or null where it isn't an instant, so a hand-edited time is left out. */
 internal fun Session.startedInstant(): Instant? = instantOrNull(startedAt)
 
 private fun instantOrNull(text: String): Instant? =
@@ -97,8 +97,9 @@ sealed interface EntryResult {
 }
 
 /**
- * `sessionEntryResult`, held by
- * `conformance/records.yaml`: RN's exercise editor keeps reading it until the library flip.
+ * What an entry put up, held by `conformance/records.yaml`: History's rows, the session editor, Exercise
+ * detail's history and the finish screen's "against last time" all read it, so one entry can't say two
+ * things on two screens.
  */
 fun sessionEntryResult(entry: SessionEntry): EntryResult =
     when (entry) {

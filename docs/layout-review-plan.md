@@ -24,7 +24,7 @@ Keep this section. It is the reason not to re-open these.
 | Review item | Why it is rejected |
 |---|---|
 | §6c "the HIIT chip is a real bug — fix the data path regardless" | Not a bug. `90:90 knee drops` is authored `type: hiit`, so the chip is right; `SessionNextCard` previews the **next** step, and the following exercise is a `timed_hold`, so `NEXT: hold` is also right. The reviewer read a preview of the next step as a description of the current one. |
-| §7 "Stats and History disagree (13/119 vs 16/120) — dedupe the totals" | They call the same `historyStats()` from `history-stats.ts` on the same store array ([history.tsx:159](../src/app/(tabs)/history.tsx#L159), [analytics.tsx:55](../src/app/analytics.tsx#L55)). There is no second implementation. The screenshots were taken at different times, or one had a search active. |
+| §7 "Stats and History disagree (13/119 vs 16/120) — dedupe the totals" | They call the same `historyStats()` from `history-stats.ts` on the same store array ([history.tsx:159](https://github.com/celsaad/kettle/blob/a1b8f03bc441894b26d3434ad87181c023c01d08/src/app/(tabs)/history.tsx#L159), [analytics.tsx:55](https://github.com/celsaad/kettle/blob/a1b8f03bc441894b26d3434ad87181c023c01d08/src/app/analytics.tsx#L55)). There is no second implementation. The screenshots were taken at different times, or one had a search active. |
 | §9 "runner triangles unlabelled" | `session.previousStep` / `session.doneNextStep`, `minHeight: 64`. |
 | §9 "the row play circle is unlabelled" | `build.startAccessibility`, with the workout name interpolated. |
 | §9 "−/+/SWAP are under 44px" | 26px with `hitSlop={12}` → 50px effective, which is the documented house mechanism. |
@@ -50,7 +50,7 @@ one accent-outlined pill in the title row. The fix is placement and weight, not 
 
   This plan originally said to move it under the card as a text link. **That is wrong, and the reason
   is recorded in the code**: the comment on `emptySessionButton` in
-  [index.tsx](../src/app/(tabs)/index.tsx) says the control has already been three things — a bare
+  [index.tsx](https://github.com/celsaad/kettle/blob/a1b8f03bc441894b26d3434ad87181c023c01d08/src/app/(tabs)/index.tsx) says the control has already been three things — a bare
   text link under the card ("genuinely easy to miss on a device — it read as a caption"), then a
   full-width outlined button there ("a peer of `Start session` in both width and position, which
   overstates a secondary action"), and now the pill. Moving it back is re-treading a placement already
@@ -147,12 +147,12 @@ states the hierarchy backwards. The `calm` hue stays as a fourth signal, never t
 
 ### 3b. The duplicate advance control
 
-In [session-hold.tsx](../src/components/session-hold.tsx#L192-L214) the right-hand circle and the
+In [session-hold.tsx](https://github.com/celsaad/kettle/blob/a1b8f03bc441894b26d3434ad87181c023c01d08/src/components/session-hold.tsx#L192-L214) the right-hand circle and the
 full-width "Done set" button **both call `onDone`** — two controls, one action, one screen. Delete the
 circle. Same check for `SessionInterval`.
 
 Rejecting §6b's actual prescription (three equal-width `Back`/`Pause`/`Next` buttons). The hierarchy
-there is deliberate: the comment at [session-hold.tsx:202-208](../src/components/session-hold.tsx#L202-L208)
+there is deliberate: the comment at [session-hold.tsx:202-208](https://github.com/celsaad/kettle/blob/a1b8f03bc441894b26d3434ad87181c023c01d08/src/components/session-hold.tsx#L202-L208)
 records that Pause *used* to have the filled treatment and was demoted on purpose, because advancing
 is the common action and pausing is the interruption. Flattening all three to equal weight
 re-introduces exactly what that change fixed.
@@ -228,7 +228,7 @@ Applied narrowly.
 
 The one genuinely new idea in the review (§7).
 
-The current [analytics.tsx](../src/app/analytics.tsx) answers "am I turning up" (this-week tiles,
+The current [analytics.tsx](https://github.com/celsaad/kettle/blob/a1b8f03bc441894b26d3434ad87181c023c01d08/src/app/analytics.tsx) answers "am I turning up" (this-week tiles,
 all-time tiles, `WeekBars`). It has no answer at all to "am I getting stronger", which is the question
 that would make the screen worth a second visit.
 

@@ -18,11 +18,11 @@ Inside the app, the thing that sentence promises is reachable from exactly two p
 - a caption-sized text link beside **Export** in the Library tab header
   (`src/app/(tabs)/library.tsx:114`),
 - a row in Settings → Data, behind the gear on the Workouts screen
-  ([`settings.tsx:380`](../src/app/settings.tsx#L380)).
+  ([`settings.tsx:380`](https://github.com/celsaad/kettle/blob/5859d1c0c92b6b18fef7c5a07a2125c2b8823e2b/src/app/settings.tsx#L380)).
 
 And the first-run card names three steps — start the workout, edit it, plan weeks in Programs — with
 no mention of the file, the import, or an assistant
-([`first-run-card.tsx`](../src/components/first-run-card.tsx)).
+([`first-run-card.tsx`](https://github.com/celsaad/kettle/blob/5859d1c0c92b6b18fef7c5a07a2125c2b8823e2b/src/components/first-run-card.tsx)).
 
 So someone who installed *because of* the wedge opens a screen that sells the timer, on the one axis
 where Hevy and Strong already win. That is an acquisition-to-activation mismatch, not a navigation
@@ -37,7 +37,7 @@ training app look like a developer tool to the majority who just want to lift.
 
 The actual finding is narrower. The import screen holds the app's best *content* offer — three
 bundled packs, one tap, no YAML in sight — and files it under a plumbing verb, third on the screen,
-below Choose file and Paste YAML ([`import.tsx:549`](../src/app/import.tsx#L549)). Everything below
+below Choose file and Paste YAML ([`import.tsx:549`](https://github.com/celsaad/kettle/blob/5859d1c0c92b6b18fef7c5a07a2125c2b8823e2b/src/app/import.tsx#L549)). Everything below
 promotes the pack, the program and the ownership claim. Nothing below promotes the word "import".
 
 ## The constraint that shapes the sequencing: this cannot be measured
@@ -113,7 +113,7 @@ activation moment for people who will never type YAML.
 - **Obligations:** `accessibilityRole="button"`; 44px via `minHeight`, never `height`; keys in **all
   three** bundles (`en`, `pt`, `ja` — `ja` takes only `_other` for anything with a count).
 - **Tests:** a first-run case beside
-  [`workouts-next-up.test.tsx`](../src/app/__tests__/workouts-next-up.test.tsx) — present at zero
+  [`workouts-next-up.test.tsx`](https://github.com/celsaad/kettle/blob/5859d1c0c92b6b18fef7c5a07a2125c2b8823e2b/src/app/__tests__/workouts-next-up.test.tsx) — present at zero
   sessions, absent once one is logged, routes to `/import` — plus one run driven in `pt`, since an
   English-locale assertion cannot catch a hardcoded English string. **One of the cases is the rest-day
   gate**: zero sessions, a program whose next slot is `rest_day: true`, link present. Reintroduce
@@ -126,7 +126,7 @@ activation moment for people who will never type YAML.
 
 ### D2 — Import leads with packs for someone who has logged nothing
 
-- **Where:** [`import.tsx`](../src/app/import.tsx), inside the idle block only (`!ready && !applied`).
+- **Where:** [`import.tsx`](https://github.com/celsaad/kettle/blob/5859d1c0c92b6b18fef7c5a07a2125c2b8823e2b/src/app/import.tsx), inside the idle block only (`!ready && !applied`).
   The packs section at `:549` moves above Choose file and Paste YAML when `useSessionHistoryStore`
   reports zero sessions.
 - **Why state-dependent rather than always:** a returning user opens this screen *to import a file*;
@@ -144,7 +144,7 @@ activation moment for people who will never type YAML.
   The block now rides up between the two file rows *for a returning user*, because the share sheet
   made it the thing they came for rather than a schema to copy. The half that mattered here holds
   unchanged: at zero sessions it is still last, under the packs, for exactly the reason above.
-- **Tests:** [`import.test.tsx`](../src/app/__tests__/import.test.tsx) — assert rendered order at zero
+- **Tests:** [`import.test.tsx`](https://github.com/celsaad/kettle/blob/5859d1c0c92b6b18fef7c5a07a2125c2b8823e2b/src/app/__tests__/import.test.tsx) — assert rendered order at zero
   sessions and at one.
 - **Done when:** the first thing a new user sees on `/import` is three programs, not two file verbs.
 
@@ -161,7 +161,7 @@ empty-state visitors.
 - **Programs** (`src/app/(tabs)/programs.tsx:147`): **not a dead end** — it links to
   `/program-guide`, and an earlier read of this that called it one was wrong. The gap is one level
   in: the guide *describes* the route in prose — "Library tab → Import → pick your file → review the
-  summary → Merge & import" ([`program-guide.tsx:158`](../src/app/program-guide.tsx#L158)) — to a
+  summary → Merge & import" ([`program-guide.tsx:158`](https://github.com/celsaad/kettle/blob/5859d1c0c92b6b18fef7c5a07a2125c2b8823e2b/src/app/program-guide.tsx#L158)) — to a
   reader who has just finished being told how to write the file. It should end with the control
   instead of directions to it.
 - **The control goes in the guide, and that is why the empty state needs nothing of its own.** The
@@ -170,8 +170,8 @@ empty-state visitors.
   programs. Duplicating it into the empty state would buy nothing and add a second thing to keep
   worded consistently.
 - **Push or replace is a decision for this file, not for the device.** `/import` and `/program-guide`
-  are both `presentation: 'modal'` ([`_layout.tsx:121`](../src/app/_layout.tsx#L121),
-  [`:127`](../src/app/_layout.tsx#L127)), so pushing import from inside the guide leaves the user two
+  are both `presentation: 'modal'` ([`_layout.tsx:121`](https://github.com/celsaad/kettle/blob/5859d1c0c92b6b18fef7c5a07a2125c2b8823e2b/src/app/_layout.tsx#L121),
+  [`:127`](https://github.com/celsaad/kettle/blob/5859d1c0c92b6b18fef7c5a07a2125c2b8823e2b/src/app/_layout.tsx#L127)), so pushing import from inside the guide leaves the user two
   modals deep and, on dismiss, back mid-scroll in 226 lines of reference they are done with.
   **Default: `replace`** — the guide's last step *is* the import, and dismissing should land on
   Programs, where the imported program has just appeared. Settings → Import is the precedent for
@@ -185,7 +185,7 @@ empty-state visitors.
 
 ### D4 — The first-run card carries the sentence the listing sold
 
-- **Where:** [`first-run-card.tsx`](../src/components/first-run-card.tsx) and `today.firstRun.*`.
+- **Where:** [`first-run-card.tsx`](https://github.com/celsaad/kettle/blob/5859d1c0c92b6b18fef7c5a07a2125c2b8823e2b/src/components/first-run-card.tsx) and `today.firstRun.*`.
 - **Shape:** a **copy swap, not a fourth step.** The card's argument for naming exactly three things
   survives this plan intact; what changes is that one of the three carries ownership and outside
   authoring instead of restating what the tab bar already says.

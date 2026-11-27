@@ -15,9 +15,8 @@ data class Preferences(
 /**
  * What a `preferences.json` says, or null where it says nothing usable: held by `conformance/preferences.yaml`.
  *
- * Read with the YAML loader, since RN writes the file with `JSON.stringify` and that output is YAML
- * 1.2. One wrong field refuses the whole file, as zod's object does, and keys it doesn't know are
- * ignored, as zod strips them.
+ * Read with the YAML loader, since the file is JSON ([serializePreferences]'s, or an older install's)
+ * and JSON is YAML 1.2. One wrong field refuses the whole file, and keys it doesn't know are ignored.
  */
 fun parsePreferences(text: String): Preferences? {
     val fields = (loadYaml(text) as? YamlLoad.Loaded)?.value as? Map<*, *>
@@ -25,7 +24,7 @@ fun parsePreferences(text: String): Preferences? {
 }
 
 /**
- * [stored], or where there's none, what RN's store defaulted to: the device's [units] (the only layer
+ * [stored], or where there's none, the defaults: the device's [units] (the only layer
  * that can make that call), the system's scheme, the reminder off and the sounds on. A change starts
  * from this and writes all of it, so the first setting changed also writes down the rest.
  */
@@ -42,8 +41,8 @@ fun preferencesOrDefault(
     )
 
 /**
- * The file as RN's `JSON.stringify` wrote it, every field, so RN's read and an older build's read what
- * native Settings writes (#237). The whole file on every write, never just the field that changed.
+ * The file as JSON, every field, so an older build reads what Settings writes (#237). The whole
+ * file on every write, never just the field that changed.
  */
 fun serializePreferences(preferences: Preferences): String =
     listOf(

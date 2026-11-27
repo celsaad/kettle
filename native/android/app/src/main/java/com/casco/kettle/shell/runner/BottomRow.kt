@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.sizeIn
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -52,20 +53,21 @@ internal fun BottomRow(
 ) {
     val backAction = back?.let { RowAction(stringResource(R.string.session_prev), R.drawable.icon_back, it) }
     val slots = listOfNotNull(backAction, side)
-    val slotWidths = slots.map { maxOf(SLOT_WIDTH, rememberWidestText(listOf(it.label), SlotLabel) + SLOT_INSET * 2) }
-    val mainWidth = rememberWidestText(listOf(main.label), KettleType.heading) + MAIN_INSET * 2
+    val backWidth = backAction?.let { slotWidth(it) }
+    val sideWidth = side?.let { slotWidth(it) }
+    val mainWidth = rememberWidestText(main.sizedFor, KettleType.heading) + MAIN_INSET * 2
     BoxWithConstraints {
         // At 200% text "Voltar", "Continuar" and "Concluir" can't share one line at any split, and the
         // main action's word broke mid-word (#469). Then it takes a line of its own, over the slots.
-        val need = slotWidths.fold(mainWidth) { sum, width -> sum + width + Spacing.two }
+        val need = listOfNotNull(backWidth, sideWidth).fold(mainWidth) { sum, width -> sum + width + Spacing.two }
         if (need <= maxWidth) {
             Row(
                 horizontalArrangement = Arrangement.spacedBy(Spacing.two),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                backAction?.let { SlotButton(it) }
+                backAction?.let { SlotButton(it, Modifier.width(backWidth!!)) }
                 MainButton(main, Modifier.weight(1f))
-                side?.let { SlotButton(it) }
+                side?.let { SlotButton(it, Modifier.width(sideWidth!!)) }
             }
         } else {
             Column(verticalArrangement = Arrangement.spacedBy(Spacing.two)) {
@@ -81,6 +83,11 @@ internal fun BottomRow(
         }
     }
 }
+
+/** A side slot's width: 64dp, or what the widest of its words needs. */
+@Composable
+private fun slotWidth(action: RowAction): Dp =
+    maxOf(SLOT_WIDTH, rememberWidestText(action.sizedFor, SlotLabel) + SLOT_INSET * 2)
 
 /**
  * The filled one, the field's inverse: its ink with the field's colour on it, never orange. Its symbol
@@ -174,14 +181,20 @@ internal fun doneAction(context: StepContext) =
 internal fun skipAction(context: StepContext) =
     RowAction(stringResource(R.string.session_skip), R.drawable.icon_skip, context::advance)
 
-/** Pause, or Resume while paused: the main action on a clock's screen and a paused rest, an AMRAP's side. */
+/**
+ * Pause, or Resume while paused: the main action on a clock's screen and on a paused rest, and the side
+ * slot on an AMRAP. Sized for both words, so the tap that flips it doesn't move it.
+ */
 @Composable
 internal fun pauseAction(context: StepContext): RowAction {
     val toggle = { context.send(RunnerCommand.TogglePause) }
+    val pause = stringResource(R.string.session_pause)
+    val resume = stringResource(R.string.session_resume)
+    val both = listOf(pause, resume)
     return if (context.paused) {
-        RowAction(stringResource(R.string.session_resume), R.drawable.icon_play, toggle)
+        RowAction(resume, R.drawable.icon_play, toggle, both)
     } else {
-        RowAction(stringResource(R.string.session_pause), R.drawable.icon_pause, toggle)
+        RowAction(pause, R.drawable.icon_pause, toggle, both)
     }
 }
 
@@ -241,7 +254,7 @@ private fun Pill(
 }
 
 /** The canvas's 72dp row: taller than the 48dp minimum, being the controls a hand lands on unlooking. */
-private val ROW_HEIGHT = 72.dp
+internal val ROW_HEIGHT = 72.dp
 private val SLOT_WIDTH = 64.dp
 
 /** The bottom area's and the End pill's outline: one weight, so the controls read as one set. */

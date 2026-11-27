@@ -1,8 +1,12 @@
 package com.casco.kettle.shell.runner
 
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsNotDisplayed
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.swipeUp
 import com.casco.kettle.domain.CircuitMember
 import com.casco.kettle.domain.RunnerCommand
 import com.casco.kettle.domain.WorkoutBlock
@@ -11,6 +15,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import org.robolectric.annotation.GraphicsMode
 
 /**
  * A circuit's reps step as its board draws it (#478): no effort, no load row for a bodyweight member until
@@ -28,6 +33,8 @@ class RunnerCircuitStepTest : RunnerScreenHarness() {
     fun `a circuit's bodyweight member has no load and no effort, and its first round no last round`() {
         show(running(circuit, started(circuit).advanced()))
         compose.onNodeWithText("Búlgaro").assertExists()
+        // "Carga" as a word: the pill's "Adicionar carga" is lower case.
+        compose.onNodeWithText("Carga", substring = true).assertDoesNotExist()
         button("Aumentar carga").assertDoesNotExist()
         compose.onNodeWithText("Esforço", substring = true).assertDoesNotExist()
         compose.onNodeWithText("Rodada 1:", substring = true).assertDoesNotExist()
@@ -58,9 +65,12 @@ class RunnerCircuitStepTest : RunnerScreenHarness() {
 
     /**
      * The toggle keeps its slot on a paused AMRAP, and the round keeps the main one (#521): when Resume
-     * led instead (#478), a quick second tap where Pause had been logged a round.
+     * led instead (#478), a quick second tap where Pause had been logged a round. Native graphics: legacy
+     * mode measures every word under the slot's 64dp minimum, so "Pausar" and "Continuar" would fit alike
+     * there even if the slot followed its current word.
      */
     @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
     fun `a paused AMRAP's Resume is where Pause was, and the round stays the main action`() {
         val amrap = plan(block(grinder))
         show(running(amrap))
@@ -72,6 +82,41 @@ class RunnerCircuitStepTest : RunnerScreenHarness() {
         assertEquals(running, button("Rodada 1 feita").getUnclippedBoundsInRoot())
         button("Continuar").performClick()
         assertEquals(RunnerCommand.TogglePause, sent.last())
+    }
+
+    /** In `ja` Pause is the wider word, so a slot sized for its current word shrank on the tap (#521). */
+    @Test
+    @Config(qualifiers = "ja-w411dp-h891dp")
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    fun `in Japanese at a larger text size the AMRAP's toggle keeps its slot too`() {
+        fontScale = 1.3f
+        val amrap = plan(block(grinder))
+        show(running(amrap))
+        val pause = button("一時停止").getUnclippedBoundsInRoot()
+        val running = button("1ラウンド完了").getUnclippedBoundsInRoot()
+
+        show(running(amrap, started(amrap).after(RunnerCommand.TogglePause)))
+        assertEquals(pause, button("再開").getUnclippedBoundsInRoot())
+        assertEquals(running, button("1ラウンド完了").getUnclippedBoundsInRoot())
+    }
+
+    /**
+     * The header scrolls with the step on a short screen at a large text size (#521), so each step has to
+     * start at the top: sharing one scroll, the next member arrived with its label and name scrolled off.
+     */
+    @Test
+    @Config(qualifiers = "pt-w320dp-h480dp")
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    fun `on a short screen the next member starts at the top, not where the last was scrolled`() {
+        fontScale = 2f
+        val first = started(circuit)
+        show(running(circuit, first))
+        compose.onNodeWithText("Agachamento").performTouchInput { swipeUp() }
+        compose.onNodeWithText("Circuito · rodada 1 de 2").assertIsNotDisplayed()
+
+        show(running(circuit, first.advanced()))
+        compose.onNodeWithText("Circuito · rodada 1 de 2").assertIsDisplayed()
+        compose.onNodeWithText("Búlgaro").assertIsDisplayed()
     }
 
     /**

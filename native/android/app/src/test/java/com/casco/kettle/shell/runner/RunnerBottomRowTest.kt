@@ -6,7 +6,6 @@ import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import androidx.compose.ui.unit.dp
 import com.casco.kettle.domain.RunnerCommand
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -167,7 +166,7 @@ class RunnerBottomRowTest : RunnerScreenHarness() {
         fontScale = 2f
         val sets = plan(block(squat))
         show(running(sets, started(sets).withWeight(102.5)))
-        button("Voltar").assertIsDisplayed().assertHeightIsAtLeast(44.dp)
-        button("Registrar série").assertIsDisplayed().assertHeightIsAtLeast(44.dp)
+        button("Voltar").assertIsDisplayed().assertHeightIsAtLeast(ROW_HEIGHT)
+        button("Registrar série").assertIsDisplayed().assertHeightIsAtLeast(ROW_HEIGHT)
     }
 }

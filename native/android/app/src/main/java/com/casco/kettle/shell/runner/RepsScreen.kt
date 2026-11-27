@@ -80,10 +80,10 @@ internal fun RepsScreen(
             Column(Modifier.padding(top = Spacing.two), verticalArrangement = Arrangement.spacedBy(Spacing.one)) {
                 // A circuit's bodyweight member has no load row (#478), only a way to add one (#521); a
                 // weighted one keeps it.
-                val load = loadRow(step, context)
+                val load = loadVisibility(step, context)
                 when {
-                    !inCircuit || load.shown -> LoadControl(context)
-                    else -> OutlinedPill(stringResource(R.string.session_reps_addLoad), load.show)
+                    !inCircuit || load.visible -> LoadControl(context)
+                    else -> OutlinedPill(stringResource(R.string.session_reps_addLoad), load.reveal)
                 }
                 LastTimeRow(step, context)
             }
@@ -338,10 +338,10 @@ private val STEPPER_GAP = 22.dp
 private val REPS_LABEL_GAP = 6.dp
 private val LOAD_UNIT = 18.sp
 
-/** Whether a circuit member's load row is on screen, and the way to put it there. */
-private class LoadRow(
-    val shown: Boolean,
-    val show: () -> Unit,
+/** Whether a circuit member's load control is on screen, and the way to put it there. */
+private class LoadVisibility(
+    val visible: Boolean,
+    val reveal: () -> Unit,
 )
 
 /**
@@ -350,12 +350,12 @@ private class LoadRow(
  * under the finger and slid last time's adopt into its place, where the next tap brought it back.
  */
 @Composable
-private fun loadRow(
+private fun loadVisibility(
     step: RunnerStep.Reps,
     context: StepContext,
-): LoadRow {
+): LoadVisibility {
     val shown = remember(context.snapshot.visit) { mutableStateOf(false) }
     val loaded = (step.targetWeightKg ?: 0.0) > 0 || context.snapshot.inputs.weightKg > 0
     if (loaded && !shown.value) SideEffect { shown.value = true }
-    return LoadRow(loaded || shown.value) { shown.value = true }
+    return LoadVisibility(loaded || shown.value) { shown.value = true }
 }

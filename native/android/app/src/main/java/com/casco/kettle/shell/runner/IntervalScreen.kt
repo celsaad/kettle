@@ -229,9 +229,9 @@ private fun AmrapScreen(
                 }
             }
             val roundDone =
-                RowAction(stringResource(R.string.session_amrap_roundDone, "$round"), null) {
+                RowAction(stringResource(R.string.session_amrap_roundDone, "$round"), null, {
                     context.setRounds(round)
-                }
+                })
             // Paused, Resume stays in Pause's slot and the round in the main one, unlike every other paused
             // screen (#421): there Pause is already the main action, but here Resume leading (#478) put the
             // round under the finger that had just paused, and a quick second tap logged it (#521).

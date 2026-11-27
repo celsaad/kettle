@@ -187,6 +187,7 @@ private fun Resources.thenHint(
 }
 
 private const val SEPARATOR = " · "
+private val ROUND_DIGITS = '0'..'9'
 
 /**
  * An AMRAP (#417): "Round N done" is the main action, each tap a round, with Undo taking back the last;
@@ -228,10 +229,12 @@ private fun AmrapScreen(
                     context.setRounds(rounds - 1)
                 }
             }
-            val roundDone =
-                RowAction(stringResource(R.string.session_amrap_roundDone, "$round"), null, {
-                    context.setRounds(round)
-                })
+            // Sized for two digits as well (#566): "Round 10 done" outgrew "Round 9 done", and near the
+            // row's fit the tap that reached it restacked the row under the finger. Each digit doubled
+            // covers every two-digit round; a hundred rounds is past any AMRAP worth sizing for.
+            val twoDigits = ROUND_DIGITS.map { stringResource(R.string.session_amrap_roundDone, "$it$it") }
+            val label = stringResource(R.string.session_amrap_roundDone, "$round")
+            val roundDone = RowAction(label, null, { context.setRounds(round) }, listOf(label) + twoDigits)
             // Paused, Resume stays in Pause's slot and the round in the main one, unlike every other paused
             // screen (#421): there Pause is already the main action, but here Resume leading (#478) put the
             // round under the finger that had just paused, and a quick second tap logged it (#521).

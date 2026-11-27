@@ -21,7 +21,7 @@
 > tenth of the work and needs no format change at all.
 
 An exercise can only explain itself in prose. `notes` is a coaching cue
-(`locales/en.json:493` — "Coaching cue…"), and a cue is a reminder for a move you already
+(`exerciseEditor.notesPlaceholder` — "Coaching cue…"), and a cue is a reminder for a move you already
 know.
 
 **The rule, in one line:** every **seeded** exercise gets a **bundled line drawing keyed by its id**.

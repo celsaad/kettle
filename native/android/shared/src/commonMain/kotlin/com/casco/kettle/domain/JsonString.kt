@@ -1,9 +1,10 @@
 package com.casco.kettle.domain
 
 /**
- * [value] as `JSON.stringify` writes a string, character for character, wherever a Kotlin string has
- * to come out exactly as RN's would: `supporter.json`, which both sides read, and [recordKey], which
- * `conformance/records.yaml` holds to RN's.
+ * [value] as `JSON.stringify` writes a string, character for character, wherever a string has to come
+ * out exactly as files already on the phone have it: the JSON files the app before the native rewrite
+ * wrote and this one still reads (preferences, `supporter.json`, backups), and [recordKey], whose
+ * form `conformance/records.yaml` pins.
  */
 internal fun jsonString(value: String): String =
     buildString {

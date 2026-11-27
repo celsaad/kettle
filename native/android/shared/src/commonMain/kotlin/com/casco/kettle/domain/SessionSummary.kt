@@ -97,8 +97,8 @@ sealed interface EntryResult {
 }
 
 /**
- * `sessionEntryResult`, held by
- * `conformance/records.yaml`: RN's exercise editor keeps reading it until the library flip.
+ * What an entry put up, held by `conformance/records.yaml`: History's rows, the session editor and
+ * Exercise detail's "against last time" all read it, so one entry can't say two things on two screens.
  */
 fun sessionEntryResult(entry: SessionEntry): EntryResult =
     when (entry) {

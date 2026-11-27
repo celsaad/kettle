@@ -114,12 +114,12 @@ these were missing:
 |---|---|---|
 | Native project generation | no `ios/` in the tree | CNG. Same prebuild path Android already uses; nothing is checked in to port |
 | App icon | [`assets/expo.icon/`](../assets/expo.icon) via [`app.json`](#what-appjson-held-for-ios) `ios.icon` | Already an Icon Composer bundle, and `icon.json` already declares a `watchOS` circle mask |
-| Tab bar | [`(tabs)/_layout.tsx`](../src/app/(tabs)/_layout.tsx) | Every `NativeTabs.Trigger.Icon` already carries `sf={{ default, selected }}` beside its `md=`. The iOS tab bar renders natively today |
-| File storage | [`storage/paths.ts`](../src/storage/paths.ts) | No platform guard (web, the only unsupported platform, ended in M6), so iOS gets the real document directory |
-| Session timing | [`use-session-runner.ts`](../src/hooks/use-session-runner.ts) | Recomputes from `Date.now()` on every `AppState` change instead of accumulating ticks. Written for Android throttling; it is exactly what survives iOS *suspending* the app |
+| Tab bar | [`(tabs)/_layout.tsx`](https://github.com/celsaad/kettle/blob/d80e5e72432b03294da9fca1ca2b665a7b4ce2b5/src/app/(tabs)/_layout.tsx) | Every `NativeTabs.Trigger.Icon` already carries `sf={{ default, selected }}` beside its `md=`. The iOS tab bar renders natively today |
+| File storage | [`storage/paths.ts`](https://github.com/celsaad/kettle/blob/d80e5e72432b03294da9fca1ca2b665a7b4ce2b5/src/storage/paths.ts) | No platform guard (web, the only unsupported platform, ended in M6), so iOS gets the real document directory |
+| Session timing | [`use-session-runner.ts`](https://github.com/celsaad/kettle/blob/d80e5e72432b03294da9fca1ca2b665a7b4ce2b5/src/hooks/use-session-runner.ts) | Recomputes from `Date.now()` on every `AppState` change instead of accumulating ticks. Written for Android throttling; it is exactly what survives iOS *suspending* the app |
 | Confirm dialogs | everywhere `Alert.alert` is used | Real on iOS. The no-op is web only |
-| Keyboard | [`session-exercise-picker.tsx:74`](../src/components/session-exercise-picker.tsx#L74) | Already branches `Platform.OS === 'ios' ? 'padding' : undefined` |
-| Export / share | [`storage/export.ts`](../src/storage/export.ts) | `expo-sharing` is the iOS share sheet. It opens; **what it offers is 2.6** |
+| Keyboard | [`session-exercise-picker.tsx:74`](https://github.com/celsaad/kettle/blob/d80e5e72432b03294da9fca1ca2b665a7b4ce2b5/src/components/session-exercise-picker.tsx#L74) | Already branches `Platform.OS === 'ios' ? 'padding' : undefined` |
+| Export / share | [`storage/export.ts`](https://github.com/celsaad/kettle/blob/d80e5e72432b03294da9fca1ca2b665a7b4ce2b5/src/storage/export.ts) | `expo-sharing` is the iOS share sheet. It opens; **what it offers is 2.6** |
 | Privacy posture | nothing in the app transmits | The App Privacy label mirrors the Play declaration verbatim: nothing collected, nothing shared |
 
 Two consequences worth stating: **the a11y and i18n work carries over free** (roles, labels and the
@@ -176,7 +176,7 @@ Small, contained, and testable inline. This is the whole of the iOS-specific app
 > Support is an empty stub route now, and Settings offers Support on Android only. An iOS tip jar
 > needs a StoreKit screen of its own; what follows is how the RN one was made to work, kept for that.
 
-[`support.tsx:86`](../src/app/support.tsx#L86) sent:
+[`support.tsx:86`](https://github.com/celsaad/kettle/blob/d80e5e72432b03294da9fca1ca2b665a7b4ce2b5/src/app/support.tsx#L86) sent:
 
 ```ts
 await requestPurchase({ request: { google: { skus: [sku] } }, type: 'in-app' });
@@ -228,7 +228,7 @@ developers under $1M/yr. It is an application, not automatic.
 
 ### 2.4 iOS has no backup story, and the fix is config — *shipped*
 
-[`backup.ts:33`](../src/storage/backup.ts#L33) hides the backup-folder feature on iOS, and the decision
+[`backup.ts:33`](https://github.com/celsaad/kettle/blob/d80e5e72432b03294da9fca1ca2b665a7b4ce2b5/src/storage/backup.ts#L33) hides the backup-folder feature on iOS, and the decision
 log is right about why — iOS grants the picked folder for the app session only and stores no bookmark,
 so a folder chosen there would look set and quietly stop being written to. That reasoning stands and
 this plan does not reopen it.
@@ -240,7 +240,7 @@ is a better fit for the data-ownership pitch than the Android SAF dance: the use
 folder, they just *have* the folder, and the app writes where it always wrote.
 
 Both keys are in [`app.json`](#what-appjson-held-for-ios)'s `ios.infoPlist`, and `isDocumentsFolderShared` in
-[`backup.ts`](../src/storage/backup.ts) gates the Settings copy on them — a flag that governs a
+[`backup.ts`](https://github.com/celsaad/kettle/blob/d80e5e72432b03294da9fca1ca2b665a7b4ce2b5/src/storage/backup.ts) gates the Settings copy on them — a flag that governs a
 paragraph rather than any behaviour, which is why `app-config.test.ts` asserts the keys are still
 there: delete one and the sentence stays on screen describing a folder nothing can see. The copy is
 its own (the Android strings are about choosing and forgetting a folder, none of which applies) and
@@ -318,7 +318,7 @@ rather than a phone.
 Found by auditing the code rather than by the first pass through this plan, which is why it is
 numbered after the five and why the table above was overclaiming.
 
-[`export.ts`](../src/storage/export.ts) calls `Sharing.shareAsync(uri, { mimeType, dialogTitle })`.
+[`export.ts`](https://github.com/celsaad/kettle/blob/d80e5e72432b03294da9fca1ca2b665a7b4ce2b5/src/storage/export.ts) calls `Sharing.shareAsync(uri, { mimeType, dialogTitle })`.
 Both of those are **Android-only** (`expo-sharing`'s `SharingOptions`: `mimeType` is `@platform
 android`, `dialogTitle` is android and web). The two iOS ones are not passed:
 
@@ -393,7 +393,7 @@ Android that works. On iOS, once the app is suspended, `setInterval` stops **and
 silent, so the only thing left is the local-notification fallback — and as configured it will not cue
 anyone:
 
-- ✅ **Shipped.** `scheduleStepCompleteNotification` ([`safe-notifications.ts`](../src/hooks/safe-notifications.ts))
+- ✅ **Shipped.** `scheduleStepCompleteNotification` ([`safe-notifications.ts`](https://github.com/celsaad/kettle/blob/d80e5e72432b03294da9fca1ca2b665a7b4ce2b5/src/hooks/safe-notifications.ts))
   set no `sound` on the notification content, so a rest ending in a pocket produced a silent banner.
   **That was the whole of the pocket failure, and `sound: 'default'` was the whole of the fix**, with
   `interruptionLevel: 'timeSensitive'` beside it so a Focus mode doesn't eat the cue. Android takes a
@@ -420,7 +420,7 @@ anyone:
   The `shouldPlaySound: false` in the same file's `setNotificationHandler` looks like a second cause
   and is not: on iOS that handler runs **only while the app is foregrounded**, and a suspended app's
   notification is rendered by the system from the content alone. In the foreground
-  [`use-session-sounds.ts`](../src/hooks/use-session-sounds.ts) is already playing the real cue, so the
+  [`use-session-sounds.ts`](https://github.com/celsaad/kettle/blob/d80e5e72432b03294da9fca1ca2b665a7b4ce2b5/src/hooks/use-session-sounds.ts) is already playing the real cue, so the
   handler is correct as written and **flipping it would double-cue.** Leave it alone.
 - [`app.json`](#what-appjson-held-for-ios) sets `expo-audio`'s `enableBackgroundPlayback: false`, so the real cues
   cannot fire in the background even in principle.
@@ -448,14 +448,14 @@ So there are two routes, and they are not exclusive:
 
   **That flag alone does nothing.** The config plugin writes the Info.plist key; the audio *session*
   is separate and defaults off — `AudioMode.shouldPlayInBackground` is `false`
-  (`expo-audio/build/Audio.types.d.ts:560`), and [`use-session-sounds.ts:43`](../src/hooks/use-session-sounds.ts#L43)
+  (`expo-audio/build/Audio.types.d.ts:560`), and [`use-session-sounds.ts:43`](https://github.com/celsaad/kettle/blob/d80e5e72432b03294da9fca1ca2b665a7b4ce2b5/src/hooks/use-session-sounds.ts#L43)
   currently calls `setAudioModeAsync({ playsInSilentMode: true, interruptionMode: 'duckOthers' })`
   without it. Both halves or neither, and the runtime half is the one that reads as already done.
 
 Recommendation: **ship the first, evaluate the second on device.** The notification route removes the
 "no cue at all" failure outright, which is the one that costs a workout; the background-audio route is
 an improvement on top and can be cut without the feature being broken. `playsInSilentMode: true` is
-already set in [`use-session-sounds.ts`](../src/hooks/use-session-sounds.ts) and stays either way.
+already set in [`use-session-sounds.ts`](https://github.com/celsaad/kettle/blob/d80e5e72432b03294da9fca1ca2b665a7b4ce2b5/src/hooks/use-session-sounds.ts) and stays either way.
 
 ### The Watch — and the trap in the current plan
 
@@ -476,7 +476,7 @@ understating the case:
 
 **There is an iOS-specific constraint to check first, but it is narrower than it first looks.** iOS
 forwards notifications to the Watch only when the iPhone is *locked or asleep*, and the session screen
-calls `useKeepAwake` ([`session.tsx`](../src/app/session.tsx)) for the whole duration of a workout.
+calls `useKeepAwake` ([`session.tsx`](https://github.com/celsaad/kettle/blob/d80e5e72432b03294da9fca1ca2b665a7b4ce2b5/src/app/session.tsx)) for the whole duration of a workout.
 
 That reads like a direct collision, and it partly is — but `useKeepAwake` disables the **idle timer**,
 which prevents the phone falling asleep on its own. It does not prevent a *manual* lock. And the

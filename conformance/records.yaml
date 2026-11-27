@@ -1,8 +1,7 @@
 # What a logged entry puts up for a record: `entryBest` over each entry of a parsed session file, and
-# `recordKey`, which keys every best by exercise and kind. RN's runner keeps reading both past M4 for its
-# live "this beats your best" cue, and the native Stats and exercise progress screens read them too, so
-# the two have to agree on what counts as doing more, or a session is a record on one screen and not on
-# the other. `entryBest` is null for an entry that competes for nothing.
+# `recordKey`, which keys every best by exercise and kind. The runner's live record marker, Stats and the
+# exercise progress screens all read both, so they have to agree on what counts as doing more, or a
+# session is a record on one screen and not on another. `entryBest` is null for an entry that competes for nothing.
 #
 # `sessionRecords` is what the completion screen lists: what `session` beat across `prior` (session
 # YAML each), named from `library` (inline YAML). Both runners show it, so the badge can't differ.
@@ -146,8 +145,8 @@ cases:
   - { name: key-keeps-non-ascii, op: recordKey, exercise: 'flexão-脚', kind: mostRounds }
   - { name: key-escapes-a-control-character, op: recordKey, exercise: "tab\there", kind: heaviestSet }
   # `sessionDurationMinutes`: a session's length in whole minutes, which the training calendar shades by
-  # and Stats' THIS WEEK time adds up. Native Stats reads the log RN's runner writes, so a session on the
-  # rounding line has to land in the same calendar bucket on both sides.
+  # and Stats' THIS WEEK time adds up. The finish screen and History read it too, so a session on the
+  # rounding line has to land in the same bucket on every one of them.
   - name: duration-rounds-half-a-minute-up
     why: Math.round, so 29m30s is 30 and shades as a mid-length day.
     op: sessionDurationMinutes
@@ -197,8 +196,8 @@ cases:
       ended_at: "2026-08-01T09:50:00.000Z"
       entries: []
   # `sessionEntryResult` and `sessionSetCount`: what a row of native History says each entry put up, and
-  # the set count on the row and in the summary line. RN's session editor and Today keep reading both
-  # until M5, so a session shows one count and one result on either side.
+  # the set count on the row and in the summary line. The session editor and the finish screen read them
+  # too, so a session shows one count and one result wherever it appears.
   - name: entry-results-fold-seven-types-onto-six-shapes
     why: hiit and amrap both reduce to rounds; an emom whose minutes add up to no reps has no total, not 0.
     op: sessionEntryResult

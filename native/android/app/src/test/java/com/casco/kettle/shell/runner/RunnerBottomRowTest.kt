@@ -31,7 +31,7 @@ class RunnerBottomRowTest : RunnerScreenHarness() {
         compose.onNodeWithText("Reps · série 1 de 2").assertExists()
         compose.onNodeWithText("Reps feitas · meta 5").assertExists()
         button("Aumentar Repetições").performClick()
-        assertEquals(RunnerCommand.SetReps(6), sent.last())
+        assertEquals(RunnerCommand.SetReps(6, FIRST_VISIT), sent.last())
         button("Registrar série").performClick()
         assertEquals(RunnerCommand.Advance(FIRST_VISIT), sent.last())
         button("Voltar").assertIsTarget().performClick()

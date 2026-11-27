@@ -161,7 +161,7 @@ class RunnerWritesTest {
         @Test
         fun `does not retract a logged set when Prev follows an added set`() {
             val runner = Runner(workoutOf(single("pullups")))
-            runner.send(RunnerCommand.SetReps(9))
+            runner.reps(9)
             runner.advance()
             runner.send(RunnerCommand.AddSet)
             runner.prev()
@@ -173,7 +173,7 @@ class RunnerWritesTest {
         @Test
         fun `does not retract a logged set when Prev follows a swap`() {
             val runner = Runner(workoutOf(single("pullups")))
-            runner.send(RunnerCommand.SetReps(9))
+            runner.reps(9)
             runner.advance()
             runner.send(RunnerCommand.Swap(runner.exercise("dips")))
             runner.prev()
@@ -220,7 +220,7 @@ class RunnerWritesTest {
         @Test
         fun `writes the first set before the exercise is anywhere near finished`() {
             val runner = Runner(workoutOf(single("pullups")))
-            runner.send(RunnerCommand.SetReps(7))
+            runner.reps(7)
             runner.advance()
 
             assertEquals(listOf(7L), runner.pullupSets().map { it.reps })
@@ -298,7 +298,7 @@ class RunnerWritesTest {
         fun `debounces the snapshot save of an input edit`() {
             val runner = Runner(workoutOf(single("pullups")))
             runner.clearEffects()
-            runner.send(RunnerCommand.SetReps(4))
+            runner.reps(4)
 
             assertEquals(listOf(RunnerEffect.SaveSnapshot(debounce = true)), runner.effects.drop(1))
         }
@@ -307,7 +307,7 @@ class RunnerWritesTest {
         fun `saves nothing for an edit that changes nothing`() {
             val runner = Runner(workoutOf(single("pullups")))
             runner.clearEffects()
-            runner.send(RunnerCommand.SetReps(6))
+            runner.reps(6)
 
             assertEquals(1, runner.effects.size)
         }
@@ -326,9 +326,9 @@ class RunnerWritesTest {
         @Test
         fun `records reps, weight and rpe on each logged set`() {
             val runner = Runner(workoutOf(single("pullups")))
-            runner.send(RunnerCommand.SetReps(8))
-            runner.send(RunnerCommand.SetWeight(22.5))
-            runner.send(RunnerCommand.SetRpe(9.0))
+            runner.reps(8)
+            runner.weight(22.5)
+            runner.rpe(9.0)
             repeat(5) { runner.advance() }
 
             assertEquals(3, runner.pullupSets().size)
@@ -341,8 +341,8 @@ class RunnerWritesTest {
             assertEquals(6L, runner.inputs.reps)
             assertEquals(20.0, runner.inputs.weightKg)
 
-            runner.send(RunnerCommand.SetWeight(30.0))
-            runner.send(RunnerCommand.SetReps(4))
+            runner.weight(30.0)
+            runner.reps(4)
             runner.advance()
             runner.advance()
 
@@ -353,7 +353,7 @@ class RunnerWritesTest {
         @Test
         fun `falls back to the target load after a bodyweight set`() {
             val runner = Runner(workoutOf(single("pullups")))
-            runner.send(RunnerCommand.SetWeight(0.0))
+            runner.weight(0.0)
             runner.advance()
             runner.advance()
 
@@ -364,13 +364,13 @@ class RunnerWritesTest {
         fun `starts effort empty on every set, logging only what was picked on it`() {
             val runner = Runner(workoutOf(single("pullups"), single("dips")))
             assertNull(runner.inputs.rpe)
-            runner.send(RunnerCommand.SetRpe(7.0))
+            runner.rpe(7.0)
             runner.advance() // set 1, then its rest
             assertNull(runner.inputs.rpe)
             runner.advance()
             assertNull(runner.inputs.rpe) // set 2: the 7 isn't carried
-            runner.send(RunnerCommand.SetRpe(9.0))
-            runner.send(RunnerCommand.SetRpe(null)) // picked, then cleared
+            runner.rpe(9.0)
+            runner.rpe(null) // picked, then cleared
             repeat(4) { runner.advance() }
 
             assertEquals("dips", runner.step?.exerciseId)
@@ -384,7 +384,7 @@ class RunnerWritesTest {
 
             runner.advance()
             assertEquals(10L, runner.inputs.reps)
-            runner.send(RunnerCommand.SetReps(8))
+            runner.reps(8)
             runner.advance()
             runner.advance()
 
@@ -404,7 +404,7 @@ class RunnerWritesTest {
         @Test
         fun `logs bodyweight as an absent weight rather than a zero load`() {
             val runner = Runner(workoutOf(single("pullups")))
-            runner.send(RunnerCommand.SetWeight(0.0))
+            runner.weight(0.0)
             runner.advance()
 
             assertNull(runner.pullupSets()[0].weightKg)
@@ -414,7 +414,7 @@ class RunnerWritesTest {
         fun `logs an amrap's rounds and extra reps once`() {
             val runner = Runner(workoutOf(single("grinder")))
             runner.rounds(5)
-            runner.send(RunnerCommand.SetExtraReps(3))
+            runner.extraReps(3)
             runner.advance()
 
             assertEquals(listOf(SessionEntry.Amrap("grinder", 5, 3)), runner.entries)
@@ -424,10 +424,10 @@ class RunnerWritesTest {
         fun `a round counted or taken back clears the reps entered into it`() {
             val runner = Runner(workoutOf(single("grinder")))
             runner.rounds(4)
-            runner.send(RunnerCommand.SetExtraReps(8))
+            runner.extraReps(8)
             runner.rounds(5)
             assertEquals(0, runner.snapshot.inputs.extraReps)
-            runner.send(RunnerCommand.SetExtraReps(3))
+            runner.extraReps(3)
             runner.rounds(4)
             runner.advance()
 
@@ -477,7 +477,7 @@ class RunnerWritesTest {
         @Test
         fun `writes no entry for an exercise whose only set was zero`() {
             val runner = Runner(workoutOf(single("pullups"), single("lsit")))
-            runner.send(RunnerCommand.SetReps(0))
+            runner.reps(0)
             runner.advance()
 
             assertTrue(runner.entries.isEmpty())
@@ -497,7 +497,7 @@ class RunnerWritesTest {
             runner.advance()
             runner.tick(30)
             runner.advance()
-            runner.send(RunnerCommand.SetReps(0))
+            runner.reps(0)
             runner.advance()
             runner.tick(50)
             runner.advance()
@@ -512,7 +512,7 @@ class RunnerWritesTest {
             val runner = Runner(workoutOf(single("pullups")))
             runner.advance()
             runner.advance()
-            runner.send(RunnerCommand.SetReps(0))
+            runner.reps(0)
             runner.advance()
             runner.prev()
 
@@ -554,7 +554,7 @@ class RunnerWritesTest {
         @Test
         fun `commits the in-progress set rather than discarding it`() {
             val runner = Runner(workoutOf(single("pullups")))
-            runner.send(RunnerCommand.SetReps(4))
+            runner.reps(4)
             runner.finish()
 
             assertEquals(listOf(4L), runner.pullupSets().map { it.reps })

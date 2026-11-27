@@ -172,13 +172,13 @@ class RunnerScreenTest : RunnerScreenHarness() {
         compose.onNodeWithText("Esforço · opcional").assertExists()
         for (value in listOf("6", "7", "8", "9", "10")) effort(value).assertIsNotSelected().assertIsTarget()
         effort("9").performClick()
-        assertEquals(RunnerCommand.SetRpe(9.0), sent.last())
+        assertEquals(RunnerCommand.SetRpe(9.0, FIRST_VISIT), sent.last())
 
-        show(running(plan(block(squat)), started(plan(block(squat))).after(RunnerCommand.SetRpe(9.0))))
+        show(running(plan(block(squat)), started(plan(block(squat))).withRpe(9.0)))
         effort("9").assertIsSelected()
         effort("8").assertIsNotSelected()
         effort("9").performClick()
-        assertEquals(RunnerCommand.SetRpe(null), sent.last())
+        assertEquals(RunnerCommand.SetRpe(null, FIRST_VISIT), sent.last())
     }
 
     @Test
@@ -206,10 +206,13 @@ class RunnerScreenTest : RunnerScreenHarness() {
         // The target of 60 kg beats a best of 50.
         compose.onNodeWithText("Recorde").assertExists()
         button("Usar a série da última vez, 50 quilogramas, e salvar a carga como novo alvo").performClick()
-        assertEquals(listOf(RunnerCommand.SetWeight(50.0), RunnerCommand.SetReps(5)), sent.takeLast(2))
+        assertEquals(
+            listOf(RunnerCommand.SetWeight(50.0, FIRST_VISIT), RunnerCommand.SetReps(5, FIRST_VISIT)),
+            sent.takeLast(2),
+        )
         // The library takes it only once the set is logged with it (#410), not on the tap.
         assertEquals(emptyList<Pair<String, Double>>(), adopted)
-        show(running(plan(block(squat)), started(plan(block(squat))).after(RunnerCommand.SetWeight(50.0))))
+        show(running(plan(block(squat)), started(plan(block(squat))).withWeight(50.0)))
         button("Registrar série").performClick()
         assertEquals(listOf("squat" to 50.0), adopted)
     }
@@ -226,7 +229,7 @@ class RunnerScreenTest : RunnerScreenHarness() {
         button("2").performClick()
         compose.onNodeWithText("12").assertExists()
         button("Definir").performClick()
-        assertEquals(RunnerCommand.SetReps(12), sent.last())
+        assertEquals(RunnerCommand.SetReps(12, FIRST_VISIT), sent.last())
         button("Definir").assertDoesNotExist()
     }
 
@@ -236,7 +239,7 @@ class RunnerScreenTest : RunnerScreenHarness() {
         button("Carga: 60 quilogramas. Toque para inserir um valor exato.").performClick()
         listOf("6", "2", ".", "5").forEach { button(it).performClick() }
         button("Definir").performClick()
-        assertEquals(RunnerCommand.SetWeight(62.5), sent.last())
+        assertEquals(RunnerCommand.SetWeight(62.5, FIRST_VISIT), sent.last())
     }
 
     // overlays and back
@@ -577,7 +580,7 @@ class RunnerScreenTest : RunnerScreenHarness() {
         show(running(plan(block(everyMinute))))
         compose.onNodeWithText("Reps neste minuto").assertExists()
         button("Aumentar Reps neste minuto").performClick()
-        assertEquals(RunnerCommand.SetReps(11), sent.last())
+        assertEquals(RunnerCommand.SetReps(11, FIRST_VISIT), sent.last())
     }
 
     @Test
@@ -667,7 +670,7 @@ class RunnerScreenTest : RunnerScreenHarness() {
         button("Definir").performClick()
 
         // 5, ⌫ → empty; 1 2 3 → 123; ⌫ → 12.
-        assertEquals(RunnerCommand.SetReps(12), sent.last())
+        assertEquals(RunnerCommand.SetReps(12, FIRST_VISIT), sent.last())
     }
 
     @Test

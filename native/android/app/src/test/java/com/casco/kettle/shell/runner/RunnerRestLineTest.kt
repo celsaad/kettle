@@ -4,7 +4,6 @@ import androidx.compose.ui.test.onNodeWithText
 import com.casco.kettle.domain.CircuitMember
 import com.casco.kettle.domain.Exercise
 import com.casco.kettle.domain.ExerciseConfig
-import com.casco.kettle.domain.RunnerCommand
 import com.casco.kettle.domain.RunnerPlan
 import com.casco.kettle.domain.Workout
 import com.casco.kettle.domain.WorkoutBlock
@@ -35,7 +34,7 @@ class RunnerRestLineTest : RunnerScreenHarness() {
     @Test
     fun `a rest names the load carried from the set just logged`() {
         val squats = plan(block(squat))
-        show(running(squats, started(squats).after(RunnerCommand.SetWeight(70.0)).advanced()))
+        show(running(squats, started(squats).withWeight(70.0).advanced()))
         text("Série 2 de 2 · 70 kg · 5 repetições").assertExists()
     }
 

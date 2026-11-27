@@ -59,8 +59,8 @@ internal class AdoptingSend(
         reps: Long,
         visit: Long,
     ) {
-        send(RunnerCommand.SetWeight(weightKg))
-        send(RunnerCommand.SetReps(reps))
+        send(RunnerCommand.SetWeight(weightKg, visit))
+        send(RunnerCommand.SetReps(reps, visit))
         pending = PendingAdopt(exerciseId, weightKg, visit)
     }
 

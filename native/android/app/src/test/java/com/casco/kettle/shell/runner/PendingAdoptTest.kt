@@ -17,7 +17,7 @@ class PendingAdoptTest {
 
     private fun RunnerState.after(command: RunnerCommand) = reduceRunner(this, command, T0).state
 
-    private val picked = start.after(RunnerCommand.SetWeight(25.0))
+    private val picked = start.after(RunnerCommand.SetWeight(25.0, start.snapshot.visit))
     private val pending = PendingAdopt("pullups", 25.0, picked.snapshot.visit)
 
     @Test
@@ -32,7 +32,7 @@ class PendingAdoptTest {
             writesLibraryOn(
                 pending,
                 RunnerCommand.Advance(pending.visit),
-                view(picked.after(RunnerCommand.SetWeight(30.0))),
+                view(picked.after(RunnerCommand.SetWeight(30.0, picked.snapshot.visit))),
             ),
         )
         assertFalse(writesLibraryOn(pending, RunnerCommand.Advance(pending.visit + 1), view(picked)))

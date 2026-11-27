@@ -24,7 +24,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.sp
 import com.casco.kettle.domain.IntervalVariant
-import com.casco.kettle.domain.RunnerCommand
 import com.casco.kettle.domain.RunnerStep
 import com.casco.kettle.domain.WorkStep
 import com.casco.kettle.domain.isMinute
@@ -86,7 +85,8 @@ internal fun IntervalScreen(
                     stringResource(R.string.session_interval_repsThisMinute),
                     context.snapshot.inputs.reps,
                     context,
-                ) { RunnerCommand.SetReps(it) }
+                    onSet = context::setReps,
+                )
             }
         },
         controls = {
@@ -217,7 +217,8 @@ private fun AmrapScreen(
                     stringResource(R.string.session_interval_repsIntoRound, "$round"),
                     inputs.extraReps,
                     context,
-                ) { RunnerCommand.SetExtraReps(it) }
+                    onSet = context::setExtraReps,
+                )
             }
         },
         controls = {
@@ -271,9 +272,9 @@ private fun Stepper(
     name: String,
     value: Long,
     context: StepContext,
-    command: (Long) -> RunnerCommand,
+    onSet: (Long) -> Unit,
 ) {
-    val set = { next: Long -> context.send(command(maxOf(0, next))) }
+    val set = { next: Long -> onSet(maxOf(0, next)) }
     val description = stringResource(R.string.session_stepperAccessibility, name, "$value")
     Row(
         Modifier.fillMaxWidth().padding(top = Spacing.three),

@@ -435,8 +435,8 @@ class RunnerTimingTest {
         }
 
         /**
-         * "Round 3 done" tapped as one AMRAP's cap ran out, landing on the AMRAP after it (#516): it set
-         * that one's rounds before a single one was done. Remove the visit check on SetRounds in
+         * "Round 3 done" tapped as one AMRAP's cap ran out, landing on the AMRAP after it: it set
+         * that one's rounds before a single one was done (#555). Remove the visit check on SetRounds in
          * `editInputs` and this fails.
          */
         @Test
@@ -449,6 +449,52 @@ class RunnerTimingTest {
 
             assertNotEquals(first, runner.snapshot.visit)
             assertEquals(0L, runner.inputs.roundsCompleted)
+        }
+
+        /**
+         * The extra-reps stepper tapped as one AMRAP's cap ran out, landing on the AMRAP after it (#556):
+         * that one opened with extra reps nobody did. Remove the visit check in `editInputs` and this fails.
+         */
+        @Test
+        fun `ignores extra reps aimed at an AMRAP that has since ended`() {
+            val runner = Runner(workoutOf(single("grinder"), single("grinder")))
+            val first = runner.snapshot.visit
+            runner.tick(300)
+            runner.send(RunnerCommand.SetExtraReps(3, first))
+
+            assertNotEquals(first, runner.snapshot.visit)
+            assertEquals(0L, runner.inputs.extraReps)
+        }
+
+        /**
+         * An EMOM's reps stepper tapped as its minute ran out, landing on the next minute (#556): that
+         * minute's reps, which it logs as it ends, were the late tap's. Remove the visit check in
+         * `editInputs` and this fails.
+         */
+        @Test
+        fun `ignores reps aimed at an EMOM minute that has since ended`() {
+            val runner = Runner(workoutOf(single("swings")))
+            val minuteOne = runner.snapshot.visit
+            runner.tick(60)
+            runner.send(RunnerCommand.SetReps(15, minuteOne))
+
+            assertNotEquals(minuteOne, runner.snapshot.visit)
+            assertEquals(10L, runner.inputs.reps)
+        }
+
+        /**
+         * A load tapped as Log set went, on a set with no rest after it (#556): it landed on the next set
+         * and was logged with it. Remove the visit check in `editInputs` and this fails.
+         */
+        @Test
+        fun `ignores a load aimed at a set already logged, with no rest between`() {
+            val runner = Runner(workoutOf(single("dips")))
+            val setOne = runner.snapshot.visit
+            runner.advance()
+            runner.send(RunnerCommand.SetWeight(20.0, setOne))
+
+            assertEquals(1, runner.index)
+            assertEquals(0.0, runner.inputs.weightKg)
         }
 
         @Test
@@ -1029,7 +1075,7 @@ class RunnerTimingTest {
             while ((step as? RunnerStep.Reps)?.let { it.exerciseId == exerciseId && it.circuit?.round == round } !=
                 true
             ) {
-                (step as? RunnerStep.Reps)?.let { send(RunnerCommand.SetReps(reps(it))) }
+                (step as? RunnerStep.Reps)?.let { send(RunnerCommand.SetReps(reps(it), snapshot.visit)) }
                 advance()
             }
         }

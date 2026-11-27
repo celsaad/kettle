@@ -130,12 +130,12 @@ data class RunnerTransition(
 
 /**
  * What the UI and the service ask of the engine. [Advance], [TimeUpdate], [Prev], [AddRestSeconds],
- * [SetRounds] and [Finish] name the [visit] they were aimed at. Any of them aimed at a step already
+ * [Finish] and every [InputEdit] name the [visit] they were aimed at. Any of them aimed at a step already
  * left does nothing, except that a Finish still ends the session but commits nothing for the step that
  * replaced its own. A ticker and a resume can both land on a step that has just ended, and a tap can
  * land just after a step ended by itself; without that, the second of either commits a step nobody
  * performed, a late Back throws away the step just started, a late +30s stretches the round after a
- * rest, and a late "Round N done" sets the next AMRAP's count.
+ * rest, and a late round, stepper, load or effort edits the next step.
  */
 sealed interface RunnerCommand {
     /** Log the set, Done, Skip, or log the interval: commit the step on screen and move on. */
@@ -168,32 +168,41 @@ sealed interface RunnerCommand {
         val visit: Long,
     ) : RunnerCommand
 
-    sealed interface InputEdit : RunnerCommand
+    /**
+     * An edit to the step on screen. Every one names the [visit] it was aimed at and is refused once that
+     * step is gone (#555, #556): an AMRAP's cap and an EMOM's minute end by themselves while a tap is on
+     * its way, and a reps set with no rest after it hands straight to the next set, so a late round,
+     * stepper, load or effort would otherwise land on the next step.
+     */
+    sealed interface InputEdit : RunnerCommand {
+        val visit: Long
+    }
 
     data class SetReps(
         val reps: Long,
+        override val visit: Long,
     ) : InputEdit
 
     data class SetWeight(
         val weightKg: Double,
+        override val visit: Long,
     ) : InputEdit
 
     /** The set's effort; null clears it, which picking the selected value again does. */
     data class SetRpe(
         val rpe: Double?,
+        override val visit: Long,
     ) : InputEdit
 
-    /**
-     * An AMRAP's round count, absolute, and aimed (#555): a late "Round N done" set the next AMRAP's.
-     * The other edits aren't aimed yet, though the AMRAP and EMOM steppers have the same late tap (#516).
-     */
+    /** An AMRAP's round count, absolute. */
     data class SetRounds(
         val rounds: Long,
-        val visit: Long,
+        override val visit: Long,
     ) : InputEdit
 
     data class SetExtraReps(
         val extraReps: Long,
+        override val visit: Long,
     ) : InputEdit
 
     sealed interface StepEdit : RunnerCommand
@@ -422,8 +431,7 @@ private fun editInputs(
     state: RunnerState,
     edit: RunnerCommand.InputEdit,
 ): RunnerTransition {
-    // A round count can land after its AMRAP ended (#555). The other edits aren't aimed yet (#516).
-    if (edit is RunnerCommand.SetRounds && edit.visit != state.snapshot.visit) return unchanged(state)
+    if (edit.visit != state.snapshot.visit) return unchanged(state)
     val inputs = state.snapshot.inputs
     val edited =
         when (edit) {

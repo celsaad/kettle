@@ -38,7 +38,7 @@ class RunnerRecordsTest {
         fun `does not change when a set is logged mid-session`() {
             val prior = listOf(finishedSession("older", repsSets(8L to 15.0)))
             val runner = Runner(workoutOf(single("pullups")))
-            runner.send(RunnerCommand.SetWeight(40.0))
+            runner.weight(40.0)
             runner.advance()
             runner.advance() // past the trailing rest, onto set 2
 
@@ -50,7 +50,7 @@ class RunnerRecordsTest {
         fun `skips the in-flight session even when it is passed in with the others`() {
             val prior = listOf(finishedSession("older", repsSets(8L to 15.0)))
             val runner = Runner(workoutOf(single("pullups")))
-            runner.send(RunnerCommand.SetWeight(40.0))
+            runner.weight(40.0)
             runner.advance()
             runner.advance()
 
@@ -87,7 +87,7 @@ class RunnerRecordsTest {
         @Test
         fun `stays quiet with nothing to beat`() {
             val runner = Runner(workoutOf(single("pullups")))
-            runner.send(RunnerCommand.SetWeight(200.0))
+            runner.weight(200.0)
 
             assertFalse(beatsPersonalBest(runner.state, emptyList(), runner.now))
         }
@@ -95,7 +95,7 @@ class RunnerRecordsTest {
         @Test
         fun `stays quiet on a tie`() {
             val runner = Runner(workoutOf(single("pullups")))
-            runner.send(RunnerCommand.SetWeight(20.0))
+            runner.weight(20.0)
 
             assertFalse(beatsPersonalBest(runner.state, benchLog(20.0), runner.now))
         }
@@ -103,7 +103,7 @@ class RunnerRecordsTest {
         @Test
         fun `marks a load above anything ever logged`() {
             val runner = Runner(workoutOf(single("pullups")))
-            runner.send(RunnerCommand.SetWeight(22.5))
+            runner.weight(22.5)
 
             assertTrue(beatsPersonalBest(runner.state, benchLog(20.0), runner.now))
         }
@@ -112,7 +112,7 @@ class RunnerRecordsTest {
         fun `does not re-mark the following set at the same new weight`() {
             val prior = benchLog(20.0)
             val runner = Runner(workoutOf(single("pullups")))
-            runner.send(RunnerCommand.SetWeight(25.0))
+            runner.weight(25.0)
             assertTrue(beatsPersonalBest(runner.state, prior, runner.now))
 
             runner.advance()
@@ -127,10 +127,10 @@ class RunnerRecordsTest {
         fun `marks again once the load goes up mid-session`() {
             val prior = benchLog(20.0)
             val runner = Runner(workoutOf(single("pullups")))
-            runner.send(RunnerCommand.SetWeight(25.0))
+            runner.weight(25.0)
             runner.advance()
             runner.advance()
-            runner.send(RunnerCommand.SetWeight(27.5))
+            runner.weight(27.5)
 
             assertTrue(beatsPersonalBest(runner.state, prior, runner.now))
         }
@@ -190,7 +190,7 @@ class RunnerRecordsTest {
 
             val load = (previousSet(runner.snapshot, prior) as PreviousSet.Reps).weightKg
             assertEquals(32.5, load)
-            runner.send(RunnerCommand.SetWeight(load!!))
+            runner.weight(load!!)
 
             assertEquals(32.5, runner.inputs.weightKg)
         }

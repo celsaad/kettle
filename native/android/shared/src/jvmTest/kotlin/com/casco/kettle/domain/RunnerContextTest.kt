@@ -106,7 +106,7 @@ class RunnerContextTest {
         val prior = last("squat", 10L to 20.0, 10L to 20.0, 10L to 20.0)
         val opened =
             runner(prior, programLoads = setOf("squat")).openings { set ->
-                if (set == 1L) send(RunnerCommand.SetWeight(30.0))
+                if (set == 1L) weight(30.0)
             }
 
         assertEquals(listOf(10L to 20.0, 8L to 30.0, 8L to 30.0), opened)
@@ -117,7 +117,7 @@ class RunnerContextTest {
         // 53.5 lb typed on the pad stores as 24.27 kg; last time's 24.26 kg also reads 53.5 lb.
         val typed = fromDisplayWeight(53.5, UnitSystem.IMPERIAL)
         val prior = last("squat", 10L to 24.26, 10L to 24.26, 10L to 24.26)
-        val carryTyped: Runner.(Long) -> Unit = { set -> if (set == 1L) send(RunnerCommand.SetWeight(typed)) }
+        val carryTyped: Runner.(Long) -> Unit = { set -> if (set == 1L) weight(typed) }
 
         assertEquals(10L, runner(prior, units = UnitSystem.IMPERIAL).openings(carryTyped)[1].first)
         // In kilograms 24.27 is heavier, which is the reset the imperial reading must not make.
@@ -129,7 +129,7 @@ class RunnerContextTest {
         val prior = last("pushups", 12L to null, 12L to null)
         val opened =
             runner(prior, exerciseId = "pushups").openings { set ->
-                if (set == 1L) send(RunnerCommand.SetWeight(5.0))
+                if (set == 1L) weight(5.0)
             }
 
         assertEquals(listOf(12L to 0.0, 8L to 5.0), opened)

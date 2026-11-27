@@ -139,9 +139,9 @@ class RunnerEffectsTest {
     fun `debounces the state file for an input edit, writing the latest after a second`() {
         val start = started(PULLUPS)
         effects.carryOut(start.effects, start.state.snapshot)
-        val first = reduceRunner(start.state, RunnerCommand.SetReps(4), loop.now)
+        val first = reduceRunner(start.state, RunnerCommand.SetReps(4, start.state.snapshot.visit), loop.now)
         effects.carryOut(first.effects, first.state.snapshot)
-        val second = reduceRunner(first.state, RunnerCommand.SetReps(5), loop.now)
+        val second = reduceRunner(first.state, RunnerCommand.SetReps(5, first.state.snapshot.visit), loop.now)
         effects.carryOut(second.effects, second.state.snapshot)
 
         loop.advanceBy(900)
@@ -153,7 +153,7 @@ class RunnerEffectsTest {
     @Test
     fun `flushes a debounced write at once, as when the runner leaves the screen`() {
         val start = started(PULLUPS)
-        val edit = reduceRunner(start.state, RunnerCommand.SetReps(4), loop.now)
+        val edit = reduceRunner(start.state, RunnerCommand.SetReps(4, start.state.snapshot.visit), loop.now)
         effects.carryOut(edit.effects, edit.state.snapshot)
         stateFile.flush()
 
@@ -165,7 +165,7 @@ class RunnerEffectsTest {
     fun `deletes the state file when the session ends, and drops a pending write`() {
         val start = started(PULLUPS)
         effects.carryOut(start.effects, start.state.snapshot)
-        val edit = reduceRunner(start.state, RunnerCommand.SetReps(4), loop.now)
+        val edit = reduceRunner(start.state, RunnerCommand.SetReps(4, start.state.snapshot.visit), loop.now)
         effects.carryOut(edit.effects, edit.state.snapshot)
         val finish = reduceRunner(edit.state, RunnerCommand.Finish(edit.state.snapshot.visit), loop.now)
         effects.carryOut(finish.effects, finish.state.snapshot)

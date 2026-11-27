@@ -165,7 +165,7 @@ Then:
 ### a11y and i18n
 
 - New keys in **both** `en.json` and `pt.json`: the open-ended caption, the open-ended announcement
-  variant of `session.a11y.hold` (`"hold {{target}} seconds"`, since moved to `session.announce.hold`)
+  variant of `session.a11y.hold` (`"hold {{target}} seconds"`, since replaced by `session.announce.hold`)
   used by `use-session-announcements.ts`, and the notification title/body pulled out of the runner.
 - No new colours, so no contrast work. No new controls, so no new touch targets.
 

@@ -1,10 +1,9 @@
 package com.casco.kettle.domain
 
 /**
- * [value] as `JSON.stringify` writes a string, character for character, wherever a string has to come
- * out exactly as files already on the phone have it: the JSON files the app before the native rewrite
- * wrote and this one still reads (preferences, `supporter.json`, backups), and [recordKey], whose
- * form `conformance/records.yaml` pins.
+ * [value] as `JSON.stringify` writes a string, character for character: valid JSON for the small files
+ * the app writes and reads back (preferences, `supporter.json`, `backup-targets.json`), and exactly the
+ * form of [recordKey], which `conformance/records.yaml` pins.
  */
 internal fun jsonString(value: String): String =
     buildString {

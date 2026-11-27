@@ -115,7 +115,7 @@ these were missing:
 | Native project generation | no `ios/` in the tree | CNG. Same prebuild path Android already uses; nothing is checked in to port |
 | App icon | [`assets/expo.icon/`](../assets/expo.icon) via [`app.json`](#what-appjson-held-for-ios) `ios.icon` | Already an Icon Composer bundle, and `icon.json` already declares a `watchOS` circle mask |
 | Tab bar | [`(tabs)/_layout.tsx`](https://github.com/celsaad/kettle/blob/d80e5e72432b03294da9fca1ca2b665a7b4ce2b5/src/app/(tabs)/_layout.tsx) | Every `NativeTabs.Trigger.Icon` already carries `sf={{ default, selected }}` beside its `md=`. The iOS tab bar renders natively today |
-| File storage | [`storage/paths.ts`](https://github.com/celsaad/kettle/blob/d80e5e72432b03294da9fca1ca2b665a7b4ce2b5/src/storage/paths.ts) | No platform guard (web, the only unsupported platform, ended in M6), so iOS gets the real document directory |
+| File storage | [`storage/paths.ts`](https://github.com/celsaad/kettle/blob/f7e37ef70857914153f145c8d59bb18235578e17/src/storage/paths.ts) | No platform guard (web, the only unsupported platform, ended in M6), so iOS gets the real document directory |
 | Session timing | [`use-session-runner.ts`](https://github.com/celsaad/kettle/blob/d80e5e72432b03294da9fca1ca2b665a7b4ce2b5/src/hooks/use-session-runner.ts) | Recomputes from `Date.now()` on every `AppState` change instead of accumulating ticks. Written for Android throttling; it is exactly what survives iOS *suspending* the app |
 | Confirm dialogs | everywhere `Alert.alert` is used | Real on iOS. The no-op is web only |
 | Keyboard | [`session-exercise-picker.tsx:74`](https://github.com/celsaad/kettle/blob/d80e5e72432b03294da9fca1ca2b665a7b4ce2b5/src/components/session-exercise-picker.tsx#L74) | Already branches `Platform.OS === 'ios' ? 'padding' : undefined` |
@@ -247,7 +247,7 @@ its own (the Android strings are about choosing and forgetting a folder, none of
 ends on the same warning the Android branch does, which matters more here — files sitting in the
 Files app look like a backup already, and the session log still cannot be read back in.
 
-The claim at [`product-plan.md:389`](product-plan.md#L389) that "this app declares no iOS file
+The claim at [`product-plan.md:389`](https://github.com/celsaad/kettle/blob/d80e5e72432b03294da9fca1ca2b665a7b4ce2b5/docs/product-plan.md#L389) that "this app declares no iOS file
 sharing" is updated rather than left to rot, and the decision log's backup entry has the paragraph
 this route earns.
 
@@ -580,9 +580,9 @@ constraints that shape future work, and claims that become **false** the moment 
 - **[`decisions.md`](decisions.md), backup entry** — "It is Android-only, and that is a platform fact
   rather than a scope cut" stays true about *folder picking*, and gets a paragraph about the Files-app
   route from 2.4 being the iOS answer instead.
-- **[`product-plan.md:389`](product-plan.md#L389)** — "this app declares no iOS file sharing" becomes
+- **[`product-plan.md:389`](https://github.com/celsaad/kettle/blob/d80e5e72432b03294da9fca1ca2b665a7b4ce2b5/docs/product-plan.md#L389)** — "this app declares no iOS file sharing" becomes
   false in 2.4.
-- **[`README.md:49`](../README.md#L49)** — "iOS is not planned." A shipped platform is at most an edit
+- **[`README.md:49`](https://github.com/celsaad/kettle/blob/d80e5e72432b03294da9fca1ca2b665a7b4ce2b5/README.md#L49)** — "iOS is not planned." A shipped platform is at most an edit
   to an existing bullet; it does not earn the README a paragraph.
 - **`docs/building-ios.md`** — new, mirroring `building-android.md`: the certificate setup, the
   workflow, and what it costs.

@@ -58,7 +58,8 @@
       "accentOnSoft": "#F7F3EA",
       "accentCalm": "#6AA6DE",
       "accentCalmSoft": "rgba(106,166,222,0.16)",
-      "accentCalmOnSoft": "#6AA6DE"
+      "accentCalmOnSoft": "#6AA6DE",
+      "backdrop": "rgba(0,0,0,0.55)"
     },
     "getReady": {
       "background": "#0B0A08",
@@ -76,7 +77,8 @@
       "accentOnSoft": "#F7F3EA",
       "accentCalm": "#6AA6DE",
       "accentCalmSoft": "rgba(106,166,222,0.16)",
-      "accentCalmOnSoft": "#6AA6DE"
+      "accentCalmOnSoft": "#6AA6DE",
+      "backdrop": "rgba(0,0,0,0.55)"
     },
     "work": {
       "background": "#E8763E",
@@ -94,7 +96,8 @@
       "accentOnSoft": "#0B0A08",
       "accentCalm": "#0B0A08",
       "accentCalmSoft": "rgba(247,243,234,0.18)",
-      "accentCalmOnSoft": "#0B0A08"
+      "accentCalmOnSoft": "#0B0A08",
+      "backdrop": "rgba(0,0,0,0.55)"
     },
     "rest": {
       "background": "#1E5A8C",
@@ -112,7 +115,8 @@
       "accentOnSoft": "#F5F9FD",
       "accentCalm": "#F5F9FD",
       "accentCalmSoft": "rgba(245,249,253,0.14)",
-      "accentCalmOnSoft": "#F5F9FD"
+      "accentCalmOnSoft": "#F5F9FD",
+      "backdrop": "rgba(0,0,0,0.55)"
     }
   },
   "Spacing": {

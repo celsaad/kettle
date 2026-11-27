@@ -70,6 +70,9 @@ what the bar says. On `work` and `rest` the track can't also clear 3:1 against t
 fields is only 6.68 and 6.85, short of the 9 two 3:1 steps need. The canvas's tracks there (`#6A3013`,
 `#93B8DA`) took the field's side and left the fill at 1.93 against them, on the one field a bar draws
 on mid-set. `border` stays a decorative hairline, a card's or a separator's.
+`backdrop` dims the field behind a runner sheet, over the whole screen with the system bars, so
+`RunnerField.darkBarIcons` decides the status bar's icons over it composited onto the field. It is
+the same in every field, repeated to keep each one whole.
 
 Measured at the byte alpha both platforms render, translucent tokens composited onto their field:
 

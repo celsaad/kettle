@@ -369,6 +369,7 @@
       "logSet": "セットを記録",
       "repsDone": "完了レップ",
       "loadLabel": "負荷",
+      "addLoad": "負荷を追加",
       "repsLabel": "レップ",
       "repsDoneTarget": "完了レップ · 目標{{target}}",
       "effortLabel": "きつさ · 任意",

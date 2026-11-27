@@ -419,6 +419,7 @@
       "logSet": "Registrar série",
       "repsDone": "Reps feitas",
       "loadLabel": "Carga",
+      "addLoad": "Adicionar carga",
       "repsLabel": "Repetições",
       "repsDoneTarget": "Reps feitas · meta {{target}}",
       "effortLabel": "Esforço · opcional",

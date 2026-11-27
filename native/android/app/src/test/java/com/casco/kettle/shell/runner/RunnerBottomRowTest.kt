@@ -1,10 +1,12 @@
 package com.casco.kettle.shell.runner
 
+import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.unit.dp
 import com.casco.kettle.domain.RunnerCommand
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -152,5 +154,20 @@ class RunnerBottomRowTest : RunnerScreenHarness() {
         show(running(emom, started(emom).after(RunnerCommand.TogglePause)))
         button("Voltar").assertIsDisplayed()
         button("Concluir").assertIsDisplayed()
+    }
+
+    /**
+     * At 320×480dp and 200% text the reps screen's top block, its load the 26sp title uncapped, outgrew
+     * the screen, and Back was squeezed to nothing under it (#521).
+     */
+    @Test
+    @Config(qualifiers = "pt-w320dp-h480dp")
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    fun `at a large text size on a short screen a reps set keeps Back and Log set full size`() {
+        fontScale = 2f
+        val sets = plan(block(squat))
+        show(running(sets, started(sets).withWeight(102.5)))
+        button("Voltar").assertIsDisplayed().assertHeightIsAtLeast(44.dp)
+        button("Registrar série").assertIsDisplayed().assertHeightIsAtLeast(44.dp)
     }
 }

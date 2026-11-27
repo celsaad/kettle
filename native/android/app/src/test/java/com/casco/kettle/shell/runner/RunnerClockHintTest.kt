@@ -96,6 +96,17 @@ class RunnerClockHintTest : RunnerScreenHarness() {
         text("Pausado").assertExists()
     }
 
+    /** A resume after process death lands a rest paused (#307), and it said nothing of it (#521). */
+    @Test
+    fun `a paused rest says so too`() {
+        val sets = plan(block(squat))
+        show(running(sets, started(sets).advanced()))
+        absent("Pausado")
+
+        show(running(sets, started(sets).advanced().after(RunnerCommand.TogglePause)))
+        text("Pausado").assertExists()
+    }
+
     /** The column's width, as the boards draw it: it was a 220dp strip in the middle. */
     @Test
     fun `the bar runs the column's width`() {

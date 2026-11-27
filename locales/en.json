@@ -394,6 +394,7 @@
       "logSet": "Log set",
       "repsDone": "Reps done",
       "loadLabel": "Load",
+      "addLoad": "Add load",
       "repsLabel": "Reps",
       "repsDoneTarget": "Reps done · target {{target}}",
       "effortLabel": "Effort · optional",

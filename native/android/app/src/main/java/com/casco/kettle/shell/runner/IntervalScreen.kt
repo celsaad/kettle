@@ -190,8 +190,9 @@ private const val SEPARATOR = " · "
 
 /**
  * An AMRAP (#417): "Round N done" is the main action, each tap a round, with Undo taking back the last;
- * Pause sits to the side, and there is no Skip, the cap or End being the ways out. The extra reps come
- * only in the last minute, since the cap ends the step and logs it in one move: there is no after.
+ * Pause sits to the side, Resume taking its slot while paused, and there is no Skip, the cap or End
+ * being the ways out. The extra reps come only in the last minute, since the cap ends the step and logs
+ * it in one move: there is no after.
  */
 @Composable
 private fun AmrapScreen(
@@ -231,13 +232,10 @@ private fun AmrapScreen(
                 RowAction(stringResource(R.string.session_amrap_roundDone, "$round"), null) {
                     context.setRounds(round)
                 }
-            // Paused, Resume is the main action and the round to the side (#478), as every paused screen
-            // has it (#421): a stopped clock has one thing to do next.
-            if (context.paused) {
-                BottomRow(pauseAction(context), back = { context.prev() }, side = roundDone)
-            } else {
-                BottomRow(roundDone, back = { context.prev() }, side = pauseAction(context))
-            }
+            // Paused, Resume stays in Pause's slot and the round in the main one, unlike every other paused
+            // screen (#421): there Pause is already the main action, but here Resume leading (#478) put the
+            // round under the finger that had just paused, and a quick second tap logged it (#521).
+            BottomRow(roundDone, back = { context.prev() }, side = pauseAction(context))
         },
     )
 }

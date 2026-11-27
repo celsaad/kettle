@@ -2,18 +2,19 @@ package com.casco.kettle.shell.runner
 
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import com.casco.kettle.domain.CircuitMember
 import com.casco.kettle.domain.RunnerCommand
 import com.casco.kettle.domain.WorkoutBlock
-import org.junit.Assert.assertTrue
+import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
 /**
- * A circuit's reps step as its board draws it (#478): no effort, no load for a bodyweight member, and the
- * last round's reps from round 2; and a paused AMRAP's Resume as its main action. In `pt`, as
+ * A circuit's reps step as its board draws it (#478): no effort, no load row for a bodyweight member until
+ * it adds one, and the last round's reps from round 2; and a paused AMRAP's slots. In `pt`, as
  * [RunnerScreenTest] is.
  */
 @RunWith(RobolectricTestRunner::class)
@@ -27,7 +28,7 @@ class RunnerCircuitStepTest : RunnerScreenHarness() {
     fun `a circuit's bodyweight member has no load and no effort, and its first round no last round`() {
         show(running(circuit, started(circuit).advanced()))
         compose.onNodeWithText("Búlgaro").assertExists()
-        compose.onNodeWithText("Carga", substring = true).assertDoesNotExist()
+        button("Aumentar carga").assertDoesNotExist()
         compose.onNodeWithText("Esforço", substring = true).assertDoesNotExist()
         compose.onNodeWithText("Rodada 1:", substring = true).assertDoesNotExist()
     }
@@ -55,13 +56,36 @@ class RunnerCircuitStepTest : RunnerScreenHarness() {
         compose.onNodeWithText("Rodada 1: 8").assertExists()
     }
 
-    /** Resume leads on a paused AMRAP, as on every paused screen (#421); the round goes to the side. */
+    /**
+     * The toggle keeps its slot on a paused AMRAP, and the round keeps the main one (#521): when Resume
+     * led instead (#478), a quick second tap where Pause had been logged a round.
+     */
     @Test
-    fun `a paused AMRAP makes Resume the main action, the round to the side`() {
+    fun `a paused AMRAP's Resume is where Pause was, and the round stays the main action`() {
         val amrap = plan(block(grinder))
+        show(running(amrap))
+        val pause = button("Pausar").getUnclippedBoundsInRoot()
+        val running = button("Rodada 1 feita").getUnclippedBoundsInRoot()
+
         show(running(amrap, started(amrap).after(RunnerCommand.TogglePause)))
-        val resume = button("Continuar").getUnclippedBoundsInRoot()
-        val round = button("Rodada 1 feita").getUnclippedBoundsInRoot()
-        assertTrue(resume.right - resume.left > round.right - round.left)
+        assertEquals(pause, button("Continuar").getUnclippedBoundsInRoot())
+        assertEquals(running, button("Rodada 1 feita").getUnclippedBoundsInRoot())
+        button("Continuar").performClick()
+        assertEquals(RunnerCommand.TogglePause, sent.last())
+    }
+
+    /**
+     * With no load planned or set, a bodyweight member offers "Add load" in the row's place (#521): a vest
+     * couldn't be added from the runner without an earlier load to adopt. A tap shows the stepper.
+     */
+    @Test
+    fun `a bodyweight member can add a load, which shows the stepper`() {
+        val member = started(circuit).advanced()
+        show(running(circuit, member))
+        button("Aumentar carga").assertDoesNotExist()
+        button("Adicionar carga").assertIsTarget().performClick()
+        button("Adicionar carga").assertDoesNotExist()
+        button("Aumentar carga").performClick()
+        assertEquals(RunnerCommand.SetWeight(2.5, member.snapshot.visit), sent.last())
     }
 }

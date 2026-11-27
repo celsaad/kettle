@@ -16,10 +16,12 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -29,11 +31,12 @@ import com.casco.kettle.shell.theme.KettleType
 import com.casco.kettle.shell.theme.Spacing
 
 /**
- * Top, middle and the controls down the screen: the middle centred in the room between, and scrolling
- * once it can't fit, so the controls are always on screen. At 200% text on a short phone a paused EMOM's
- * line, clock, hint and stepper pushed Back and Done off the bottom (#477). The top block is RN's 4dp
- * rhythm, the name and last time's row taking a step more; [middleGap] is the reps screen's wider one.
- * The controls sit 8dp apart, as RN's Done under Pause.
+ * Top, middle and the controls down the screen: the middle centred in the room the top leaves, and the
+ * two scrolling together once they can't fit, so the controls are always on screen. At 200% text on a
+ * short phone a paused EMOM's line, clock, hint and stepper pushed Back and Done off the bottom (#477),
+ * and at 320×480dp the reps screen's top alone outgrew the room and squeezed Back to nothing (#521). The
+ * top block is RN's 4dp rhythm, the name and last time's row taking a step more; [middleGap] is the reps
+ * screen's wider one. The controls sit 8dp apart, as RN's Done under Pause.
  */
 @Composable
 internal fun StepLayout(
@@ -43,17 +46,36 @@ internal fun StepLayout(
     middleGap: Dp = Spacing.two,
 ) {
     Column(Modifier.fillMaxSize()) {
-        Column(verticalArrangement = Arrangement.spacedBy(Spacing.one), content = top)
         BoxWithConstraints(Modifier.weight(1f).fillMaxWidth()) {
-            Column(
-                Modifier
-                    .fillMaxWidth()
-                    .verticalScroll(rememberScrollState())
-                    .heightIn(min = maxHeight),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(middleGap, Alignment.CenterVertically),
-                content = middle,
-            )
+            Layout(
+                contents =
+                    listOf(
+                        { Column(verticalArrangement = Arrangement.spacedBy(Spacing.one), content = top) },
+                        {
+                            Column(
+                                Modifier.fillMaxWidth(),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(middleGap, Alignment.CenterVertically),
+                                content = middle,
+                            )
+                        },
+                    ),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .verticalScroll(rememberScrollState())
+                        .heightIn(min = maxHeight),
+            ) { (topSlot, middleSlot), constraints ->
+                // The scroll leaves the height unbounded; the room is the minimum heightIn gives it.
+                val free = constraints.copy(minHeight = 0, maxHeight = Constraints.Infinity)
+                val head = topSlot.single().measure(free.copy(minWidth = 0))
+                val rest = (constraints.minHeight - head.height).coerceAtLeast(0)
+                val body = middleSlot.single().measure(free.copy(minHeight = rest))
+                layout(constraints.maxWidth, maxOf(constraints.minHeight, head.height + body.height)) {
+                    head.place(0, 0)
+                    body.place(0, head.height)
+                }
+            }
         }
         Column(verticalArrangement = Arrangement.spacedBy(Spacing.two), content = controls)
     }
@@ -160,7 +182,9 @@ internal fun RestScreen(context: StepContext) {
         top = { context.snapshot.step?.let { RestHeader(it, context) } },
         middle = {
             // The clock alone (#477): −15s and +30s move it in place, and an "of 1:30" under it said it twice.
-            Numeral(formatClock(context.remaining), REST_NUMERAL)
+            // Paused, it says so and dims, as every paused clock does (#521); a rest has no bar to dim.
+            PausedLine(context.paused)
+            Numeral(formatClock(context.remaining), REST_NUMERAL, color = clockInk(context.paused))
             Row(Modifier.padding(top = Spacing.two), horizontalArrangement = Arrangement.spacedBy(Spacing.two)) {
                 val width = Modifier.widthIn(min = REST_BUTTON_MIN_WIDTH)
                 OutlineButton(

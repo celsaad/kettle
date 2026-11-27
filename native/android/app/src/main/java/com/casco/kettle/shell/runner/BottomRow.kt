@@ -174,7 +174,7 @@ internal fun doneAction(context: StepContext) =
 internal fun skipAction(context: StepContext) =
     RowAction(stringResource(R.string.session_skip), R.drawable.icon_skip, context::advance)
 
-/** Pause, or Resume while paused: the main action on a screen the clock runs, and on a paused rest. */
+/** Pause, or Resume while paused: the main action on a clock's screen and a paused rest, an AMRAP's side. */
 @Composable
 internal fun pauseAction(context: StepContext): RowAction {
     val toggle = { context.send(RunnerCommand.TogglePause) }

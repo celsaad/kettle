@@ -20,7 +20,7 @@
 ## The problem
 
 A program can only say "run this workout". Every entry in `weeks:` requires a `workout:`
-([`schema.ts:163`](https://github.com/celsaad/kettle/blob/7ff2f0bd437bce8842b9f678021714eab30d2ef5/src/domain/schema.ts#L163)), so a four-day-a-week block is written as four
+([`schema.ts:163`](https://github.com/celsaad/kettle/blob/fc92d2581225ddc302a77ee9ed8367688c78ce77/src/domain/schema.ts#L163)), so a four-day-a-week block is written as four
 entries and the three days off it depends on are simply absent from the file.
 
 That has three consequences:
@@ -34,9 +34,9 @@ That has three consequences:
   exercise. That runs a session, writes a session file, and counts toward "sessions this week" — a day
   off recorded as training.
 
-Note what this is *not*: the `rest` **exercise** type ([`types.ts:29`](https://github.com/celsaad/kettle/blob/7ff2f0bd437bce8842b9f678021714eab30d2ef5/src/domain/types.ts#L29))
+Note what this is *not*: the `rest` **exercise** type ([`types.ts:29`](https://github.com/celsaad/kettle/blob/fc92d2581225ddc302a77ee9ed8367688c78ce77/src/domain/types.ts#L29))
 is intra-workout rest between sets, and the **rest-day reminder**
-([`use-rest-day-reminder.ts`](https://github.com/celsaad/kettle/blob/7ff2f0bd437bce8842b9f678021714eab30d2ef5/src/hooks/use-rest-day-reminder.ts)) is an opt-in nudge derived from
+([`use-rest-day-reminder.ts`](https://github.com/celsaad/kettle/blob/fc92d2581225ddc302a77ee9ed8367688c78ce77/src/hooks/use-rest-day-reminder.ts)) is an opt-in nudge derived from
 the log. Neither is a program's scheduled day off, and this plan touches neither.
 
 ## The rule, in one line
@@ -67,7 +67,7 @@ absent workout. `rest_day` rather than `rest` because `rest` is already an exerc
 authors get it wrong.
 
 Schema rules, all as `.refine`s on `rawProgramWeekSchema`
-([`schema.ts:157`](https://github.com/celsaad/kettle/blob/7ff2f0bd437bce8842b9f678021714eab30d2ef5/src/domain/schema.ts#L157)):
+([`schema.ts:157`](https://github.com/celsaad/kettle/blob/fc92d2581225ddc302a77ee9ed8367688c78ce77/src/domain/schema.ts#L157)):
 
 | rule | why |
 | --- | --- |
@@ -82,7 +82,7 @@ the editor's output are unchanged.
 
 ### It clears itself by elapsed calendar days
 
-The pointer arithmetic in `nextWeekAfter` ([`selectors.ts:182`](https://github.com/celsaad/kettle/blob/7ff2f0bd437bce8842b9f678021714eab30d2ef5/src/state/selectors.ts#L182)) is
+The pointer arithmetic in `nextWeekAfter` ([`selectors.ts:182`](https://github.com/celsaad/kettle/blob/fc92d2581225ddc302a77ee9ed8367688c78ce77/src/state/selectors.ts#L182)) is
 derived entirely from the log — "the slot after whichever one the most recent tracked session was
 for". A rest day is never logged, so on its own it would pin the home screen to the rest card
 forever.
@@ -130,7 +130,7 @@ Every existing `week.workoutId` read fails typecheck until it is guarded, and th
 the compiler enumerates the sites that have to think about rest instead of leaving them to be found
 by hand. There are six in `src/` (below), which is small enough for the union to be worth it.
 
-`NextUpView` ([`selectors.ts:130`](https://github.com/celsaad/kettle/blob/7ff2f0bd437bce8842b9f678021714eab30d2ef5/src/state/selectors.ts#L130)) becomes a union for the same
+`NextUpView` ([`selectors.ts:130`](https://github.com/celsaad/kettle/blob/fc92d2581225ddc302a77ee9ed8367688c78ce77/src/state/selectors.ts#L130)) becomes a union for the same
 reason — a rest card has no workout, no exercises and no `sessionParams`:
 
 ```ts
@@ -158,28 +158,28 @@ and both already hold the week — the churn is not worth it.
 
 | file | change |
 | --- | --- |
-| [`types.ts:74`](https://github.com/celsaad/kettle/blob/7ff2f0bd437bce8842b9f678021714eab30d2ef5/src/domain/types.ts#L74) | `ProgramWeek` union above |
-| [`schema.ts:157`](https://github.com/celsaad/kettle/blob/7ff2f0bd437bce8842b9f678021714eab30d2ef5/src/domain/schema.ts#L157) | `workout` optional, `rest_day`, the four refines |
-| [`yaml-mapping.ts:285-303`](https://github.com/celsaad/kettle/blob/7ff2f0bd437bce8842b9f678021714eab30d2ef5/src/domain/yaml-mapping.ts#L285-L303) | `programWeekToDomain` / `programWeekToRaw` both branch; a rest week round-trips with no `workout:` key |
-| [`program.ts:37`](https://github.com/celsaad/kettle/blob/7ff2f0bd437bce8842b9f678021714eab30d2ef5/src/domain/program.ts#L37) | `resolveWorkoutForWeek` returns null for a rest week, before the workout lookup |
-| [`merge.ts:78`](https://github.com/celsaad/kettle/blob/7ff2f0bd437bce8842b9f678021714eab30d2ef5/src/domain/merge.ts#L78) | the `unknownWorkout` check skips rest weeks — otherwise every rest day fails import |
+| [`types.ts:74`](https://github.com/celsaad/kettle/blob/fc92d2581225ddc302a77ee9ed8367688c78ce77/src/domain/types.ts#L74) | `ProgramWeek` union above |
+| [`schema.ts:157`](https://github.com/celsaad/kettle/blob/fc92d2581225ddc302a77ee9ed8367688c78ce77/src/domain/schema.ts#L157) | `workout` optional, `rest_day`, the four refines |
+| [`yaml-mapping.ts:285-303`](https://github.com/celsaad/kettle/blob/fc92d2581225ddc302a77ee9ed8367688c78ce77/src/domain/yaml-mapping.ts#L285-L303) | `programWeekToDomain` / `programWeekToRaw` both branch; a rest week round-trips with no `workout:` key |
+| [`program.ts:37`](https://github.com/celsaad/kettle/blob/fc92d2581225ddc302a77ee9ed8367688c78ce77/src/domain/program.ts#L37) | `resolveWorkoutForWeek` returns null for a rest week, before the workout lookup |
+| [`merge.ts:78`](https://github.com/celsaad/kettle/blob/fc92d2581225ddc302a77ee9ed8367688c78ce77/src/domain/merge.ts#L78) | the `unknownWorkout` check skips rest weeks — otherwise every rest day fails import |
 
 ### State
 
 | file | change |
 | --- | --- |
-| [`selectors.ts:130-214`](https://github.com/celsaad/kettle/blob/7ff2f0bd437bce8842b9f678021714eab30d2ef5/src/state/selectors.ts#L130-L214) | `NextUpView` union; `nextUpView` grows the rest branch, the elapsed-days rule and `skipTo`. `nextWeekAfter` is **unchanged** — it still returns the literal next slot, and the skipping lives one level up where the clock is |
+| [`selectors.ts:130-214`](https://github.com/celsaad/kettle/blob/fc92d2581225ddc302a77ee9ed8367688c78ce77/src/state/selectors.ts#L130-L214) | `NextUpView` union; `nextUpView` grows the rest branch, the elapsed-days rule and `skipTo`. `nextWeekAfter` is **unchanged** — it still returns the literal next slot, and the skipping lives one level up where the clock is |
 
 ### Screens
 
 | file | change |
 | --- | --- |
 | [`next-up-card.tsx`](https://github.com/celsaad/kettle/blob/79cc1e2be3a54a7bb208ec898533d1ec53ec940d/src/components/next-up-card.tsx) (`RestDayCard`) | rest branch of the Next-up card: week/day label, notes, no chips, no summary line, no Start button, "Train anyway" link. The "Start an empty session" button below is untouched and stays the way to train on a rest day. Lived in `(tabs)/index.tsx` when this shipped; it moved into its own component when the Today and Build tabs merged |
-| [`program-detail.tsx:81-130`](https://github.com/celsaad/kettle/blob/7ff2f0bd437bce8842b9f678021714eab30d2ef5/src/app/program-detail.tsx#L81-L130) | rest weeks render as a card with a "Rest" badge in place of the workout name and **no Start button** |
-| [`program-editor.tsx`](https://github.com/celsaad/kettle/blob/7ff2f0bd437bce8842b9f678021714eab30d2ef5/src/app/program-editor.tsx) | a "Rest day" toggle per week card (`accessibilityRole="switch"` + `accessibilityState.checked`); toggling on hides the workout picker and the override editor. `save()`'s `!week.workoutId` check ([:75](https://github.com/celsaad/kettle/blob/7ff2f0bd437bce8842b9f678021714eab30d2ef5/src/app/program-editor.tsx#L75)) only applies to non-rest weeks, and gets a new check that at least one week is trainable |
-| [`session.tsx:107-115`](https://github.com/celsaad/kettle/blob/7ff2f0bd437bce8842b9f678021714eab30d2ef5/src/app/session.tsx#L107-L115) | a deep link or stale navigation to a rest week currently resolves to null and renders a blank screen; it gets the existing "nothing to run" empty state with its own message |
-| [`workout-editor.tsx:157`](https://github.com/celsaad/kettle/blob/7ff2f0bd437bce8842b9f678021714eab30d2ef5/src/app/workout-editor.tsx#L157) | the "used by N programs" check reads `week.workoutId`; guard for the union |
-| [`program-guide.tsx`](https://github.com/celsaad/kettle/blob/7ff2f0bd437bce8842b9f678021714eab30d2ef5/src/app/program-guide.tsx) | a section for rest days after §5, with the sample above. Deliberately English-only, like the rest of that screen |
+| [`program-detail.tsx:81-130`](https://github.com/celsaad/kettle/blob/fc92d2581225ddc302a77ee9ed8367688c78ce77/src/app/program-detail.tsx#L81-L130) | rest weeks render as a card with a "Rest" badge in place of the workout name and **no Start button** |
+| [`program-editor.tsx`](https://github.com/celsaad/kettle/blob/fc92d2581225ddc302a77ee9ed8367688c78ce77/src/app/program-editor.tsx) | a "Rest day" toggle per week card (`accessibilityRole="switch"` + `accessibilityState.checked`); toggling on hides the workout picker and the override editor. `save()`'s `!week.workoutId` check ([:75](https://github.com/celsaad/kettle/blob/fc92d2581225ddc302a77ee9ed8367688c78ce77/src/app/program-editor.tsx#L75)) only applies to non-rest weeks, and gets a new check that at least one week is trainable |
+| [`session.tsx:107-115`](https://github.com/celsaad/kettle/blob/fc92d2581225ddc302a77ee9ed8367688c78ce77/src/app/session.tsx#L107-L115) | a deep link or stale navigation to a rest week currently resolves to null and renders a blank screen; it gets the existing "nothing to run" empty state with its own message |
+| [`workout-editor.tsx:157`](https://github.com/celsaad/kettle/blob/fc92d2581225ddc302a77ee9ed8367688c78ce77/src/app/workout-editor.tsx#L157) | the "used by N programs" check reads `week.workoutId`; guard for the union |
+| [`program-guide.tsx`](https://github.com/celsaad/kettle/blob/fc92d2581225ddc302a77ee9ed8367688c78ce77/src/app/program-guide.tsx) | a section for rest days after §5, with the sample above. Deliberately English-only, like the rest of that screen |
 
 ### i18n
 
@@ -195,7 +195,7 @@ days off, and they are what most people read first.
 
 | file | change |
 | --- | --- |
-| [`seed-library.ts:230-400`](https://github.com/celsaad/kettle/blob/7ff2f0bd437bce8842b9f678021714eab30d2ef5/src/storage/seed-library.ts#L230-L400) | both programs (`foundations`, `dumbbell-strength`) |
+| [`seed-library.ts:230-400`](https://github.com/celsaad/kettle/blob/fc92d2581225ddc302a77ee9ed8367688c78ce77/src/storage/seed-library.ts#L230-L400) | both programs (`foundations`, `dumbbell-strength`) |
 | `site/examples/beginner-full-body.yaml` | 3 days/week |
 | `site/examples/bodyweight-no-equipment.yaml` | 3 days/week |
 | `site/examples/push-pull-legs-6-weeks.yaml` | 3 days/week |
@@ -253,8 +253,8 @@ Free, once the code lands — these already exist and will fail if the change is
   entry the schema refuses, or a renumbered day that collides, fails here.
 - `docs-samples.test.ts` and `site-samples.test.ts` run every complete library sample in the docs and
   on the site through the real `parseLibraryYaml`. A mirror teaching a shape the schema refuses fails.
-- `seed-library.test.ts` ([:104](https://github.com/celsaad/kettle/blob/7ff2f0bd437bce8842b9f678021714eab30d2ef5/src/storage/__tests__/seed-library.test.ts#L104),
-  [:197](https://github.com/celsaad/kettle/blob/7ff2f0bd437bce8842b9f678021714eab30d2ef5/src/storage/__tests__/seed-library.test.ts#L197)) maps `week.workoutId` and needs the
+- `seed-library.test.ts` ([:104](https://github.com/celsaad/kettle/blob/fc92d2581225ddc302a77ee9ed8367688c78ce77/src/storage/__tests__/seed-library.test.ts#L104),
+  [:197](https://github.com/celsaad/kettle/blob/fc92d2581225ddc302a77ee9ed8367688c78ce77/src/storage/__tests__/seed-library.test.ts#L197)) maps `week.workoutId` and needs the
   union guard before it compiles.
 
 To write:

@@ -41,9 +41,8 @@ fun preferencesOrDefault(
     )
 
 /**
- * The file as JSON, every field, so an older build reads what Settings writes (#237), and the
- * file says every setting rather than leaving one to a default that could change. The whole file on
- * every write, never just the field that changed.
+ * The file as JSON, every field, so an older build reads what Settings writes (#237). The whole
+ * file on every write, never just the field that changed.
  */
 fun serializePreferences(preferences: Preferences): String =
     listOf(

@@ -17,7 +17,7 @@ const val HISTORY_BACKUP_NAME = "kettle-history.yaml"
  */
 fun backupFolderLabel(folderUri: String): String {
     val decoded = decodeUriComponent(folderUri) ?: return folderUri
-    // JS's slice(-1) where there's no /tree/: the last character, which a volume marker can't be in.
+    // No /tree/: keep only the last character, which can't hold a volume marker, so the decoded URI shows.
     val tree = decoded.indexOf("/tree/").let { if (it < 0) decoded.takeLast(1) else decoded.substring(it) }
     val afterVolume = Regex(":([^:]*)$").find(tree)?.groupValues?.get(1)
     return afterVolume?.trim('/')?.ifEmpty { null } ?: decoded
@@ -57,7 +57,7 @@ fun parseBackupTargets(text: String): Map<String, String> {
     return strings?.associate { (key, value) -> key as String to value as String }.orEmpty()
 }
 
-/** The record as JSON, which `parseBackupTargets` reads with the YAML loader, as it reads an older install's. */
+/** The record as JSON, which `parseBackupTargets` reads with the YAML loader. */
 fun serializeBackupTargets(targets: Map<String, String>): String =
     targets.entries.joinToString(",", "{", "}") { (name, uri) -> "${jsonString(name)}:${jsonString(uri)}" }
 

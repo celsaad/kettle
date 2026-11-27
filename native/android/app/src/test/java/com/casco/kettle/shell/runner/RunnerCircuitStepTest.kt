@@ -118,6 +118,10 @@ class RunnerCircuitStepTest : RunnerScreenHarness() {
         show(running(amrap, start.after(RunnerCommand.SetRounds(9, start.snapshot.visit))))
         assertEquals(nine, button("Rodada 10 feita").getUnclippedBoundsInRoot())
         assertEquals(pause, button("Pausar").getUnclippedBoundsInRoot())
+
+        // Undo back to 9 leaves it where it was too.
+        show(running(amrap, start.after(RunnerCommand.SetRounds(8, start.snapshot.visit))))
+        assertEquals(nine, button("Rodada 9 feita").getUnclippedBoundsInRoot())
     }
 
     /**

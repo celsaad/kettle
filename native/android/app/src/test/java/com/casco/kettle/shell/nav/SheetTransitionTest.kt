@@ -1,39 +1,99 @@
 package com.casco.kettle.shell.nav
 
-import android.graphics.Bitmap
-import android.os.Looper
-import android.view.View
-import android.view.View.MeasureSpec
-import android.widget.FrameLayout
-import com.casco.kettle.shell.theme.LightColors
+import androidx.activity.BackEventCompat
+import androidx.compose.material3.Text
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.layout.LayoutCoordinates
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInRoot
+import com.casco.kettle.domain.RunnerStart
+import com.casco.kettle.domain.SessionParams
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
-import org.robolectric.RuntimeEnvironment
-import org.robolectric.Shadows.shadowOf
-import java.time.Duration
 
-/** The transitions table, and the sheet playing it on the view its route draws in (#197). */
+/**
+ * The transitions table (#155), and the shell playing every case of it in its one composition (#377),
+ * driven by the [Navigator]. Each route draws a stand-in that says whether it's composed and where it is,
+ * so these hold what the screen shows at a move's first frame, part way and at its end: what arrives is
+ * there from the first frame (nothing blank), and what leaves stays live until it has gone.
+ *
+ * Opacity and scale aren't positions, so the fades are held as which screens are there; [ShellMotionTest]
+ * holds what each frame sets.
+ */
 @RunWith(RobolectricTestRunner::class)
 class SheetTransitionTest {
-    private val context = RuntimeEnvironment.getApplication()
-    private val content = FrameLayout(context)
-    private val native = View(context).also(content::addView)
-    private val stage =
-        SheetStage(content, native, {}, {}, { _, _ -> }).apply {
-            paint(LightColors)
-            content.measure(
-                MeasureSpec.makeMeasureSpec(WIDTH_PX, MeasureSpec.EXACTLY),
-                MeasureSpec.makeMeasureSpec(HEIGHT_PX, MeasureSpec.EXACTLY),
-            )
-            content.layout(0, 0, WIDTH_PX, HEIGHT_PX)
-        }
-    private val motion = SheetMotion(stage)
-    private val picture = Bitmap.createBitmap(WIDTH_PX, HEIGHT_PX, Bitmap.Config.ARGB_8888)
+    @get:Rule
+    val compose = shellRule()
 
-    private fun finishMotion() = shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(1))
+    private lateinit var navigator: Navigator
+    private lateinit var shell: ShellView
+
+    /** The stand-ins composed now, by name. */
+    private val alive = mutableSetOf<String>()
+    private val placed = mutableMapOf<String, LayoutCoordinates>()
+
+    private fun show() {
+        navigator = Navigator()
+        shell =
+            compose.showShell(navigator) { route ->
+                val name = standInName(route)
+                DisposableEffect(name) {
+                    alive += name
+                    onDispose {
+                        alive -= name
+                        placed -= name
+                    }
+                }
+                Text(name, Modifier.onGloballyPositioned { placed[name] = it })
+            }
+    }
+
+    /** A move, played out. */
+    private fun go(move: Navigator.() -> Unit) {
+        compose.runOnUiThread { navigator.move() }
+        compose.waitForIdle()
+    }
+
+    /** A move and the first frame that draws it, with the clock stopped there. */
+    private fun start(move: Navigator.() -> Unit) {
+        compose.mainClock.autoAdvance = false
+        compose.runOnUiThread { navigator.move() }
+        compose.mainClock.advanceTimeByFrame()
+    }
+
+    private fun advance(millis: Long) = compose.mainClock.advanceTimeBy(millis)
+
+    private fun finish() {
+        compose.mainClock.autoAdvance = true
+        compose.waitForIdle()
+    }
+
+    private val playing get() = compose.runOnIdle { navigator.motion.motion?.transition }
+
+    private fun at(name: String): Offset = compose.runOnIdle { placed.getValue(name).positionInRoot() }
+
+    private fun isAlive(name: String) = compose.runOnIdle { name in alive }
+
+    private val height get() = shell.height.toFloat()
+    private val width get() = shell.width.toFloat()
+
+    /** Where a sheet's screen rests: 12dp under the status bar, which has none here, then the strip. */
+    private val sheetRest get() = with(compose.density) { (12f + SheetStripHeight.value) * density }
+
+    private val support = Route(Destination.Support)
+    private val import = Route(Destination.Import)
+    private val settings = Route(Destination.Settings)
+    private val dips = Route(Destination.ExerciseDetail, mapOf("id" to "dips"))
+    private val base = Route(Destination.ProgramDetail, mapOf("programId" to "base"))
+    private val preview = Route(Destination.WorkoutPreview, mapOf("workoutId" to "bench"))
+    private val bench = RunnerStart.Planned(SessionParams.Workout("bench"))
 
     @Test
     fun `a push from a tab slides the sheet up, and back slides it down`() {
@@ -96,100 +156,396 @@ class SheetTransitionTest {
         assertEquals(Transition.PushFadeOut, transitionBetween(Place.Pushed, Place.Pushed, MoveKind.Replace))
     }
 
-    /** Settings → Support or Your file: a sheet covers a pushed screen as it covers a tab. */
+    /** Settings → Support or Your file: a sheet covers a pushed screen as it covers a tab, and closes back onto it. */
     @Test
     fun `a sheet opens over a pushed screen as over a tab, and closes back onto it`() {
         assertEquals(Transition.Open, transitionBetween(Place.Pushed, Place.Sheet, MoveKind.Push))
         assertEquals(Transition.Close, transitionBetween(Place.Sheet, Place.Pushed, MoveKind.Back))
     }
 
-    /** Full frame, square, with no chrome or scrim, sliding in from the side over the picture it covers. */
+    // The table, played.
+
+    /** The first frame already draws the sheet's screen, below the frame, over the live tab: nothing blank. */
     @Test
-    fun `a pushed screen comes in full frame from the side, over what it covers`() {
-        stage.layOutAsSheet()
+    fun `Open slides the arriving sheet up from below the frame`() {
+        show()
 
-        motion.pushIn(picture, LightColors, fade = false)
+        start { push(support) }
 
-        assertEquals(0, (native.layoutParams as FrameLayout.LayoutParams).topMargin)
-        assertEquals(false, native.clipToOutline)
-        assertEquals(View.GONE, stage.chrome.visibility)
-        assertEquals(View.GONE, stage.scrim.visibility)
-        assertEquals(View.VISIBLE, stage.backdrop.visibility)
-        assertEquals(WIDTH_PX.toFloat(), native.translationX)
-
-        native.viewTreeObserver.dispatchOnPreDraw()
-        finishMotion()
-
-        assertEquals(0f, native.translationX)
-        // Still behind it, for what a predictive back uncovers.
-        assertEquals(View.VISIBLE, stage.backdrop.visibility)
-    }
-
-    /** A predictive back slid it part way: it leaves from there, as a picture, over the screen it covered. */
-    @Test
-    fun `a pushed screen leaves by its side from where a predictive back left it`() {
-        motion.pushIn(null, LightColors, fade = false)
-        native.viewTreeObserver.dispatchOnPreDraw()
-        finishMotion()
-        stage.translate(0f, DRAGGED_PX)
-
-        motion.pushOut(picture, null, fade = false)
-
-        assertEquals(View.VISIBLE, stage.leaving.visibility)
-        assertEquals(DRAGGED_PX, stage.leaving.translationX)
-        assertEquals(0, (stage.leaving.layoutParams as FrameLayout.LayoutParams).topMargin)
-        // A tab is live under it: nothing of the stage is left behind.
-        assertEquals(View.GONE, stage.backdrop.visibility)
-
-        finishMotion()
-
-        assertEquals(View.GONE, stage.leaving.visibility)
+        assertEquals(Transition.Open, playing)
+        assertTrue(isAlive("Screen Today"))
+        assertTrue(at("Screen Support").y >= height)
+        advance(OPEN_MS / 2)
+        assertTrue(at("Screen Support").y in sheetRest..height)
+        finish()
+        assertNull(playing)
+        assertEquals(sheetRest, at("Screen Support").y)
     }
 
     @Test
-    fun `the live view takes the sheet's shape and moves as the sheet`() {
-        stage.layOutAsSheet()
+    fun `Close slides the leaving sheet down, live, over the tab`() {
+        show()
+        go { push(support) }
 
-        assertEquals(stage.top, (native.layoutParams as FrameLayout.LayoutParams).topMargin)
-        assertTrue(native.clipToOutline)
+        start { back() }
 
-        stage.translate(DRAGGED_PX)
-
-        assertEquals(DRAGGED_PX, native.translationY)
+        assertEquals(Transition.Close, playing)
+        assertTrue(isAlive("Screen Support"))
+        assertEquals(sheetRest, at("Screen Support").y)
+        advance(CLOSE_MS / 2)
+        assertTrue(at("Screen Support").y > sheetRest)
+        finish()
+        assertEquals(false, isAlive("Screen Support"))
+        assertTrue(isAlive("Screen Today"))
     }
 
-    /** Settings → Support: the old sheet leaves as a picture, and the new one comes in live. */
     @Test
-    fun `a hand-over brings the live view in under the old sheet's picture`() {
-        stage.layOutAsSheet()
+    fun `FadeIn and FadeOut reach and leave a sheet in place`() {
+        show()
 
-        motion.across(picture, Across.Forward)
+        start { navigate(support) }
+        assertEquals(Transition.FadeIn, playing)
+        assertTrue(isAlive("Screen Support"))
+        finish()
 
-        assertEquals(View.VISIBLE, stage.leaving.visibility)
-        assertEquals(0f, native.alpha)
-
-        finishMotion()
-
-        assertEquals(1f, native.alpha)
-        assertEquals(0f, native.translationX)
-        assertEquals(View.GONE, stage.leaving.visibility)
+        start { navigate(Route(Destination.Today)) }
+        assertEquals(Transition.FadeOut, playing)
+        advance(FADE_MS / 2)
+        assertTrue(isAlive("Screen Support"))
+        assertTrue(isAlive("Screen Today"))
+        finish()
+        assertEquals(false, isAlive("Screen Support"))
     }
 
-    /** A sheet dragged down and let go leaves from where the drag left it, not from the top. */
+    /** Import → Support: the old screen leaves to the start as the new one comes in from the end. */
     @Test
-    fun `a sheet closes from where it was dragged to`() {
-        motion.present(null, LightColors, fade = false)
-        finishMotion()
-        stage.translate(DRAGGED_PX)
+    fun `Forward hands the sheet over along the shared axis, both screens live`() {
+        show()
+        go { push(import) }
 
-        motion.dismiss(picture, fade = false)
+        start { push(support) }
 
-        assertEquals(DRAGGED_PX, stage.leaving.translationY)
+        assertEquals(Transition.Forward, playing)
+        advance(SHARED_AXIS_MS / 2)
+        assertTrue(at("Screen Support").x > 0f)
+        assertTrue(at("Screen Import").x < 0f)
+        finish()
+        assertEquals(false, isAlive("Screen Import"))
+        assertEquals(0f, at("Screen Support").x)
+    }
+
+    @Test
+    fun `Backward hands it back the other way`() {
+        show()
+        go { push(import) }
+        go { push(support) }
+
+        start { back() }
+
+        assertEquals(Transition.Backward, playing)
+        advance(SHARED_AXIS_MS / 2)
+        assertTrue(at("Screen Import").x < 0f)
+        assertTrue(at("Screen Support").x > 0f)
+        finish()
+        assertEquals(false, isAlive("Screen Support"))
+        assertEquals(0f, at("Screen Import").x)
+    }
+
+    @Test
+    fun `FadeThrough replaces a sheet in place`() {
+        show()
+        go { push(Route(Destination.ProgramGuide)) }
+
+        start { replace(import) }
+
+        assertEquals(Transition.FadeThrough, playing)
+        advance(FADE_MS / 4)
+        assertTrue(isAlive("Screen ProgramGuide"))
+        assertTrue(isAlive("Screen Import"))
+        finish()
+        assertEquals(false, isAlive("Screen ProgramGuide"))
+    }
+
+    /** Settings → Support, and back: the pushed screen stays live under the scrim throughout. */
+    @Test
+    fun `Open and Close over a pushed screen leave it live under the sheet`() {
+        show()
+        go { push(settings) }
+
+        start { push(support) }
+        assertEquals(Transition.Open, playing)
+        assertTrue(at("Screen Support").y >= height)
+        finish()
+
+        start { back() }
+        assertEquals(Transition.Close, playing)
+        advance(CLOSE_MS / 2)
+        assertTrue(at("Screen Support").y > sheetRest)
+        assertEquals(0f, at("Screen Settings").x)
+        finish()
+        assertEquals(false, isAlive("Screen Support"))
+        assertTrue(isAlive("Screen Settings"))
+    }
+
+    /** A link to a sheet from a pushed screen, and from a sheet to a pushed screen, fade in place. */
+    @Test
+    fun `a navigate between a pushed screen and a sheet fades the sheet`() {
+        show()
+        go { push(settings) }
+
+        start { navigate(support) }
+        assertEquals(Transition.FadeIn, playing)
+        finish()
+
+        start { navigate(settings) }
+        assertEquals(Transition.FadeOut, playing)
+        advance(FADE_MS / 4)
+        assertTrue(isAlive("Screen Support"))
+        assertTrue(isAlive("Screen Settings"))
+        finish()
+        assertEquals(false, isAlive("Screen Support"))
+    }
+
+    /**
+     * Workout preview → session: the sheet grows under the runner and stays composed there, and as the
+     * runner goes it shrinks from full frame back to its place.
+     */
+    @Test
+    fun `Grow and Shrink take the sheet into the runner and back`() {
+        show()
+        go { push(preview) }
+
+        start { openRunner(bench) }
+        assertEquals(Transition.Grow, playing)
+        assertTrue(isAlive("Screen Session bench"))
+        finish()
+        assertTrue(isAlive("Screen WorkoutPreview bench"))
+
+        start { closeRunner() }
+        assertEquals(Transition.Shrink, playing)
+        assertEquals(false, isAlive("Screen Session bench"))
+        // Full frame at the start: the strip from the very top.
+        val strip = with(compose.density) { SheetStripHeight.toPx() }
+        assertEquals(strip, at("Screen WorkoutPreview bench").y)
+        advance(RUNNER_MS / 2)
+        assertTrue(at("Screen WorkoutPreview bench").y in strip..sheetRest)
+        finish()
+        assertEquals(sheetRest, at("Screen WorkoutPreview bench").y)
+    }
+
+    @Test
+    fun `Release leaves the runner for a tab or a pushed screen with nothing to play`() {
+        show()
+        start { openRunner(bench) }
+        assertNull(playing)
+        finish()
+
+        start { closeRunner() }
+        assertNull(playing)
+        finish()
+
+        go { push(settings) }
+        start { openRunner(bench) }
+        assertNull(playing)
+        finish()
+        start { closeRunner() }
+        assertNull(playing)
+        assertEquals(0f, at("Screen Settings").x)
+    }
+
+    @Test
+    fun `a tab switch plays nothing`() {
+        show()
+
+        start { select(Tab.Progress) }
+
+        assertNull(playing)
+    }
+
+    @Test
+    fun `PushIn slides a pushed screen in from the end over the live tab`() {
+        show()
+
+        start { push(settings) }
+
+        assertEquals(Transition.PushIn, playing)
+        assertEquals(width, at("Screen Settings").x)
+        assertTrue(isAlive("Screen Today"))
+        advance(PUSH_MS / 2)
+        assertTrue(at("Screen Settings").x in 0f..width)
+        finish()
+        assertEquals(0f, at("Screen Settings").x)
+    }
+
+    /** Exercise detail → Program detail: the one beneath stays live, for a back to uncover. */
+    @Test
+    fun `PushIn over a pushed screen and PushOut back to it`() {
+        show()
+        go { push(dips) }
+
+        start { push(base) }
+        assertEquals(Transition.PushIn, playing)
+        advance(PUSH_MS / 2)
+        assertEquals(0f, at("Screen ExerciseDetail dips").x)
+        assertTrue(at("Screen ProgramDetail base").x > 0f)
+        finish()
+        assertTrue(isAlive("Screen ExerciseDetail dips"))
+
+        start { back() }
+        assertEquals(Transition.PushOut, playing)
+        advance(POP_MS / 2)
+        assertTrue(at("Screen ProgramDetail base").x in 0f..width)
+        assertEquals(0f, at("Screen ExerciseDetail dips").x)
+        finish()
+        assertEquals(false, isAlive("Screen ProgramDetail base"))
+    }
+
+    @Test
+    fun `PushOut slides the leaving screen out by its side, live, over the tab`() {
+        show()
+        go { push(settings) }
+
+        start { back() }
+
+        assertEquals(Transition.PushOut, playing)
+        assertEquals(0f, at("Screen Settings").x)
+        advance(POP_MS / 2)
+        assertTrue(at("Screen Settings").x > 0f)
+        finish()
+        assertEquals(false, isAlive("Screen Settings"))
+    }
+
+    @Test
+    fun `PushFadeIn and PushFadeOut reach and leave a pushed screen in place`() {
+        show()
+
+        start { navigate(settings) }
+        assertEquals(Transition.PushFadeIn, playing)
+        // In place, not from the side: only the fade's 92% scale, about its bottom centre, moves it in.
+        assertTrue(at("Screen Settings").x < width * (1 - ShellMotion.FADE_SCALE))
+        finish()
+        assertEquals(0f, at("Screen Settings").x)
+
+        start { navigate(Route(Destination.Today)) }
+        assertEquals(Transition.PushFadeOut, playing)
+        advance(FADE_MS / 4)
+        assertTrue(isAlive("Screen Settings"))
+        finish()
+        assertEquals(false, isAlive("Screen Settings"))
+    }
+
+    @Test
+    fun `a pushed screen replaced fades out over the one in its place`() {
+        show()
+        go { push(dips) }
+
+        start { replace(base) }
+
+        assertEquals(Transition.PushFadeOut, playing)
+        advance(FADE_MS / 4)
+        assertTrue(isAlive("Screen ExerciseDetail dips"))
+        assertTrue(isAlive("Screen ProgramDetail base"))
+        finish()
+        assertEquals(false, isAlive("Screen ExerciseDetail dips"))
+    }
+
+    /** A second move part way through the first ends the first where it ends, and plays from there. */
+    @Test
+    fun `a move during a transition ends it and starts its own`() {
+        show()
+        start { push(import) }
+        advance(OPEN_MS / 4)
+
+        compose.runOnUiThread { navigator.push(support) }
+        compose.mainClock.advanceTimeByFrame()
+
+        assertEquals(Transition.Forward, playing)
+        finish()
+        assertEquals(sheetRest, at("Screen Support").y)
+        assertEquals(false, isAlive("Screen Import"))
+    }
+
+    // Predictive back.
+
+    private fun backStarted() =
+        compose.runOnUiThread { compose.activity.onBackPressedDispatcher.dispatchOnBackStarted(backEvent(0f)) }
+
+    private fun backAt(progress: Float) =
+        compose.runOnUiThread { compose.activity.onBackPressedDispatcher.dispatchOnBackProgressed(backEvent(progress)) }
+
+    private fun backEvent(progress: Float) = BackEventCompat(0f, 0f, progress, BackEventCompat.EDGE_LEFT)
+
+    /** The sheet shrinks towards its bottom as the gesture goes, so its screen's top comes down. */
+    @Test
+    fun `a predictive back shrinks the sheet, and its commit closes it from there`() {
+        show()
+        go { push(support) }
+
+        backStarted()
+        backAt(1f)
+        compose.waitForIdle()
+        assertTrue(at("Screen Support").y > sheetRest)
+
+        compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
+        compose.waitForIdle()
+        assertEquals(emptyList<Route>(), navigator.stack)
+        assertEquals(false, isAlive("Screen Support"))
+    }
+
+    /** Sheet over sheet: the commit goes back one sheet, not the whole stack. */
+    @Test
+    fun `a predictive back over a stacked sheet goes back one sheet`() {
+        show()
+        go { push(import) }
+        go { push(support) }
+
+        backStarted()
+        backAt(PART_WAY)
+        compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
+        compose.waitForIdle()
+
+        assertEquals(listOf(import), navigator.stack)
+        assertEquals(sheetRest, at("Screen Import").y)
+    }
+
+    @Test
+    fun `a cancelled predictive back settles the sheet back, and goes nowhere`() {
+        show()
+        go { push(support) }
+
+        backStarted()
+        backAt(PART_WAY)
+        compose.runOnUiThread { compose.activity.onBackPressedDispatcher.dispatchOnBackCancelled() }
+        compose.waitForIdle()
+
+        assertEquals(listOf(support), navigator.stack)
+        assertEquals(sheetRest, at("Screen Support").y)
+    }
+
+    /** A pushed screen starts out by its side under the gesture, then leaves from there (#489). */
+    @Test
+    fun `a predictive back slides a pushed screen towards its side`() {
+        show()
+        go { push(settings) }
+
+        backStarted()
+        backAt(1f)
+        compose.waitForIdle()
+        assertEquals(width * ShellMotion.PREDICTIVE_SLIDE, at("Screen Settings").x)
+
+        compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
+        compose.waitForIdle()
+        assertEquals(emptyList<Route>(), navigator.stack)
     }
 
     private companion object {
-        const val WIDTH_PX = 400
-        const val HEIGHT_PX = 800
-        const val DRAGGED_PX = 120f
+        const val OPEN_MS = ShellMotion.OPEN_MS.toLong()
+        const val CLOSE_MS = ShellMotion.CLOSE_MS.toLong()
+        const val SHARED_AXIS_MS = ShellMotion.SHARED_AXIS_MS.toLong()
+        const val FADE_MS = ShellMotion.FADE_MS.toLong()
+        const val RUNNER_MS = ShellMotion.RUNNER_MS.toLong()
+        const val PUSH_MS = ShellMotion.PUSH_MS.toLong()
+        const val POP_MS = ShellMotion.POP_MS.toLong()
+        const val PART_WAY = 0.5f
     }
 }

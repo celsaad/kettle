@@ -1,6 +1,5 @@
 package com.casco.kettle.shell.theme
 
-import android.content.res.Configuration
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -61,16 +60,4 @@ internal fun readThemePreference(file: File): ThemePreference {
             null
         }
     return text?.let(::parsePreferences)?.themePreference ?: ThemePreference.SYSTEM
-}
-
-/**
- * [rememberPreferredDarkTheme] outside Compose, read now: the scheme for the views the shell draws
- * itself, such as the sheet's chrome. The file is a few bytes, so the main thread reads it.
- */
-fun preferredColors(
-    preferences: File,
-    configuration: Configuration,
-): KettleColors {
-    val systemDark = configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES
-    return if (isDark(readThemePreference(preferences), systemDark)) DarkColors else LightColors
 }

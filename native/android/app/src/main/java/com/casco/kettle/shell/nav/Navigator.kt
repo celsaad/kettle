@@ -42,6 +42,9 @@ class Navigator(
     /** The top of the stack, a sheet or a pushed screen; null on a tab. */
     val sheet: Route? get() = sheets.lastOrNull()
 
+    /** The whole stack over the tabs, bottom to top: its sheets and pushed screens. */
+    val stack: List<Route> get() = sheets
+
     /** The runner, over everything while it shows; null when it doesn't. */
     var runner by mutableStateOf<RunnerSlot?>(null)
         private set
@@ -52,7 +55,7 @@ class Navigator(
     /** The bar shows on a tab, with nothing over it. */
     val barShown: Boolean get() = sheets.isEmpty() && runner == null
 
-    /** Hears every move, before and after: the sheet animates from it. The current activity's sheet. */
+    /** Hears every move, before and after: the shell animates from it ([ShellMotion]). */
     var moves: MoveListener? = null
 
     /** Where the shell is: which of the tabs, the sheet and the runner shows. */
@@ -222,7 +225,7 @@ data class Move(
 
 /** The sheet's ears on the [Navigator]. */
 interface MoveListener {
-    /** Before [move] lands: the screen still shows where it starts, so this is when to picture it. */
+    /** Before [move] lands: the navigator still holds where it starts, so this is when to read what shows. */
     fun willMove(move: Move)
 
     /** After [move] landed in the navigator's state, before anything has drawn it. */

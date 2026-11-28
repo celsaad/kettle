@@ -8,8 +8,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material3.Icon
@@ -21,7 +19,6 @@ import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.key
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
@@ -36,13 +33,12 @@ import com.casco.kettle.shell.theme.KettleTheme
 
 /**
  * The tabs, one entry at a time: NavHost switches between them and holds nothing else, since the back
- * stack is the [navigator]'s. [onPlace] is told which place to show.
+ * stack is the [navigator]'s.
  */
 @Composable
 internal fun Destinations(
     navigator: Navigator,
     content: @Composable (Route) -> Unit,
-    onPlace: (Place) -> Unit,
 ) {
     val navController = rememberNavController()
     LaunchedEffect(navigator.tab) {
@@ -63,9 +59,6 @@ internal fun Destinations(
             restoreState = true
         }
     }
-    val place = navigator.place
-    SideEffect { onPlace(place) }
-
     NavHost(
         navController = navController,
         startDestination = Tab.Today.name,
@@ -76,41 +69,13 @@ internal fun Destinations(
     ) {
         for (tab in Tab.entries) {
             composable(tab.name) {
-                // Opaque to the top, strip included, as NativeSheet is: the window behind is Material's
-                // gray, not the theme's (#227). Here and not in each screen, so every tab gets it.
+                // Opaque to the top, as a sheet's screen is: the window behind is Material's gray, not the
+                // theme's (#227). Here and not in each screen, so every tab gets it.
                 Box(Modifier.fillMaxSize().background(KettleTheme.colors.background)) {
                     content(navigator.tabRoute(tab))
                 }
             }
         }
-    }
-}
-
-/**
- * What the sheet shows (#197): the route on top of the [navigator]'s stack. A sheet's starts below the strip
- * [SheetChrome] draws over, which it leaves clear as RN's `ModalHeader` did. [onComposed] hears the route
- * composed, or null for nothing, after each composition, so the sheet can hold its arrival until the
- * screen it slides in is there.
- */
-@Composable
-internal fun NativeSheet(
-    navigator: Navigator,
-    content: @Composable (Route) -> Unit,
-    onComposed: (Route?) -> Unit,
-) {
-    val route = navigator.sheet
-    SideEffect { onComposed(route) }
-    if (route == null) return
-    // A fresh screen per route and params: progress for one exercise pushed over another's keeps none of
-    // its state. Opaque to the top, strip included: the sheet's picture is this view's.
-    key(route) {
-        Box(
-            Modifier
-                .fillMaxSize()
-                .background(KettleTheme.colors.background)
-                // A pushed screen has no strip: it starts under the status bar, its Back row first (#489).
-                .then(if (route.pushed) Modifier.statusBarsPadding() else Modifier.padding(top = SheetStripHeight)),
-        ) { content(route) }
     }
 }
 

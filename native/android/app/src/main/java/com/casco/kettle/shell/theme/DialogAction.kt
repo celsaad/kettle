@@ -6,6 +6,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.window.DialogProperties
+import com.casco.kettle.shell.nav.LocalReachable
 
 /** One of a dialog's buttons: its words and what it does, or, not [enabled], that it does nothing now. */
 internal data class DialogAction(
@@ -22,6 +23,10 @@ internal data class DialogAction(
  * were never contrast-checked against it: `accentText` on `backgroundElement` is RN's checked pairing.
  * [dismiss] null for a notice with one button, as RN's buttonless `Alert` is. [onDismissRequest] null
  * for a question that has to be answered: back and a tap outside then do nothing.
+ *
+ * Shown only while its screen can be reached ([LocalReachable], #569): a stacked screen stays composed
+ * under what covers it, and its dialog's window would float over that, live, so a delete confirmed over
+ * a share would close the share. Hidden, not dismissed: what opened it holds, and it shows again on back.
  */
 @Composable
 internal fun KettleAlertDialog(
@@ -41,6 +46,7 @@ internal fun KettleAlertDialog(
     dismiss: DialogAction?,
     content: @Composable () -> Unit,
 ) {
+    if (!LocalReachable.current) return
     val colors = KettleTheme.colors
     val buttons = ButtonDefaults.textButtonColors(contentColor = colors.accentText)
     AlertDialog(

@@ -60,7 +60,7 @@ import com.casco.kettle.shell.i18n.deviceUnitSystem
 import com.casco.kettle.shell.i18n.formatClock
 import com.casco.kettle.shell.i18n.formatMonthDay
 import com.casco.kettle.shell.library.ExerciseBadge
-import com.casco.kettle.shell.nav.LocalNavigator
+import com.casco.kettle.shell.nav.rememberCloseThis
 import com.casco.kettle.shell.theme.KettleTheme
 import com.casco.kettle.shell.theme.KettleType
 import com.casco.kettle.shell.theme.MaxContentWidth
@@ -74,12 +74,11 @@ import kotlinx.datetime.TimeZone
 /** What the route table draws at `Destination.SessionEditor`, as History's Edit pushes it, with an `id`. */
 @Composable
 fun SessionEditorRoute(params: Map<String, String>) {
-    val navigator = LocalNavigator.current
     SessionEditorScreen(
         params["id"],
         LocalLatestFiles.current,
         TimeZone.currentSystemDefault(),
-        SessionEditorActions(close = { navigator.back() }),
+        SessionEditorActions(close = rememberCloseThis()),
     )
 }
 
@@ -105,9 +104,12 @@ fun SessionEditorScreen(
     actions: SessionEditorActions,
 ) {
     val locale = LocalConfiguration.current.locales[0]
-    val units = files.preferences?.unitSystem ?: deviceUnitSystem(locale)
     val library = files.library ?: EmptyLibrary
     val logged = files.sessionLog?.logged
+    // The units the editor opened in, from the read that brought the log, kept while it's open (#569): a
+    // units switch in Settings, pushed over the editor by a link, would otherwise rebuild the drafts.
+    val current = files.preferences?.unitSystem ?: deviceUnitSystem(locale)
+    val units = if (logged != null) remember(id) { current } else current
     val scope = rememberCoroutineScope()
     // Worked out from the first read of the log and kept, as RN's editor copied its drafts once: the
     // log can change while the sheet is up, and from then on what's typed is the user's. Once more when

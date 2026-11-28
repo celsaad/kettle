@@ -393,5 +393,44 @@ class NavigatorTest {
         assertEquals(listOf(editor("pushups"), settings, import("d")), navigator.sheets)
     }
 
+    /** An editor's Save landing while a share covers it closes the editor, not the share (#569). */
+    @Test
+    fun `close takes its own screen off the stack, wherever it is`() {
+        navigator.push(editor("pushups"))
+        val editor = navigator.entries.single()
+        navigator.arrive(import("a"))
+        val share = navigator.entries.last()
+
+        navigator.close(editor.id)
+
+        assertEquals(listOf(share), navigator.entries)
+        assertEquals(Place.Sheet, navigator.place)
+    }
+
+    @Test
+    fun `close on top is back, and on a screen already gone is nothing`() {
+        navigator.push(editor("pushups"))
+        val editor = navigator.entries.single()
+
+        navigator.close(editor.id)
+        assertTrue(navigator.sheets.isEmpty())
+
+        navigator.push(support)
+        navigator.close(editor.id)
+        assertEquals(listOf(support), navigator.sheets)
+    }
+
+    @Test
+    fun `close under the runner is dropped, as every move is`() {
+        navigator.push(editor("pushups"))
+        val editor = navigator.entries.single()
+        navigator.push(support)
+        navigator.openRunner(null)
+
+        navigator.close(editor.id)
+
+        assertEquals(listOf(editor("pushups"), support), navigator.sheets)
+    }
+
     private fun import(token: String) = Route(Destination.Import, mapOf("shared" to token))
 }

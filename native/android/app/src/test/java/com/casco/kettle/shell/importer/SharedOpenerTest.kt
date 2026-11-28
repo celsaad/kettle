@@ -99,6 +99,7 @@ class SharedOpenerTest {
         val editor = Route(Destination.SessionEditor, mapOf("id" to "s1"))
         navigator.push(editor)
         opener.open(second)
+        assertNull(inbox.held)
         assertEquals(second, inbox.take(shownToken()))
 
         navigator.back()

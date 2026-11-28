@@ -79,7 +79,7 @@ import com.casco.kettle.shell.form.FormField
 import com.casco.kettle.shell.form.SheetColumn
 import com.casco.kettle.shell.i18n.deviceUnitSystem
 import com.casco.kettle.shell.list.ListRowSeparator
-import com.casco.kettle.shell.nav.LocalNavigator
+import com.casco.kettle.shell.nav.rememberCloseThis
 import com.casco.kettle.shell.theme.DialogAction
 import com.casco.kettle.shell.theme.KettleAlertDialog
 import com.casco.kettle.shell.theme.KettleTheme
@@ -98,8 +98,7 @@ import sh.calvin.reorderable.rememberReorderableLazyListState
  */
 @Composable
 fun WorkoutEditorRoute(params: Map<String, String>) {
-    val navigator = LocalNavigator.current
-    WorkoutEditorScreen(params["id"], LocalLatestFiles.current, WorkoutEditorActions(close = { navigator.back() }))
+    WorkoutEditorScreen(params["id"], LocalLatestFiles.current, WorkoutEditorActions(close = rememberCloseThis()))
 }
 
 /** What the editor asks of the shell, as a parameter so a test hears it. */

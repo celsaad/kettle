@@ -27,6 +27,13 @@ internal data class Shown(
     val sheet: StackEntry?,
 )
 
+/**
+ * The sheet directly under a pushed screen on top, which only a link opens (#569): kept in its frame
+ * under that screen, not hidden, so the screen leaves off it as it would off a tab. Null otherwise.
+ */
+internal fun sheetUnderPushed(stack: List<StackEntry>): StackEntry? =
+    stack.getOrNull(stack.size - 2)?.takeIf { stack.last().route.pushed && !it.route.pushed }
+
 internal fun shownBy(stack: List<StackEntry>): Shown {
     val top = stack.lastOrNull()
     val pushedAt = stack.indexOfLast { it.route.pushed }

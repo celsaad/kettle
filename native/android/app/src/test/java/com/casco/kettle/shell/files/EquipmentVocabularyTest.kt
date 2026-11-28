@@ -18,7 +18,7 @@ import org.robolectric.annotation.Config
 @RunWith(RobolectricTestRunner::class)
 class EquipmentVocabularyTest {
     private val shipped = ShippedLibraries()
-    private val keys = shipped.content.knownEquipment()
+    private val keys = shipped.content.equipmentVocabulary()
 
     @Test
     fun readsAVocabularyOfDistinctKeysThatAreTheirOwnMatch() {

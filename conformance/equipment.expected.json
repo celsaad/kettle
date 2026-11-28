@@ -56,6 +56,16 @@
       "value": "ダンベル",
       "matchKey": "ダンベル",
       "known": null
+    },
+    {
+      "value": "STRASSE",
+      "matchKey": "strasse",
+      "known": null
+    },
+    {
+      "value": "Straße",
+      "matchKey": "straße",
+      "known": null
     }
   ],
   "straight-blocks-in-order": ["dumbbell", "bench", "barbell"],

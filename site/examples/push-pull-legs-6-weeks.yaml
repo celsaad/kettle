@@ -1,8 +1,8 @@
 # Kettle example library — Push / Pull / Legs, 6 weeks
 #
 # Three sessions a week for six weeks: a push day, a pull day and a leg day, with
-# volume added in weeks 3–5 and a deload in week 6. Equipment: a barbell, plates,
-# dumbbells and a bar to hang from.
+# volume added in weeks 3–5 and a deload in week 6. Equipment: a barbell and
+# plates, a rack and a bench, dumbbells, a pull-up bar and dip bars.
 #
 # The weights below are placeholders in KILOGRAMS — Kettle always stores kg and
 # converts for display, so a file means the same thing whoever opens it. Replace

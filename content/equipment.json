@@ -31,7 +31,7 @@
   "stability_ball",
   "foam_roller",
   "yoga_block",
-  "strap",
+  "yoga_strap",
   "balance_board",
   "sliders",
   "chair",
@@ -58,5 +58,5 @@
   "agility_ladder",
   "hurdles",
   "racket",
-  "goal"
+  "net"
 ]

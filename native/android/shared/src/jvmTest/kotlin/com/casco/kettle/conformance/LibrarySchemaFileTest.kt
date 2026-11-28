@@ -29,6 +29,15 @@ import kotlin.math.abs
 /** A key no reader knows, which every level of the format drops. */
 private const val UNKNOWN_KEY = "zz_unknown"
 
+/** A one-letter escape after an even run of backslashes, so `\\n` (a backslash, then `n`) is left be. */
+private val ONE_LETTER_ESCAPE = Regex("""(?<!\\)((?:\\\\)*)\\([bfnrt])""")
+
+private val ONE_LETTER_CODES = mapOf('b' to 0x08, 'f' to 0x0C, 'n' to 0x0A, 'r' to 0x0D, 't' to 0x09)
+
+private const val HEX = 16
+
+private const val UNICODE_ESCAPE_DIGITS = 4
+
 /**
  * `content/library-schema.json` is the format's declarative statement, the one the assistant
  * brief carries whole, and it is edited by hand (#349). This holds it to `:shared`'s validator twice:
@@ -53,6 +62,14 @@ class LibrarySchemaFileTest {
             val golden = goldens.getValue(case.name) as Map<*, *>
             val document = (loadYaml(libraryText(case)) as? YamlLoad.Loaded)?.value
             when {
+                case.name in stricter -> {
+                    // Asserted too, so a file that learns to state the rule leaves the list.
+                    dynamicTest("${case.name} is a refinement the file states more strictly, so it refuses") {
+                        assertEquals(true, golden["ok"], "stricter names a case :shared accepts")
+                        assertTrue(fileRefuses(document).isNotEmpty(), "the file accepts it now: drop it from stricter")
+                    }
+                }
+
                 golden["ok"] == true -> {
                     dynamicTest("${case.name} validates") { assertEquals(emptyList<String>(), fileRefuses(document)) }
                 }
@@ -140,6 +157,16 @@ class LibrarySchemaFileTest {
         )
 
     /**
+     * The `ok` cases the file refuses, each a rule `:shared` states more loosely than JSON Schema can.
+     * An equipment item is trimmed before its length is counted, and `maxLength` counts the raw
+     * string: the file can only say so in the item's `description`, and refuses the padding.
+     */
+    private val stricter =
+        mapOf(
+            "equipment-padded-item-at-ceiling" to "an item's 60 code points are counted after trimming",
+        )
+
+    /**
      * The messages of `:shared`'s refinements (`ExerciseSchema.kt`, `ProgramSchema.kt`), as prefixes.
      * A refusal with one of these is set aside before comparing. A reworded message stops matching
      * and shows up as a disagreement, never as a silent pass.
@@ -183,10 +210,21 @@ class LibrarySchemaFileTest {
     /** The file's refused paths for [document], sorted; empty when it validates. */
     private fun fileRefuses(document: Any?): List<String> =
         validator
-            .validate(JsonParser(json(document).toString()).parse())
+            .validate(JsonParser(unicodeEscaped(json(document).toString())).parse())
             ?.let(::refusedPaths)
             ?.sorted()
             .orEmpty()
+
+    /**
+     * [text] with JSON's one-letter escapes (`\n`, `\t`, …) spelled as `\u` escapes. json-sKema
+     * 0.32's parser reads `\n` as a plain `n`, so a line break inside an equipment item reached the
+     * file's pattern as a letter and passed; its `\u` escapes it reads correctly.
+     */
+    private fun unicodeEscaped(text: String): String =
+        ONE_LETTER_ESCAPE.replace(text) { match ->
+            val code = ONE_LETTER_CODES.getValue(match.groupValues[2].single())
+            match.groupValues[1] + "\\u" + code.toString(HEX).padStart(UNICODE_ESCAPE_DIGITS, '0')
+        }
 
     /**
      * Every single edit [edits] makes: each key dropped, an unknown key added to each mapping, a list

@@ -67,6 +67,25 @@ class SiteExamplesTest {
         assertEquals(emptyList<String>(), failures)
     }
 
+    @Test
+    fun `tags nothing in an example its card calls no equipment`() {
+        // The card's chip is a claim about the file, and the file's tags are what the app will show.
+        val cards =
+            repoText("site/examples.html")
+                .split("<article ")
+                .mapNotNull { card ->
+                    Regex("""data-file="examples/([\w-]+\.yaml)"""").find(card)?.let { it.groupValues[1] to card }
+                }.filter { (_, card) -> """<span class="chip">No equipment</span>""" in card }
+        assertTrue(cards.isNotEmpty(), "found no card claiming no equipment")
+        val failures =
+            cards.flatMap { (name, _) ->
+                library(File(repoRoot, "site/examples/$name")).exercises.filter { it.equipment.isNotEmpty() }.map {
+                    "$name: ${it.id} ${it.equipment}"
+                }
+            }
+        assertEquals(emptyList<String>(), failures)
+    }
+
     /**
      * The page and the directory are kept by hand in different files: an example added without a card
      * is published but unreachable, and a card pointing at a renamed file is a 404 on both its buttons.

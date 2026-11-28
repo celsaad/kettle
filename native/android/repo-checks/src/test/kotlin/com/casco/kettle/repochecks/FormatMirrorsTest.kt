@@ -149,9 +149,37 @@ class FormatMirrorsTest {
                     markdownKeys("docs/authoring-exercises-yaml.md", "<!-- known-equipment -->"),
                 "docs/product-plan.md" to
                     markdownKeys("docs/product-plan.md", "The known items are `content/equipment.json`'s:"),
+                // The assistant brief carries the schema file whole, so its description is what steers an
+                // assistant's spelling toward known items.
+                "content/library-schema.json" to
+                    schemaEquipment()
+                        .getValue("description")
+                        .jsonPrimitive.content
+                        .substringAfter("Known items: ")
+                        .removeSuffix(".")
+                        .split(", "),
             )
         assertTrue(vocabulary.isNotEmpty())
         assertEquals(listed.mapValues { vocabulary }, listed)
+    }
+
+    /** The schema file's one statement of `equipment`, which every exercise type refers to. */
+    private fun schemaEquipment(): JsonObject {
+        val schema = Json.parseToJsonElement(repoText("content/library-schema.json")).jsonObject
+        val ref = "#/\$defs/equipment"
+        val refs =
+            schema
+                .path("properties", "exercises", "items")
+                .getValue("oneOf")
+                .jsonArray
+                .map {
+                    it.jsonObject
+                        .path("properties", "equipment")
+                        .getValue("\$ref")
+                        .jsonPrimitive.content
+                }
+        assertEquals(List(EXERCISE_TYPES) { ref }, refs)
+        return schema.path("\$defs", "equipment")
     }
 
     /** The backticked keys on the lines after [anchor]'s, up to the first that isn't one. */

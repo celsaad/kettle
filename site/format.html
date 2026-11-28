@@ -188,7 +188,9 @@
                       <td><code>equipment</code></td>
                       <td>list of strings</td>
                       <td>no</td>
-                      <td>What the exercise needs at hand: at most 20 items, each 1–60 characters. See below.</td>
+                      <td>
+                        What the exercise needs at hand: at most 20 items, each 1–60 characters on one line. See below.
+                      </td>
                     </tr>
                   </tbody>
                 </table>
@@ -208,18 +210,24 @@
                 app never writes an empty list back.
               </p>
               <p>
-                A list holds <strong>at most 20 items</strong>, and each item is trimmed of surrounding spaces and must then
-                be <strong>1 to 60 characters</strong>. A longer list, a longer item or a blank one is refused on import. A
-                single item still goes in a list: <code class="inl">equipment: bench</code> is refused.
+                A list holds <strong>at most 20 items</strong>. Each item is trimmed of surrounding whitespace, then must be
+                <strong>1 to 60 characters</strong>, counted as Unicode code points, on one line. A longer list, a longer
+                item, a blank one or a line break inside one is refused on import. A single item still goes in a list:
+                <code class="inl">equipment: bench</code> is refused.
               </p>
               <p>
-                Any words are accepted. An item that matches one of Kettle's <strong>known items</strong> below is shown in
-                each reader's own language; any other item is yours and is shown exactly as you wrote it, never translated.
-                An item matches a known one after trimming, lowercasing, and turning spaces and hyphens into
-                <code class="inl">_</code>, so <code class="inl">Dumbbell</code>, <code class="inl">pull-up bar</code> and
-                <code class="inl">pull_up_bar</code> are all known. There are no synonyms or plurals:
-                <code class="inl">dumbbells</code> and <code class="inl">DB</code> stay your own words. Two items in one
-                exercise that match the same way are kept once, as the first was written.
+                <strong>Prefer the known items below.</strong> One that matches a known item is shown in each reader's own
+                language; any other item is yours and is shown exactly as you wrote it, never translated. An item matches a
+                known one after trimming, lowercasing, and turning spaces and hyphens into <code class="inl">_</code>, so
+                <code class="inl">Dumbbell</code> is <code class="inl">dumbbell</code>, and
+                <code class="inl">pull-up bar</code> and <code class="inl">Pull_Up_Bar</code> are both
+                <code class="inl">pull_up_bar</code>. There are no synonyms or plurals:
+                <code class="inl">dumbbells</code> and <code class="inl">DB</code> stay your own words.
+              </p>
+              <p>
+                Two items in one exercise that match the same way are kept once, as the first was written. That happens after
+                the 20-item limit is counted, so a repeat still counts towards it. An item is one thing the exercise needs:
+                an alternative, such as "a dumbbell or a kettlebell", belongs in <code class="inl">notes</code>.
               </p>
               <p>The known items:</p>
               <p data-known-equipment>
@@ -234,7 +242,7 @@
                 <code class="inl">resistance_band</code> <code class="inl">mini_band</code> <code class="inl">ab_wheel</code>
                 <code class="inl">climbing_rope</code> <code class="inl">mat</code> <code class="inl">reformer</code>
                 <code class="inl">pilates_ring</code> <code class="inl">stability_ball</code>
-                <code class="inl">foam_roller</code> <code class="inl">yoga_block</code> <code class="inl">strap</code>
+                <code class="inl">foam_roller</code> <code class="inl">yoga_block</code> <code class="inl">yoga_strap</code>
                 <code class="inl">balance_board</code> <code class="inl">sliders</code> <code class="inl">chair</code>
                 <code class="inl">wall</code> <code class="inl">step</code> <code class="inl">box</code>
                 <code class="inl">towel</code> <code class="inl">table</code> <code class="inl">jump_rope</code>
@@ -243,7 +251,7 @@
                 <code class="inl">treadmill</code> <code class="inl">bike</code> <code class="inl">rower</code>
                 <code class="inl">ski_erg</code> <code class="inl">elliptical</code> <code class="inl">stair_climber</code>
                 <code class="inl">ball</code> <code class="inl">cones</code> <code class="inl">agility_ladder</code>
-                <code class="inl">hurdles</code> <code class="inl">racket</code> <code class="inl">goal</code>
+                <code class="inl">hurdles</code> <code class="inl">racket</code> <code class="inl">net</code>
               </p>
             </section>
 

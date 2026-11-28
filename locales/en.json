@@ -1158,7 +1158,7 @@
     "stability_ball": "Stability ball",
     "foam_roller": "Foam roller",
     "yoga_block": "Yoga block",
-    "strap": "Strap",
+    "yoga_strap": "Yoga strap",
     "balance_board": "Balance board",
     "sliders": "Sliders",
     "chair": "Chair",
@@ -1185,6 +1185,6 @@
     "agility_ladder": "Agility ladder",
     "hurdles": "Hurdles",
     "racket": "Racket",
-    "goal": "Goal"
+    "net": "Net"
   }
 }

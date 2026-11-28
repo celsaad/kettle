@@ -360,17 +360,21 @@ programs:
 the exercise alone. A workout's equipment is everything its exercises need, combined, and is never
 written separately; workouts, programs and program-week overrides have no `equipment` of their own.
 
-- **At most 20 items**, and each item is trimmed of surrounding whitespace and must then be **1 to 60
-  characters**. A longer list, a longer item or a blank one is refused on import, naming the field.
+- **At most 20 items.** Each item is trimmed of surrounding whitespace, then must be **1 to 60
+  characters**, counted as Unicode code points, on one line. A longer list, a longer item, a blank one
+  or a line break inside one is refused on import, naming the field.
 - A single item still goes in a list: `equipment: bench` is refused.
 - `equipment: []` means the same as leaving the key out, and the app never writes an empty list back.
-- **Any words are accepted.** An item that matches one of the known items below is shown in each
-  reader's own language. Any other item is yours, shown exactly as you wrote it and never translated,
-  as an exercise name is.
+- **Prefer the known items below.** One that matches a known item is shown in each reader's own
+  language. Any other item is accepted and is yours, shown exactly as you wrote it and never
+  translated, as an exercise name is.
 - **Matching** is trimming, lowercasing, and turning spaces and hyphens into `_`: `Dumbbell` is the
   known `dumbbell`, and `pull-up bar` and `Pull_Up_Bar` are both `pull_up_bar`. There are no synonyms
   or plurals, so `dumbbells` and `DB` stay your own words.
-- Two items in one exercise that match the same way are kept once, as the first was written.
+- Two items in one exercise that match the same way are kept once, as the first was written. That
+  happens after the 20-item limit is counted, so a repeat still counts towards it.
+- An item is one thing the exercise needs. An alternative, "a dumbbell or a kettlebell", goes in
+  `notes`.
 
 The known items:
 
@@ -379,10 +383,10 @@ The known items:
 `cable_machine` `leg_press` `lat_pulldown` `landmine` `dip_belt` `weight_vest` `sandbag`
 `ankle_weights` `pull_up_bar` `dip_bars` `rings` `parallettes` `suspension_trainer`
 `resistance_band` `mini_band` `ab_wheel` `climbing_rope` `mat` `reformer` `pilates_ring`
-`stability_ball` `foam_roller` `yoga_block` `strap` `balance_board` `sliders` `chair` `wall` `step`
+`stability_ball` `foam_roller` `yoga_block` `yoga_strap` `balance_board` `sliders` `chair` `wall` `step`
 `box` `towel` `table` `jump_rope` `medicine_ball` `slam_ball` `wall_ball` `battle_ropes` `sled`
 `tire` `treadmill` `bike` `rower` `ski_erg` `elliptical` `stair_climber` `ball` `cones`
-`agility_ladder` `hurdles` `racket` `goal`
+`agility_ladder` `hurdles` `racket` `net`
 
 ## Writing in another language
 

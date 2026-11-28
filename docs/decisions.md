@@ -1208,6 +1208,22 @@ decision assembled across several commits. Open work belongs in the sections at 
   runner (#418) and "act here" on buttons, and blue means rest; a gold or green for progress would
   make a fourth meaning to learn, and a ▼ in red would turn information into a failure.
 
+- **Known equipment keys are append-only, and an item is stored as the user wrote it (#393).** The
+  vocabulary in `content/equipment.json` is matched against users' files, which outlive any release:
+  a key renamed or removed silently turns every file that spelled it into the user's own words, shown
+  untranslated, and nothing fails when it happens. So a key, once shipped, is never renamed or
+  removed. Get the name right before it ships (`strap` became `yoga_strap` in review for exactly this
+  reason), and add a new key rather than repurposing an old one. Two constraints come with it:
+
+  - **The file keeps the user's spelling.** `Dumbbell` stays `Dumbbell`; it is read as the known
+    `dumbbell` by folding (trim, lowercase, spaces and hyphens as `_`) every time, never rewritten to
+    the key. The file is the user's, and rewriting their words on the first save would be a diff they
+    didn't make. It also keeps the parser free of the vocabulary, so adding a key changes what an
+    item shows as, not what a file parses to.
+  - **An item is one thing the exercise needs.** "A dumbbell or a kettlebell" is not an item, and
+    neither is a list of both: an alternative goes in `notes`. Equipment is what slice 2 combines
+    into a workout's "you'll need" line, and an alternative listed there reads as needing both.
+
 
 
 

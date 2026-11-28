@@ -25,11 +25,9 @@ here, next to what it describes.
 - **Paste or share a whole chat reply**: when an assistant's reply wraps the YAML in a code block,
   Import now reads the block and leaves the chat around it, so you don't have to copy just the code
   (#569).
-- **Exercises can say what they need**: an exercise in your library file can list its equipment,
-  `equipment: [barbell, bench]`, in any words you like. Kettle knows the common items, from
-  dumbbells to a reformer, and those read in your language; anything else stays as you wrote it. The
-  starter library, the packs and the site's examples now list theirs: re-import a pack to pick up the
-  tags. Editing an exercise in the app keeps its list (#393).
+- **An exercise can list its equipment in your library file**: `equipment: [barbell, bench]`. Nothing
+  in the app shows the list yet; for now it is kept in the file, and editing the exercise in the app
+  doesn't lose it. The format page has the details and the items Kettle knows by name (#393).
 - **Do a past workout again**: open a session in Progress › Sessions and tap Start again to begin a
   fresh one of the same workout, or the same program day, as it is in your library now. If the workout
   has been deleted since, the button says so instead (#281).

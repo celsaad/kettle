@@ -72,7 +72,7 @@ class EquipmentTest {
     inner class Matching {
         @Test
         fun `folds case, spaces, hyphens and the whitespace around it`() {
-            assertEquals("pull_up_bar", knownEquipment(" Pull-Up Bar\t", known))
+            assertEquals("pull_up_bar", knownEquipment("\u00A0Pull-Up Bar\t", known))
         }
 
         @Test
@@ -86,7 +86,7 @@ class EquipmentTest {
         @Test
         fun `trims what JavaScript trims, not what Kotlin does`() {
             // U+FEFF is whitespace to JS's trim and not to Kotlin's; U+001F the other way round.
-            assertEquals("bench", equipmentMatchKey("bench"))
+            assertEquals("bench", equipmentMatchKey("\uFEFFbench"))
             assertEquals("\u001Fbench", equipmentMatchKey("\u001Fbench"))
         }
     }

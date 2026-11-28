@@ -55,9 +55,10 @@ internal fun SchemaReader.exerciseConfig(
 
 /**
  * `equipment:`, at most [MAX_EQUIPMENT_ITEMS] items of 1 to [MAX_EQUIPMENT_LENGTH] characters each,
- * counted after trimming and in code points, as JSON Schema's `maxLength` counts. Any spelling is
- * accepted; two that match the same item are one, the first kept. Neither ceiling reports a
- * [SchemaReader.ceilings] maximum, since repair clamps numbers and has no way to shorten a list.
+ * counted after trimming and in code points, as JSON Schema's `maxLength` counts, and none with a
+ * line break inside it. Any spelling is accepted; two that match the same item are one, the first
+ * kept, and the ceiling on items counts what was written, before they collapse. Neither ceiling
+ * reports a [SchemaReader.ceilings] maximum, since repair clamps numbers and can't shorten a list.
  */
 private val equipmentList: Read<List<String>> = { value, path ->
     list(value, path, maxSize = MAX_EQUIPMENT_ITEMS) { item, at ->
@@ -71,6 +72,11 @@ private val equipmentList: Read<List<String>> = { value, path ->
                     refuse(at, "must be at most $MAX_EQUIPMENT_LENGTH characters", fatal = false)
                 }
 
+                // One item is one line: a break inside it is two items written as one, or a pasted note.
+                trimmed.any { it in LINE_BREAKS } -> {
+                    refuse(at, "must not contain a line break", fatal = false)
+                }
+
                 else -> {
                     trimmed
                 }
@@ -78,6 +84,9 @@ private val equipmentList: Read<List<String>> = { value, path ->
         }
     }?.let(::distinctEquipment)
 }
+
+/** ECMAScript's LineTerminator: what JSON Schema's pattern for an item refuses inside one. */
+private const val LINE_BREAKS = "\n\r\u2028\u2029"
 
 /** `int().positive().max(…)`, for the counts the runner builds a step per unit of. */
 internal fun countUpTo(max: Int): Read<Long> =

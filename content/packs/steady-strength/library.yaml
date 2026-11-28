@@ -15,7 +15,6 @@ exercises:
   - id: ss-sit-to-stand
     name: Sit to Stand
     type: reps
-    equipment: [chair]
     config:
       sets: 3
       target_reps_min: 6
@@ -27,7 +26,6 @@ exercises:
   - id: ss-wall-pushup
     name: Wall Push-ups
     type: reps
-    equipment: [wall]
     config:
       sets: 3
       target_reps_min: 8
@@ -39,7 +37,6 @@ exercises:
   - id: ss-heel-raises
     name: Heel Raises
     type: reps
-    equipment: [chair]
     config:
       sets: 3
       target_reps_min: 10
@@ -51,7 +48,6 @@ exercises:
   - id: ss-seated-march
     name: Seated March
     type: reps
-    equipment: [chair]
     config:
       sets: 3
       target_reps_min: 10
@@ -84,7 +80,6 @@ exercises:
   - id: ss-hip-hinge
     name: Hip Hinge
     type: reps
-    equipment: [chair]
     config:
       sets: 3
       target_reps_min: 8

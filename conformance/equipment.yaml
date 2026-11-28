@@ -9,9 +9,9 @@ cases:
     op: match
     values: [Dumbbell, pull-up bar, PULL_UP-BAR, " kettlebell\t", Jump Rope]
   - name: own-words-stay-own
-    why: no plurals, no synonyms, no abbreviations, no other language; a doubled space is two underscores
+    why: no plurals, no synonyms, no abbreviations, no other language; a doubled space is two underscores; lowercasing isn't case folding, so ß stays ß
     op: match
-    values: [dumbbells, DB, Squat Rack, Foam Thing, pull up  bar, ダンベル]
+    values: [dumbbells, DB, Squat Rack, Foam Thing, pull up  bar, ダンベル, STRASSE, Straße]
   - name: straight-blocks-in-order
     op: workout
     workout: w

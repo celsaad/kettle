@@ -47,7 +47,7 @@ private val EQUIPMENT_NAMES: Map<String, Int> =
         "stability_ball" to R.string.equipment_stability_ball,
         "foam_roller" to R.string.equipment_foam_roller,
         "yoga_block" to R.string.equipment_yoga_block,
-        "strap" to R.string.equipment_strap,
+        "yoga_strap" to R.string.equipment_yoga_strap,
         "balance_board" to R.string.equipment_balance_board,
         "sliders" to R.string.equipment_sliders,
         "chair" to R.string.equipment_chair,
@@ -74,5 +74,5 @@ private val EQUIPMENT_NAMES: Map<String, Int> =
         "agility_ladder" to R.string.equipment_agility_ladder,
         "hurdles" to R.string.equipment_hurdles,
         "racket" to R.string.equipment_racket,
-        "goal" to R.string.equipment_goal,
+        "net" to R.string.equipment_net,
     )

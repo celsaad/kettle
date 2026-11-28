@@ -2403,8 +2403,7 @@
           "targetRepsMax": 12,
           "restSec": 60
         },
-        "notes": "De pé a partir de uma cadeira e sentar de novo. Faça 12 em todas as séries duas vezes antes de o programa acrescentar uma quarta.",
-        "equipment": ["chair"]
+        "notes": "De pé a partir de uma cadeira e sentar de novo. Faça 12 em todas as séries duas vezes antes de o programa acrescentar uma quarta."
       },
       {
         "id": "ss-wall-pushup",
@@ -2416,8 +2415,7 @@
           "targetRepsMax": 15,
           "restSec": 45
         },
-        "notes": "Afaste mais os pés da parede para dificultar quando dominar 15 em todas as séries.",
-        "equipment": ["wall"]
+        "notes": "Afaste mais os pés da parede para dificultar quando dominar 15 em todas as séries."
       },
       {
         "id": "ss-heel-raises",
@@ -2429,8 +2427,7 @@
           "targetRepsMax": 20,
           "restSec": 45
         },
-        "notes": "O apoio é o encosto de uma cadeira ou uma bancada. Tire uma das mãos do apoio antes de aumentar as repetições.",
-        "equipment": ["chair"]
+        "notes": "O apoio é o encosto de uma cadeira ou uma bancada. Tire uma das mãos do apoio antes de aumentar as repetições."
       },
       {
         "id": "ss-seated-march",
@@ -2442,8 +2439,7 @@
           "targetRepsMax": 20,
           "restSec": 45
         },
-        "notes": "Uma esquerda e uma direita são duas repetições, então o número que você registra conta as duas pernas.",
-        "equipment": ["chair"]
+        "notes": "Uma esquerda e uma direita são duas repetições, então o número que você registra conta as duas pernas."
       },
       {
         "id": "ss-standing-balance",
@@ -2480,8 +2476,7 @@
           "targetRepsMax": 12,
           "restSec": 60
         },
-        "notes": "Mãos no encosto de uma cadeira. Desça as mãos pelo encosto conforme a amplitude aumenta.",
-        "equipment": ["chair"]
+        "notes": "Mãos no encosto de uma cadeira. Desça as mãos pelo encosto conforme a amplitude aumenta."
       },
       {
         "id": "ss-walk",
@@ -2832,8 +2827,7 @@
           "targetRepsMax": 12,
           "restSec": 60
         },
-        "notes": "椅子から立ち、また座ります。全セットで12回に届く日が2回続いてから、プログラムが4セット目を足します。",
-        "equipment": ["chair"]
+        "notes": "椅子から立ち、また座ります。全セットで12回に届く日が2回続いてから、プログラムが4セット目を足します。"
       },
       {
         "id": "ss-wall-pushup",
@@ -2845,8 +2839,7 @@
           "targetRepsMax": 15,
           "restSec": 45
         },
-        "notes": "全セットで15回を安定して出せるようになったら、足を壁から遠ざけて負荷を上げます。",
-        "equipment": ["wall"]
+        "notes": "全セットで15回を安定して出せるようになったら、足を壁から遠ざけて負荷を上げます。"
       },
       {
         "id": "ss-heel-raises",
@@ -2858,8 +2851,7 @@
           "targetRepsMax": 20,
           "restSec": 45
         },
-        "notes": "椅子の背やカウンターが支えです。回数を増やす前に、支えから片手を離します。",
-        "equipment": ["chair"]
+        "notes": "椅子の背やカウンターが支えです。回数を増やす前に、支えから片手を離します。"
       },
       {
         "id": "ss-seated-march",
@@ -2871,8 +2863,7 @@
           "targetRepsMax": 20,
           "restSec": 45
         },
-        "notes": "左右で1回ずつが2レップなので、記録する数は両脚の合計です。",
-        "equipment": ["chair"]
+        "notes": "左右で1回ずつが2レップなので、記録する数は両脚の合計です。"
       },
       {
         "id": "ss-standing-balance",
@@ -2909,8 +2900,7 @@
           "targetRepsMax": 12,
           "restSec": 60
         },
-        "notes": "椅子の背に手を置きます。可動域が広がるにつれて、手を背の下のほうへ移していきます。",
-        "equipment": ["chair"]
+        "notes": "椅子の背に手を置きます。可動域が広がるにつれて、手を背の下のほうへ移していきます。"
       },
       {
         "id": "ss-walk",

@@ -717,8 +717,7 @@
             "holdSecMin": 30,
             "holdSecMax": 60,
             "restSec": 60
-          },
-          "equipment": ["wall"]
+          }
         },
         {
           "id": "bw-mountain-climbers",
@@ -1102,7 +1101,7 @@
             "totalMinutes": 12,
             "targetReps": 15
           },
-          "notes": "15 swings at the top of each minute; the rest of the minute is the rest.",
+          "notes": "15 swings at the top of each minute; the rest of the minute is the rest. A single dumbbell works if you have no kettlebell.",
           "equipment": ["kettlebell"]
         },
         {
@@ -2989,8 +2988,7 @@
             "targetRepsMax": 12,
             "restSec": 60
           },
-          "notes": "Up from a chair and back down. Hit 12 on every set twice before the program adds a fourth.",
-          "equipment": ["chair"]
+          "notes": "Up from a chair and back down. Hit 12 on every set twice before the program adds a fourth."
         },
         {
           "id": "ss-wall-pushup",
@@ -3002,8 +3000,7 @@
             "targetRepsMax": 15,
             "restSec": 45
           },
-          "notes": "Step your feet further from the wall to make it harder once you own 15 on every set.",
-          "equipment": ["wall"]
+          "notes": "Step your feet further from the wall to make it harder once you own 15 on every set."
         },
         {
           "id": "ss-heel-raises",
@@ -3015,8 +3012,7 @@
             "targetRepsMax": 20,
             "restSec": 45
           },
-          "notes": "A chair back or a counter is the support. Take a hand off it before you add reps.",
-          "equipment": ["chair"]
+          "notes": "A chair back or a counter is the support. Take a hand off it before you add reps."
         },
         {
           "id": "ss-seated-march",
@@ -3028,8 +3024,7 @@
             "targetRepsMax": 20,
             "restSec": 45
           },
-          "notes": "One left and one right is two reps, so the number you log counts both legs.",
-          "equipment": ["chair"]
+          "notes": "One left and one right is two reps, so the number you log counts both legs."
         },
         {
           "id": "ss-standing-balance",
@@ -3066,8 +3061,7 @@
             "targetRepsMax": 12,
             "restSec": 60
           },
-          "notes": "Hands on a chair back. Move them down the chair as the range grows.",
-          "equipment": ["chair"]
+          "notes": "Hands on a chair back. Move them down the chair as the range grows."
         },
         {
           "id": "ss-walk",
@@ -5140,6 +5134,35 @@
     "ok": false,
     "kind": "schemaMismatch",
     "paths": ["exercises.0.equipment.1"]
+  },
+  "equipment-item-ideographic-blank": {
+    "ok": false,
+    "kind": "schemaMismatch",
+    "paths": ["exercises.0.equipment.1"]
+  },
+  "equipment-item-with-line-break": {
+    "ok": false,
+    "kind": "schemaMismatch",
+    "paths": ["exercises.0.equipment.1"]
+  },
+  "equipment-padded-item-at-ceiling": {
+    "ok": true,
+    "value": {
+      "version": 1,
+      "exercises": [
+        {
+          "id": "a",
+          "name": "A",
+          "type": "rest",
+          "config": {
+            "durationSec": 1
+          },
+          "equipment": ["yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy"]
+        }
+      ],
+      "workouts": [],
+      "programs": []
+    }
   },
   "equipment-bare-string-refused": {
     "ok": false,

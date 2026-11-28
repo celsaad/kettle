@@ -51,7 +51,7 @@ class ShippedContent(
      * An item that matches one of these (`knownEquipment`) reads in the reader's language; any other
      * is the user's own words.
      */
-    fun knownEquipment(): List<String> {
+    fun equipmentVocabulary(): List<String> {
         val list = JSONArray(read("equipment.json"))
         return (0 until list.length()).map(list::getString)
     }

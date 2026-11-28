@@ -627,6 +627,33 @@ cases:
       workouts: []
       programs: []
 
+  - name: equipment-item-ideographic-blank
+    why: blank is blank in any script's whitespace; U+3000 is trimmed like a space
+    input: |
+      version: 1
+      exercises:
+        - { id: a, name: A, type: rest, equipment: [bench, "\u3000\u3000"], config: { duration_sec: 1 } }
+      workouts: []
+      programs: []
+
+  - name: equipment-item-with-line-break
+    why: one item is one line; a break at either end is trimmed, one inside is refused
+    input: |
+      version: 1
+      exercises:
+        - { id: a, name: A, type: rest, equipment: ["bench\n", "pull-up\nbar"], config: { duration_sec: 1 } }
+      workouts: []
+      programs: []
+
+  - name: equipment-padded-item-at-ceiling
+    why: the 60 characters are counted after trimming, so padding doesn't count against them
+    input: |
+      version: 1
+      exercises:
+        - { id: a, name: A, type: rest, equipment: ['  yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy  '], config: { duration_sec: 1 } }
+      workouts: []
+      programs: []
+
   - name: equipment-bare-string-refused
     why: a single item still goes in a list
     input: |

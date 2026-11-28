@@ -95,7 +95,7 @@ class ShippedLibrariesTest {
     fun tagsEquipmentWithKnownKeysOnly() {
         // Shipped content reads in every language only through known items: an item spelled any other
         // way, `Dumbbell` included, is shown as written, English in a Japanese library.
-        val known = shipped.content.knownEquipment().toSet()
+        val known = shipped.content.equipmentVocabulary().toSet()
         val failures =
             everyReading().flatMap { (name, language, library) ->
                 library.exercises.flatMap { exercise ->

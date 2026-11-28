@@ -74,4 +74,35 @@ class SharedOpenerTest {
 
         assertEquals(first, inbox.take(shownToken()))
     }
+
+    /** A session started from Program detail ends on it: the share opens over it, and back returns there. */
+    @Test
+    fun `a held share opens over the sheet the session started from`() {
+        val program = Route(Destination.ProgramDetail, mapOf("id" to "p"))
+        navigator.navigate(program)
+        navigator.openRunner(null)
+        opener.open(first)
+        navigator.closeRunner()
+        opener.openHeld()
+
+        assertEquals(first, inbox.take(shownToken()))
+        navigator.back()
+        assertEquals(program, navigator.sheet)
+    }
+
+    /** A newer share replaces the held one's library: the held token would open an empty Import. */
+    @Test
+    fun `a share that opens straight away lets go of one held before it`() {
+        navigator.openRunner(null)
+        opener.open(first)
+        navigator.closeRunner()
+        navigator.push(Route(Destination.SessionEditor, mapOf("id" to "s1")))
+        opener.open(second)
+        assertEquals(second, inbox.take(shownToken()))
+
+        navigator.back()
+        opener.openHeld()
+
+        assertNull(navigator.sheet)
+    }
 }

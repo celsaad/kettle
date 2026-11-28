@@ -154,7 +154,6 @@ class MainActivity : ComponentActivity() {
         onBackPressedDispatcher.addCallback(this, sheet.backCallback)
         listenForWrites(latestFiles)
         hearNavigateReceiver(navigator)
-        sharedOpener.watch(lifecycleScope)
         setContentView(layout)
         // The stack this activity's predecessor saved, when it was made again (a font or display size
         // change, the process brought back).
@@ -164,6 +163,9 @@ class MainActivity : ComponentActivity() {
         // swipe leaves the session running, and the relaunch comes back to it with no prompt. Before the
         // link, which a running session then drops. A restored stack's link was opened the first time.
         attachRunner(navigator)
+        // After the stack and the runner are back: a share held through a recreation would otherwise open
+        // on the empty navigator this activity starts with, then be covered by both.
+        sharedOpener.watch(lifecycleScope)
         if (saved == null) openIncoming(intent, navigator, sharedOpener)
     }
 

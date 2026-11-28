@@ -105,13 +105,26 @@ class SharedLibraryInbox {
     private var waiting: Pair<String, SharedLibrary>? = null
 
     /**
-     * The token of a share waiting for the screen to be free ([SharedOpener]): here rather than in the
-     * activity, so an activity made again mid-session still opens it.
+     * A share waiting behind a session ([SharedOpener]): its token, and the sheet the session opened over.
+     * Here rather than in the activity, so an activity made again mid-session still opens it.
      */
-    var held: String? = null
+    var held: Held? = null
 
-    /** Holds [shared], replacing any earlier, and returns the token its route carries. */
-    fun put(shared: SharedLibrary): String = UUID.randomUUID().toString().also { waiting = it to shared }
+    /** A held share's [token], and the sheet that was under the runner when it arrived, if any. */
+    data class Held(
+        val token: String,
+        val beneath: Route?,
+    )
+
+    /**
+     * Holds [shared], replacing any earlier, and returns the token its route carries. A share held before
+     * it is let go with the library it named: its token would open an empty Import.
+     */
+    fun put(shared: SharedLibrary): String =
+        UUID.randomUUID().toString().also {
+            waiting = it to shared
+            held = null
+        }
 
     /** The library under [token], once; null for any other token. */
     fun take(token: String?): SharedLibrary? {
@@ -127,10 +140,11 @@ class SharedLibraryInbox {
 }
 
 /**
- * Opens what another app shared in Import (#514), or holds it while something covers the screen and
- * opens it once nothing does: a running session, whose slot drops every other move, or a sheet the user
- * opened, such as the session editor straight after Done, which the share's sheet would replace. A share
- * is the user's data; dropping it as a `kettle://` link is dropped would lose it without a word.
+ * Opens what another app shared in Import (#514), or holds it behind a running session, whose slot drops
+ * every other move, and opens it once the session ends: a share is the user's data, and dropping it as a
+ * `kettle://` link is dropped would lose it without a word. Over the sheet the session was started from,
+ * so back returns to it; but not while a sheet opened since covers it, such as the session editor
+ * straight after Done, which the share would otherwise bury.
  */
 class SharedOpener(
     private val navigator: Navigator,
@@ -138,20 +152,24 @@ class SharedOpener(
 ) {
     fun open(shared: SharedLibrary) {
         val token = inbox.put(shared)
-        if (navigator.runnerShown) inbox.held = token else navigator.navigate(route(token))
+        if (navigator.runnerShown) {
+            inbox.held = SharedLibraryInbox.Held(token, navigator.sheet)
+        } else {
+            navigator.navigate(route(token))
+        }
     }
 
-    /** Opens a held share as soon as nothing covers the screen, for as long as [scope] lives. */
+    /** Opens a held share as soon as the screen is back where the session left it, while [scope] lives. */
     fun watch(scope: CoroutineScope) {
-        scope.launch { snapshotFlow { navigator.runnerShown || navigator.sheet != null }.collect { openHeld() } }
+        scope.launch { snapshotFlow { navigator.runnerShown to navigator.sheet }.collect { openHeld() } }
     }
 
-    /** A share held until now opens, if nothing covers the screen. */
+    /** A share held until now opens, if the runner has closed and no sheet since covers where it started. */
     fun openHeld() {
-        if (navigator.runnerShown || navigator.sheet != null) return
-        val token = inbox.held ?: return
+        val held = inbox.held ?: return
+        if (navigator.runnerShown || navigator.sheet != held.beneath) return
         inbox.held = null
-        navigator.navigate(route(token))
+        navigator.push(route(held.token))
     }
 
     private fun route(token: String) = Route(Destination.Import, mapOf(IMPORT_SHARED_PARAM to token))

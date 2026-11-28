@@ -51,7 +51,57 @@ data class HistorySessionView(
     val inRounds: Boolean,
     val editable: Boolean,
     val entries: List<HistoryEntryView>,
+    /** What Start again starts (#281), or null for a session with no workout to start. */
+    val again: StartAgain? = null,
 )
+
+/**
+ * What a logged session's Start again does (#281): a fresh session of what it ran, at its current
+ * version, the old file untouched; or nothing, said why, once what it ran has gone from the library.
+ */
+sealed interface StartAgain {
+    data class Start(
+        val params: SessionParams,
+    ) : StartAgain
+
+    data object Gone : StartAgain
+}
+
+/**
+ * [session]'s Start again: its program slot when it's the newest session run under a program
+ * ([newestTracked]) and that slot still runs the same workout, else its workout while the library has
+ * it, else [StartAgain.Gone]. Null for an ad-hoc session, which ran no workout and so has none to start.
+ *
+ * Only the newest: the program's place is read from its newest session, so an older slot started again
+ * would set the program back to it, or switch to another program altogether, from one tap on an old
+ * row. Repeating the newest moves nothing. Every other row starts its workout alone, which leaves the
+ * program where it is. A slot that now runs something else, or nothing that resolves, would start a
+ * different workout from the row's, or an empty runner.
+ */
+fun startAgain(
+    session: Session,
+    library: Library,
+    newestTracked: Session?,
+): StartAgain? {
+    val workout = session.workout ?: return null
+    val week = session.programWeek
+    val program = library.programs.firstOrNull { it.id == session.program }?.takeIf { newestTracked?.id == session.id }
+    val runsSame = { p: Program, w: Long ->
+        resolveWorkoutForWeek(p, w, library, session.programDay)?.workout?.id ==
+            workout
+    }
+    val slot =
+        if (program != null && week != null && runsSame(program, week)) {
+            SessionParams.ProgramSlot(program.id, week, session.programDay)
+        } else {
+            null
+        }
+    return if (library.workouts.none { it.id == workout }) {
+        StartAgain.Gone
+    } else {
+        StartAgain.Start(slot ?: SessionParams.Workout(workout))
+    }
+}
 
 /**
  * Every row of History, in [sessions]' order. Rests are left out of a row's entries. [HistorySessionView.inRounds]
@@ -61,8 +111,10 @@ fun historySessionsView(
     sessions: List<Session>,
     library: Library,
     zone: TimeZone,
-): List<HistorySessionView> =
-    sessions.map { session ->
+): List<HistorySessionView> {
+    // Newest first, as the log is read everywhere: the session a program's place is read from.
+    val newestTracked = sessions.firstOrNull { it.program != null && it.programWeek != null }
+    return sessions.map { session ->
         val worked = session.entries.withIndex().filter { (_, entry) -> entry !is SessionEntry.Rest }
         HistorySessionView(
             id = session.id,
@@ -80,8 +132,10 @@ fun historySessionsView(
                         index,
                     )
                 },
+            again = startAgain(session, library, newestTracked),
         )
     }
+}
 
 /** One week of Sessions (#414): the day it [start]s on, null for rows with no day, and its rows. */
 data class HistoryWeek(

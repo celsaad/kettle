@@ -104,6 +104,8 @@
     "sets": "séries",
     "searchPlaceholder": "Filtrar por treino ou exercício",
     "edit": "Editar",
+    "startAgain": "Começar de novo",
+    "startAgainGone": "O treino não está mais na sua biblioteca.",
     "showExercises": "Mostrar exercícios",
     "hideExercises": "Ocultar exercícios",
     "deleteConfirmTitle": "Excluir sessão?",

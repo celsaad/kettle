@@ -182,4 +182,67 @@ class HistoryViewsTest {
             historyWeeks(rows, DayOfWeek.MONDAY).map { it.start },
         )
     }
+
+    // Start again (#281): what ran, at its current version, and said so when it's gone.
+
+    private val program =
+        Program("base", "Base", listOf(ProgramWeek.Training(2, "Mon", workoutId = "push-day")))
+    private val withProgram = library.copy(programs = listOf(program))
+
+    private fun slot(
+        week: Long,
+        day: String?,
+        id: String = "s",
+    ) = Session(1, id, "push-day", "base", week, day, "2026-07-24T09:00:00.000Z", null, emptyList())
+
+    @Test
+    fun `starts a plain session's workout again`() {
+        assertEquals(StartAgain.Start(SessionParams.Workout("push-day")), startAgain(session(), library, null))
+    }
+
+    @Test
+    fun `starts the newest program session's slot again`() {
+        val newest = slot(2, "Mon")
+        assertEquals(
+            StartAgain.Start(SessionParams.ProgramSlot("base", 2, "Mon")),
+            startAgain(newest, withProgram, newest),
+        )
+    }
+
+    // The program's place is read from its newest session: an older slot would set it back, or switch
+    // programs, from one tap on an old row. Its workout alone leaves the program where it is.
+    @Test
+    fun `starts an older program session's workout alone`() {
+        assertEquals(
+            StartAgain.Start(SessionParams.Workout("push-day")),
+            startAgain(slot(2, "Mon", id = "old"), withProgram, slot(2, "Mon", id = "new")),
+        )
+    }
+
+    @Test
+    fun `falls back to the workout when the slot is gone, or runs something else`() {
+        val gone = slot(3, "Mon")
+        assertEquals(StartAgain.Start(SessionParams.Workout("push-day")), startAgain(gone, withProgram, gone))
+        val pull = Workout("pull-day", "Pull day", emptyList())
+        val repointed =
+            library.copy(
+                workouts = library.workouts + pull,
+                programs =
+                    listOf(
+                        Program("base", "Base", listOf(ProgramWeek.Training(2, "Mon", workoutId = "pull-day"))),
+                    ),
+            )
+        val newest = slot(2, "Mon")
+        assertEquals(StartAgain.Start(SessionParams.Workout("push-day")), startAgain(newest, repointed, newest))
+    }
+
+    // A slot whose workout was deleted resolved to nothing, and opened an empty runner.
+    @Test
+    fun `says a workout deleted since is gone, a program's included, and offers nothing for an ad-hoc one`() {
+        assertEquals(StartAgain.Gone, startAgain(session(workout = "deleted"), library, null))
+        val newest = slot(2, "Mon")
+        assertEquals(StartAgain.Gone, startAgain(newest, withProgram.copy(workouts = emptyList()), newest))
+        assertNull(startAgain(session(workout = null), library, null))
+        assertEquals(StartAgain.Gone, view(session(workout = "deleted")).again)
+    }
 }

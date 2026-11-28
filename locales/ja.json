@@ -94,6 +94,8 @@
     "sets": "セット",
     "searchPlaceholder": "ワークアウトまたはエクササイズで絞り込む",
     "edit": "編集",
+    "startAgain": "もう一度始める",
+    "startAgainGone": "このワークアウトはもうライブラリにありません。",
     "showExercises": "エクササイズを表示",
     "hideExercises": "エクササイズを隠す",
     "deleteConfirmTitle": "セッションを削除しますか？",

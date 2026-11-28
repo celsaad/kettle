@@ -99,6 +99,8 @@
     "sets": "sets",
     "searchPlaceholder": "Filter by workout or exercise",
     "edit": "Edit",
+    "startAgain": "Start again",
+    "startAgainGone": "Its workout is no longer in your library.",
     "showExercises": "Show exercises",
     "hideExercises": "Hide exercises",
     "deleteConfirmTitle": "Delete session?",

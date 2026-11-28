@@ -8,6 +8,7 @@ import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasScrollToIndexAction
 import androidx.compose.ui.test.hasSetTextAction
@@ -29,6 +30,7 @@ import com.casco.kettle.domain.RepsSetLog
 import com.casco.kettle.domain.Session
 import com.casco.kettle.domain.SessionEntry
 import com.casco.kettle.domain.SessionLog
+import com.casco.kettle.domain.SessionParams
 import com.casco.kettle.domain.Workout
 import com.casco.kettle.shell.files.FakeStoredFiles
 import com.casco.kettle.shell.files.LatestFiles
@@ -70,6 +72,7 @@ class HistoryScreenTest {
 
     private val opened = mutableListOf<Route>()
     private val exported = mutableListOf<String>()
+    private val started = mutableListOf<SessionParams>()
     private val reselects = MutableSharedFlow<Tab>(extraBufferCapacity = 1)
 
     private fun show(
@@ -87,6 +90,7 @@ class HistoryScreenTest {
                     HistoryActions(
                         open = { opened += it },
                         export = { exported += it },
+                        start = { started += it },
                     ),
                     runningId,
                 )
@@ -363,6 +367,44 @@ class HistoryScreenTest {
 
         assertEquals(listOf("legs-1"), exported)
         action("Exportar tudo").assertDoesNotExist()
+    }
+
+    /** Start again (#281): a fresh session of the workout the row ran, the row itself untouched. */
+    @Test
+    fun `starts the open session's workout again`() {
+        show()
+
+        row("Leg day").performClick()
+        action("Começar de novo").assertHeightIsAtLeast(48.dp).performClick()
+
+        assertEquals(listOf<SessionParams>(SessionParams.Workout("leg-day")), started)
+    }
+
+    @Test
+    fun `greys Start again out and says why once the workout is gone`() {
+        show(Files(session("gone-1", "deleted-day", "2026-07-28T09:00:00.000Z", "dips")))
+
+        row("deleted-day").performClick()
+        action("Começar de novo")
+            .assertIsNotEnabled()
+            .assert(
+                SemanticsMatcher.expectValue(
+                    SemanticsProperties.StateDescription,
+                    "O treino não está mais na sua biblioteca.",
+                ),
+            ).performClick()
+
+        // Said once, as the button's state: the line drawn above it is kept out of the tree.
+        assertEquals(emptyList<SessionParams>(), started)
+    }
+
+    // The runner's slot takes no second session while one runs, as Delete and Edit stand aside then.
+    @Test
+    fun `offers no Start again while a session runs`() {
+        show(Files(push.copy(endedAt = null), legs), runningId = push.id)
+
+        row("Leg day").performClick()
+        action("Começar de novo").assertDoesNotExist()
     }
 
     /** #414: weeks, each titled and totalled over what it lists, where one all-time line used to be. */

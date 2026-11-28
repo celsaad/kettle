@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -20,14 +21,20 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.collapse
+import androidx.compose.ui.semantics.disabled
 import androidx.compose.ui.semantics.expand
+import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.casco.kettle.domain.HistorySessionView
+import com.casco.kettle.domain.SessionParams
+import com.casco.kettle.domain.StartAgain
 import com.casco.kettle.domain.UnitSystem
 import com.casco.kettle.shell.R
 import com.casco.kettle.shell.i18n.formatMonthDay
@@ -247,9 +254,20 @@ private fun Detail(
         failure?.let {
             Text(stringResource(R.string.common_deleteFailed, it), style = KettleType.small, color = colors.accentText)
         }
+        // Read as the button's own state (below), so not again here, out of its context.
+        if (actions.again == StartAgain.Gone) {
+            Text(
+                stringResource(R.string.history_startAgainGone),
+                Modifier.clearAndSetSemantics {},
+                style = KettleType.small,
+                color = colors.textSecondary,
+            )
+        }
         // Anchored right, the destructive one first and muted: Export keeps the outermost spot, and
-        // Delete never reads as the intended action.
+        // Delete never reads as the intended action. Start again leads, on the left, being a new
+        // session rather than anything done to this one (#281).
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+            actions.again?.let { StartAgainAction(it, actions.start) }
             Spacer(Modifier.weight(1f))
             // Hidden on the row the runner's service is writing (#295): the next set logged would write it back.
             actions.delete?.let {
@@ -265,7 +283,43 @@ private fun Detail(
     }
 }
 
+/** Start again, or the same words greyed out once its workout is gone, the line above saying why. */
+@Composable
+private fun StartAgainAction(
+    again: StartAgain,
+    start: (SessionParams) -> Unit,
+) {
+    val colors = KettleTheme.colors
+    val words = stringResource(R.string.history_startAgain)
+    when (again) {
+        is StartAgain.Start -> {
+            TextAction(words, KettleType.small, colors.accentText, { start(again.params) })
+        }
+
+        // Still a button, saying it can't act and why, as Delete exercise does when it's in use; dimmed,
+        // since Delete and Edit beside it are drawn in the same secondary ink and can act.
+        StartAgain.Gone -> {
+            val reason = stringResource(R.string.history_startAgainGone)
+            Text(
+                words,
+                Modifier
+                    .heightIn(min = 48.dp)
+                    .semantics {
+                        role = Role.Button
+                        disabled()
+                        stateDescription = reason
+                    }.padding(horizontal = Spacing.two)
+                    .wrapContentHeight(Alignment.CenterVertically),
+                style = KettleType.small,
+                color = colors.textSecondary.copy(alpha = DISABLED_ALPHA),
+            )
+        }
+    }
+}
+
 private const val HALF_TURN = 180f
+
+private const val DISABLED_ALPHA = 0.5f
 
 private val DAY_COLUMN_MIN = 38.dp
 

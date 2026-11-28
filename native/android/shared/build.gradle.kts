@@ -84,9 +84,10 @@ tasks.named<Test>("jvmTest") {
 
 // The same corpus on the simulator, which sees the Mac's file system, so it is read in place there
 // too. `simctl spawn` passes the test binary each `SIMCTL_CHILD_` variable with the prefix dropped,
-// left untracked so the checkout's absolute path stays out of any key. The Kotlin plugin never caches
-// or skips this task, so it reruns on every build whatever its inputs say. It only ever checks the
-// goldens: `-PupdateConformance` is the JVM's.
+// left untracked so the checkout's absolute path stays out of the key; the directories are tracked as
+// inputs instead, and they are what reruns the task when a golden or shipped file changes, rather
+// than leave it up to date and green. It only ever checks the goldens: `-PupdateConformance` is the
+// JVM's.
 tasks.named<KotlinNativeSimulatorTest>("iosSimulatorArm64Test") {
     environment(
         "SIMCTL_CHILD_KETTLE_CONFORMANCE_DIR",

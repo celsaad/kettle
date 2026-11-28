@@ -587,6 +587,41 @@ class SheetTransitionTest {
         assertEquals(sheetRest, at("Screen Support").y)
     }
 
+    /**
+     * A drag in two strokes: let go, and grab the sheet again while it settles back. The second grab is no
+     * Open's, so the travel counts from rest and the sheet closes, however far it had come back.
+     */
+    @Test
+    fun `a drag in two strokes during a settle-back closes the sheet`() {
+        show()
+        go { push(support) }
+        // The clock is held, so the settle-back is only as far along as the test lets it be.
+        compose.mainClock.autoAdvance = false
+
+        val grabber = compose.onNodeWithContentDescription("Drag handle")
+        grabber.performTouchInput {
+            down(center)
+            repeat(DRAG_STEPS) { moveBy(Offset(0f, FIRST_STROKE_PX / DRAG_STEPS), delayMillis = DRAG_STEP_MS) }
+            repeat(DRAG_STEPS) { moveBy(Offset.Zero, delayMillis = HOLD_STEP_MS) }
+        }
+        compose.mainClock.advanceTimeByFrame()
+        grabber.performTouchInput { up() }
+        compose.mainClock.advanceTimeBy(SETTLE_PART_MS)
+        val back = at("Screen Support").y
+        assertTrue("settled to rest, at $back", back > sheetRest)
+        assertTrue("still ${back - sheetRest} down", back - sheetRest < FIRST_STROKE_PX)
+
+        grabber.performTouchInput {
+            down(center)
+            repeat(DRAG_STEPS) { moveBy(Offset(0f, SECOND_STROKE_PX / DRAG_STEPS), delayMillis = DRAG_STEP_MS) }
+            repeat(DRAG_STEPS) { moveBy(Offset.Zero, delayMillis = HOLD_STEP_MS) }
+            up()
+        }
+        finish()
+
+        assertTrue("sheets ${navigator.sheets}", navigator.sheets.isEmpty())
+    }
+
     // Predictive back.
 
     private fun backStarted() =
@@ -687,5 +722,10 @@ class SheetTransitionTest {
         const val DRAG_STEPS = 2
         const val DRAG_STEP_MS = 8L
         const val HOLD_STEP_MS = 60L
+
+        /** Two strokes, each short of a quarter of the frame, which together pass it. */
+        const val FIRST_STROKE_PX = 100f
+        const val SECOND_STROKE_PX = 100f
+        const val SETTLE_PART_MS = 16L
     }
 }

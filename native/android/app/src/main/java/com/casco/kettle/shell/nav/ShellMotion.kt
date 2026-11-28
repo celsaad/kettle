@@ -163,15 +163,17 @@ internal class ShellMotion(
      * to, which becomes where the hand has the sheet, and any settle stops with it.
      */
     fun grab() {
+        val arriving = playing?.transition?.let { it == Transition.Open } == true
         stop()
         settle?.cancel()
         settling = false
-        grabbedAt = dragY.floatValue
+        grabbedAt = if (arriving) dragY.floatValue else 0f
     }
 
     /**
-     * Where the sheet was when the hand took it: a cut-short Open leaves it part way down, and only the
-     * hand's own travel from there counts towards closing it.
+     * Where the sheet was when the hand took it, if it was still arriving: a cut-short Open leaves it part
+     * way down, and only the hand's own travel from there counts towards closing it. A grab of a settle-back
+     * or of a sheet at rest counts from rest, so a drag made in two strokes still adds up.
      */
     private var grabbedAt = 0f
 

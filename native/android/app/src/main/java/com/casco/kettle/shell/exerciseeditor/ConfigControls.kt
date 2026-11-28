@@ -31,6 +31,7 @@ import com.casco.kettle.domain.canStep
 import com.casco.kettle.domain.configFields
 import com.casco.kettle.domain.jsNumber
 import com.casco.kettle.domain.shownCount
+import com.casco.kettle.domain.shownText
 import com.casco.kettle.domain.stepping
 import com.casco.kettle.domain.storedWeightKg
 import com.casco.kettle.domain.typing
@@ -161,7 +162,7 @@ private fun Stepper(
     val latest by rememberUpdatedState(context)
     val focus = LocalFocusManager.current
     Row(verticalAlignment = Alignment.CenterVertically) {
-        val shown = "${draft.shownCount(field)}"
+        val shown = draft.shownText(field)
         StepButton(
             R.drawable.icon_remove,
             stringResource(R.string.common_decrease, label),

@@ -30,9 +30,9 @@ import com.casco.kettle.domain.RunnerStep
 import com.casco.kettle.domain.UpcomingItem
 import com.casco.kettle.domain.WorkStep
 import com.casco.kettle.shell.R
+import com.casco.kettle.shell.i18n.formatClock
 import com.casco.kettle.shell.i18n.pluralText
 import com.casco.kettle.shell.library.weightSuffix
-import com.casco.kettle.shell.runner.formatClock
 import com.casco.kettle.shell.runner.upcomingDetail
 import com.casco.kettle.shell.runner.upcomingTarget
 import com.casco.kettle.shell.theme.KettleType

@@ -80,6 +80,24 @@ class ExerciseStepsTest {
         assertEquals("12", lower.values[ConfigKey.TargetRepsMax])
     }
 
+    // Typed past its ceiling, a count's − brings it to the ceiling; one step at a time from 1000 stayed
+    // past it, and both steppers went disabled (#569).
+    @Test
+    fun `steps a count past its ceiling down to it, and not further up`() {
+        val over = reps(ConfigKey.Sets to "1000")
+        assertEquals(true, over.canStep(sets, -1))
+        assertEquals("$MAX_SETS", over.stepping(sets, -1).values[ConfigKey.Sets])
+        assertEquals(false, over.canStep(sets, +1))
+    }
+
+    // Past a Long, the count clamps; the stepper shows what was typed (#569).
+    @Test
+    fun `shows a count too big for a Long as typed`() {
+        val huge = "123456789012345678901234"
+        assertEquals(huge, reps(ConfigKey.Sets to huge).shownText(sets))
+        assertEquals("12", reps(ConfigKey.Sets to "12").shownText(sets))
+    }
+
     // A name-only Save writes something a person would train (#456), not 1 × 1 with no rest.
     @Test
     fun `starts a new reps exercise at 3 x 8-12 with a 1-30 rest, and no weight`() {

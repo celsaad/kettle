@@ -29,6 +29,7 @@ import com.casco.kettle.domain.WorkStep
 import com.casco.kettle.domain.isMinute
 import com.casco.kettle.domain.jsNumber
 import com.casco.kettle.shell.R
+import com.casco.kettle.shell.i18n.formatClock
 import com.casco.kettle.shell.i18n.pluralText
 import com.casco.kettle.shell.theme.KettleType
 import com.casco.kettle.shell.theme.Spacing

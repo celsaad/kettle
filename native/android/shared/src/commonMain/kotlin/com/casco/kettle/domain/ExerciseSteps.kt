@@ -15,13 +15,34 @@ fun ExerciseDraft.shownCount(field: ConfigField): Long =
         ?: (if (field.key == ConfigKey.TargetRepsMax) countOf(ConfigKey.TargetRepsMin) else null)
         ?: field.min.toLong()
 
+/**
+ * [field]'s count as its stepper writes it: the whole number typed, kept as typed past a Long's range
+ * (#569), where the count itself is clamped; else the count.
+ */
+fun ExerciseDraft.shownText(field: ConfigField): String =
+    values[field.key]?.trim()?.takeIf { it.isNotEmpty() && it.all(Char::isDigit) && it.toLongOrNull() == null }
+        ?: "${shownCount(field)}"
+
 /** Whether [field]'s stepper can move [by]: within its bounds, and a reps max never below the min. */
 fun ExerciseDraft.canStep(
     field: ConfigField,
     by: Int,
 ): Boolean {
-    val next = shownCount(field) + by
+    val next = steppedCount(field, by)
     return next >= lowest(field) && next <= (field.max?.toLong() ?: Long.MAX_VALUE)
+}
+
+/**
+ * [field]'s count after a step of [by]. A count typed past its ceiling (#569) comes down to the ceiling
+ * in one step of −, which a step at a time from 501 couldn't, its next value still past the max.
+ */
+private fun ExerciseDraft.steppedCount(
+    field: ConfigField,
+    by: Int,
+): Long {
+    val shown = shownCount(field)
+    val top = field.max?.toLong() ?: Long.MAX_VALUE
+    return if (by < 0 && shown > top) top else shown + by
 }
 
 /**
@@ -33,7 +54,7 @@ fun ExerciseDraft.stepping(
     by: Int,
 ): ExerciseDraft {
     if (!canStep(field, by)) return this
-    val next = shownCount(field) + by
+    val next = steppedCount(field, by)
     var stepped = values + (field.key to "$next")
     val max = countOf(ConfigKey.TargetRepsMax)
     if (field.key == ConfigKey.TargetRepsMin && max != null &&

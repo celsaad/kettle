@@ -52,6 +52,8 @@ class ExerciseStepsTest {
         assertEquals("120", reps(ConfigKey.Sets to "3").typing(sets, "120").values[ConfigKey.Sets])
         assertEquals("501", reps(ConfigKey.Sets to "3").typing(sets, " 501 ").values[ConfigKey.Sets])
         assertEquals("50", reps(ConfigKey.Sets to "3").typing(sets, "050").values[ConfigKey.Sets])
+        val huge = "123456789012345678901234"
+        assertEquals(huge, reps(ConfigKey.Sets to "3").typing(sets, huge).values[ConfigKey.Sets])
     }
 
     // A blank or a "8.5" closed into the count it can't be would read as accepted.

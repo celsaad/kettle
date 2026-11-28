@@ -9,6 +9,7 @@ import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasContentDescription
+import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isDialog
 import androidx.compose.ui.test.isHeading
@@ -295,6 +296,29 @@ class ExerciseEditorScreenTest {
                 .config as ExerciseConfig.Reps
         assertEquals(15L, config.targetRepsMin)
         assertEquals(null, config.targetRepsMax)
+    }
+
+    // A step pressed with a count open closes it first: the next keystroke undid the step, or the field
+    // showed a number Save wouldn't write.
+    @Test
+    fun `a step pressed with a count open closes it, and the step stands`() {
+        val files = Files()
+        show(null, files)
+
+        type("Nome", "Pull-ups")
+        press("Reps alvo, 8")
+        press("Aumentar Reps alvo (máx)")
+        compose.onNode(hasContentDescription("Reps alvo") and hasSetTextAction()).assertDoesNotExist()
+        press("Salvar")
+
+        val config =
+            files.written
+                .single()
+                .exercises
+                .single()
+                .config as ExerciseConfig.Reps
+        assertEquals(8L, config.targetRepsMin)
+        assertEquals(13L, config.targetRepsMax)
     }
 
     // A max typed below the min is held at it, as the steppers keep them: both had gone disabled.

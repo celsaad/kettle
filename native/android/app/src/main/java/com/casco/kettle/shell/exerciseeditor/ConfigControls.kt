@@ -19,6 +19,7 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.casco.kettle.domain.ConfigField
@@ -158,6 +159,7 @@ private fun Stepper(
 
     // The draft as it is at each keystroke, not as it was when the field opened.
     val latest by rememberUpdatedState(context)
+    val focus = LocalFocusManager.current
     Row(verticalAlignment = Alignment.CenterVertically) {
         val shown = "${draft.shownCount(field)}"
         StepButton(
@@ -166,7 +168,10 @@ private fun Stepper(
             draft.canStep(field, -1),
             shown,
         ) {
-            context.onChange(draft.stepping(field, -1))
+            // Closes any count left open first, this one or another's: a step under an open field
+            // was undone by its next keystroke, or left the field showing what Save wouldn't write.
+            focus.clearFocus()
+            latest.onChange(latest.draft.stepping(field, -1))
         }
         if (open) {
             Box(Modifier.widthIn(min = TYPING_WIDTH, max = TYPING_WIDTH)) {
@@ -184,7 +189,10 @@ private fun Stepper(
             draft.canStep(field, +1),
             shown,
         ) {
-            context.onChange(draft.stepping(field, +1))
+            // Closes any count left open first, this one or another's: a step under an open field
+            // was undone by its next keystroke, or left the field showing what Save wouldn't write.
+            focus.clearFocus()
+            latest.onChange(latest.draft.stepping(field, +1))
         }
     }
 }

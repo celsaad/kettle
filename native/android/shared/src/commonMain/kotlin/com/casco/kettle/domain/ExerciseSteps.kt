@@ -55,10 +55,13 @@ fun ExerciseDraft.typing(
     field: ConfigField,
     text: String,
 ): ExerciseDraft {
-    val count = text.trim().toLongOrNull()?.takeIf { it >= 0 }
+    val digits = text.trim().takeIf { it.isNotEmpty() && it.all(Char::isDigit) }
+    // Past a Long, it's still a whole number, and Save's ceiling says so; dropped, it read as accepted.
+    val count = digits?.toLongOrNull()
     val held = count?.let { if (field.key == ConfigKey.TargetRepsMax) maxOf(it, lowest(field)) else it }
     val carried = held?.takeIf { field.key == ConfigKey.TargetRepsMin && (countOf(ConfigKey.TargetRepsMax) ?: it) < it }
-    val typed = if (held == null) values else values + (field.key to "$held")
+    val written = held?.toString() ?: digits
+    val typed = if (written == null) values else values + (field.key to written)
     return copy(values = if (carried == null) typed else typed + (ConfigKey.TargetRepsMax to "$carried"))
 }
 

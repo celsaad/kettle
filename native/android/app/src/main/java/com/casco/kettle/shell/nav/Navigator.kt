@@ -35,7 +35,9 @@ class Navigator(
         var current: Navigator? = null
     }
 
-    private var sheets by mutableStateOf(emptyList<Route>())
+    /** The sheet stack, bottom first: read anywhere, moved only through this navigator's moves. */
+    var sheets by mutableStateOf(emptyList<Route>())
+        private set
 
     /** The top of the stack, a sheet or a pushed screen; null on a tab. */
     val sheet: Route? get() = sheets.lastOrNull()

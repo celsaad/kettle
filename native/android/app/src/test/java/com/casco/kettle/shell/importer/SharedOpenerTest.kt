@@ -105,4 +105,20 @@ class SharedOpenerTest {
 
         assertNull(navigator.sheet)
     }
+
+    /** Held over a sheet that has left the stack, as after a relaunch with none saved: it opens anyway (#569). */
+    @Test
+    fun `a held share opens once the sheet it was held over is gone`() {
+        val program = Route(Destination.ProgramDetail, mapOf("id" to "p"))
+        navigator.navigate(program)
+        navigator.openRunner(null)
+        opener.open(first)
+        navigator.closeRunner()
+        navigator.back()
+        assertNull(navigator.sheet)
+
+        opener.openHeld()
+
+        assertEquals(first, inbox.take(shownToken()))
+    }
 }

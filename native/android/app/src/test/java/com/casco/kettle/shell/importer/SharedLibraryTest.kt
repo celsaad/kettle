@@ -130,11 +130,14 @@ class SharedLibraryTest {
         assertEquals(SharedLibrary.Text("version: 1"), intent.sharedLibrary())
     }
 
-    /** The system matched the filter on the provider's type, and left it out of the intent. */
+    /**
+     * The system matched the filter on the provider's type, and left it out of the intent: taken as it is,
+     * with no second ask of the provider on the main thread (#569). An explicit type is still held.
+     */
     @Test
-    fun `a file opened with no type is taken by the provider's`() {
-        assertEquals(SharedLibrary.File(file), view(file, null).sharedLibrary(typeOf = { "text/yaml" }))
-        assertNull(view(file, null).sharedLibrary(typeOf = { "application/octet-stream" }))
+    fun `a file opened with no type is taken, and one typed otherwise is not`() {
+        assertEquals(SharedLibrary.File(file), view(file, null).sharedLibrary())
+        assertNull(view(file, "application/octet-stream").sharedLibrary())
     }
 
     /** The manifest's filters and [VIEWED_TYPES] are two copies of one list: held together here. */

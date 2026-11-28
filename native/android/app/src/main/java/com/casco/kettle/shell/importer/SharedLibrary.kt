@@ -35,18 +35,15 @@ sealed interface SharedLibrary {
  * replays, which would import the same thing again.
  *
  * The launcher alias is exported, so an app can name it and skip the filters: a file is only ever a
- * `content:` URI ([fileUri]). [typeOf] is the provider's type for a `VIEW` that carries none, which the
- * system matched the filter against without putting it in the intent.
+ * `content:` URI ([fileUri]). An app naming it can open Import on any file, a picture say; the read is
+ * bounded and off the main thread, and the parser refuses it.
  */
-fun Intent.sharedLibrary(
-    typeOf: (Uri) -> String? = { null },
-    ownAuthority: String? = null,
-): SharedLibrary? {
+fun Intent.sharedLibrary(ownAuthority: String? = null): SharedLibrary? {
     val replayed = flags and Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY != 0
     return when {
         replayed -> null
         action == Intent.ACTION_SEND && type?.lowercase() == SHARED_TEXT_TYPE -> sentLibrary(ownAuthority)
-        action == Intent.ACTION_VIEW -> viewedLibrary(typeOf, ownAuthority)
+        action == Intent.ACTION_VIEW -> viewedLibrary(ownAuthority)
         else -> null
     }
 }
@@ -63,13 +60,14 @@ private fun Intent.sentLibrary(ownAuthority: String?): SharedLibrary? {
     return if (text.isNullOrBlank()) null else SharedLibrary.Text(text)
 }
 
-private fun Intent.viewedLibrary(
-    typeOf: (Uri) -> String?,
-    ownAuthority: String?,
-): SharedLibrary? {
+/**
+ * A `VIEW` with no type in it is one the system matched on the provider's own type, which it leaves out
+ * of the intent: asking the provider again, on the main thread, let a slow one stall the app (#569). An
+ * explicit type is still held to the manifest's.
+ */
+private fun Intent.viewedLibrary(ownAuthority: String?): SharedLibrary? {
     val uri = fileUri(data, ownAuthority) ?: return null
-    val viewed = (type ?: typeOf(uri))?.lowercase()
-    return if (viewed in VIEWED_TYPES) SharedLibrary.File(uri) else null
+    return if (type == null || type?.lowercase() in VIEWED_TYPES) SharedLibrary.File(uri) else null
 }
 
 /**
@@ -164,10 +162,16 @@ class SharedOpener(
         scope.launch { snapshotFlow { navigator.runnerShown to navigator.sheet }.collect { openHeld() } }
     }
 
-    /** A share held until now opens, if the runner has closed and no sheet since covers where it started. */
+    /**
+     * A share held until now opens, once the runner has closed and the screen is back on the sheet it
+     * started from, or that sheet has left the stack altogether, when it opens over whatever is there.
+     */
     fun openHeld() {
         val held = inbox.held ?: return
-        if (navigator.runnerShown || navigator.sheet != held.beneath) return
+        // Or once the sheet it was held over has gone from the stack altogether (#569): after a relaunch
+        // with no saved stack, or a link over the editor, it would otherwise wait for that sheet for good.
+        val gone = held.beneath != null && held.beneath !in navigator.sheets
+        if (navigator.runnerShown || (navigator.sheet != held.beneath && !gone)) return
         inbox.held = null
         navigator.push(route(held.token))
     }

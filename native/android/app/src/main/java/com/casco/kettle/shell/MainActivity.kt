@@ -197,7 +197,7 @@ private fun Activity.openIncoming(
     navigator: Navigator,
     opener: SharedOpener,
 ) {
-    val shared = intent.sharedLibrary(contentResolver::getType, ownAuthority = "$packageName.shell.files")
+    val shared = intent.sharedLibrary(ownAuthority = "$packageName.shell.files")
     if (shared == null) {
         navigator.openLink(intent)
         return

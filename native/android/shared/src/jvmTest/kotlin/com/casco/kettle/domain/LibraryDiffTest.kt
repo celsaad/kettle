@@ -129,6 +129,68 @@ class LibraryDiffTest {
     }
 
     @Nested
+    inner class Equipment {
+        private fun needing(vararg items: String) = reps().copy(equipment = items.toList())
+
+        @Test
+        fun `lists a change as the items on each side, spelled as each file spells them`() {
+            assertEquals(
+                listOf(
+                    FieldChange(
+                        DiffLabel.Equipment,
+                        DiffValue.Items(listOf("Barbell", "bench")),
+                        DiffValue.Items(listOf("Barbell", "rack")),
+                        cleared = 1,
+                    ),
+                ),
+                diffExercise(needing("Barbell", "bench"), needing("Barbell", "rack"), UnitSystem.METRIC),
+            )
+        }
+
+        // Import's warning and counts are cleared and nothing else (#456): every item that goes counts.
+        @Test
+        fun `counts each item a removal takes away`() {
+            assertEquals(
+                listOf(
+                    FieldChange(
+                        DiffLabel.Equipment,
+                        DiffValue.Items(listOf("Barbell", "bench", "my old belt")),
+                        DiffValue.Unset,
+                        cleared = 3,
+                    ),
+                ),
+                diffExercise(needing("Barbell", "bench", "my old belt"), reps(), UnitSystem.METRIC),
+            )
+        }
+
+        @Test
+        fun `reads equipment gained as nothing taken away`() {
+            assertEquals(
+                listOf(FieldChange(DiffLabel.Equipment, DiffValue.Unset, DiffValue.Items(listOf("Dumbbell")))),
+                diffExercise(reps(), needing("Dumbbell"), UnitSystem.METRIC),
+            )
+        }
+
+        // The same item, matched as known items are: a row for it would warn about nothing.
+        @Test
+        fun `says nothing about a change of spelling or order alone`() {
+            assertEquals(
+                emptyList<FieldChange>(),
+                diffExercise(needing("Dumbbell", "Pull-up bar"), needing("pull_up_bar", "dumbbell"), UnitSystem.METRIC),
+            )
+        }
+
+        @Test
+        fun `lists equipment after the notes and before the config`() {
+            val after = needing("Bench").copy(notes = "Pause", config = base.copy(sets = 6))
+            assertEquals(
+                listOf(DiffLabel.Notes, DiffLabel.Equipment, DiffLabel.Field(FieldName.Sets)),
+                diffExercise(reps(), after, UnitSystem.METRIC).map { it.label },
+            )
+        }
+    }
+
+    @Nested
     inner class Workouts {
         private fun push(vararg blocks: WorkoutBlock) = Workout("push", "Push", blocks.toList())
 

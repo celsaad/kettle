@@ -710,6 +710,7 @@
     "diff": {
       "type": "Tipo",
       "notes": "Notas",
+      "equipment": "Equipamento",
       "blocks": "Blocos",
       "exercises": "Exercícios",
       "weeks": "Semanas",

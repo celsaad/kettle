@@ -12,6 +12,9 @@ sealed interface DiffLabel {
 
     data object Notes : DiffLabel
 
+    /** An exercise's equipment (#393), the items it needs at hand. */
+    data object Equipment : DiffLabel
+
     data object Blocks : DiffLabel
 
     /**
@@ -52,6 +55,16 @@ sealed interface DiffValue {
     /** User data or a number, shown verbatim, already cut to [MAX_VALUE_LENGTH]. */
     data class Text(
         val text: String,
+    ) : DiffValue
+
+    /**
+     * Equipment items as the file spells them, never empty (#393). A list rather than [Text], because
+     * a known item reads in the reader's language and only the screen can name it; the user's own
+     * words stay verbatim. Uncut: an item is at most [MAX_EQUIPMENT_LENGTH] long, and a cut taken
+     * before the names are known would cut a different string from the one shown.
+     */
+    data class Items(
+        val items: List<String>,
     ) : DiffValue
 
     /** An exercise type, which the screen names as the form's type pills do. */
@@ -99,6 +112,7 @@ fun diffExercise(
             FieldChange(DiffLabel.Type, DiffValue.Type(before.config.type), DiffValue.Type(after.config.type))
                 .takeIf { retyped },
             change(DiffLabel.Notes, before.notes, after.notes),
+            equipmentChange(before.equipment, after.equipment),
         )
     val beforeValues = draftOf(before, units).values
     val afterValues = draftOf(after, units).values
@@ -168,6 +182,29 @@ fun diffWorkout(
         ).takeIf { edited.isNotEmpty() },
     )
 }
+
+/**
+ * The items compared as known items are matched, [equipmentMatchKey], so `Dumbbell` → `dumbbell`
+ * is no change: it is the same item, and a row for it would warn about nothing. Order is not compared
+ * either, since an exercise's items are what it needs, not a sequence. [FieldChange.cleared] counts
+ * the items the update takes away, so dropping two of three marks two (#456).
+ */
+private fun equipmentChange(
+    before: List<String>,
+    after: List<String>,
+): FieldChange? {
+    val had = before.map(::equipmentMatchKey).toSet()
+    val has = after.map(::equipmentMatchKey).toSet()
+    if (had == has) return null
+    return FieldChange(
+        DiffLabel.Equipment,
+        items(before),
+        items(after),
+        cleared = (had - has).size,
+    )
+}
+
+private fun items(list: List<String>): DiffValue = if (list.isEmpty()) DiffValue.Unset else DiffValue.Items(list)
 
 private fun measured(
     field: ConfigField,

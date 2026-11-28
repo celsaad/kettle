@@ -620,6 +620,7 @@
     "diff": {
       "type": "種類",
       "notes": "メモ",
+      "equipment": "器具",
       "blocks": "ブロック",
       "exercises": "エクササイズ",
       "weeks": "週",

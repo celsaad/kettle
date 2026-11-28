@@ -665,6 +665,7 @@
     "diff": {
       "type": "Type",
       "notes": "Notes",
+      "equipment": "Equipment",
       "blocks": "Blocks",
       "exercises": "Exercises",
       "weeks": "Weeks",

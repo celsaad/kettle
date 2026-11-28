@@ -20,6 +20,7 @@ import com.casco.kettle.domain.UnitSystem
 import com.casco.kettle.shell.R
 import com.casco.kettle.shell.exerciseeditor.label
 import com.casco.kettle.shell.form.unitSuffix
+import com.casco.kettle.shell.i18n.equipmentText
 import com.casco.kettle.shell.theme.KettleTheme
 import com.casco.kettle.shell.theme.KettleType
 import com.casco.kettle.shell.theme.Spacing
@@ -89,6 +90,7 @@ internal fun labelText(label: DiffLabel): String =
             DiffLabel.Name -> R.string.common_name
             DiffLabel.Type -> R.string.import_diff_type
             DiffLabel.Notes -> R.string.import_diff_notes
+            DiffLabel.Equipment -> R.string.import_diff_equipment
             DiffLabel.Blocks -> R.string.import_diff_blocks
             DiffLabel.Exercises -> R.string.import_diff_exercises
             DiffLabel.Weeks -> R.string.import_diff_weeks
@@ -111,7 +113,15 @@ internal fun valueText(
         is DiffValue.Text -> value.text
         is DiffValue.Type -> stringResource(value.type.label)
         is DiffValue.Measured -> measuredText(value.number, value.unit, units)
+        is DiffValue.Items -> itemsText(value.items)
     }
+
+/** Equipment items, each known one in the reader's language and the rest as written, as a list reads. */
+@Composable
+private fun itemsText(items: List<String>): String {
+    val separator = stringResource(R.string.format_listSeparator)
+    return items.map { equipmentText(it) }.joinToString(separator)
+}
 
 /**
  * A value with its unit, as the rest of the app writes one ("90 s", "5 min", "400 m"), not with a

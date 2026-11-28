@@ -27,7 +27,8 @@ here, next to what it describes.
   (#569).
 - **An exercise can list its equipment in your library file**: `equipment: [barbell, bench]`. Nothing
   in the app shows the list yet; for now it is kept in the file, and editing the exercise in the app
-  doesn't lose it. The format page has the details and the items Kettle knows by name (#393).
+  doesn't lose it. Import's preview does say when a file changes an exercise's equipment, and warns
+  when it takes items away. The format page has the details and the items Kettle knows by name (#393).
 - **Do a past workout again**: open a session in Progress › Sessions and tap Start again to begin a
   fresh one of the same workout, or the same program day, as it is in your library now. If the workout
   has been deleted since, the button says so instead (#281).

@@ -419,6 +419,19 @@ class ImportScreenTest : ImportHarness() {
         compose.onNodeWithContentDescription("Descanso: era 90 s, agora: 60 s").assertExists()
     }
 
+    // A known item reads in the reader's language; the user's own words stay as they wrote them.
+    @Test
+    fun `names an equipment change, a known item translated and the user's own words verbatim`() {
+        val gripped = pullUps.copy(equipment = listOf("Pull-up bar", "fat grips"))
+        picks(Library(1, listOf(gripped), emptyList(), emptyList()))
+        chooseFile()
+
+        compose
+            .onNodeWithContentDescription(
+                "Equipamento: era não definido, agora: Barra fixa, fat grips",
+            ).assertExists()
+    }
+
     @Test
     fun `says so when an updated id is byte-identical rather than showing a blank indent`() {
         picks(current)

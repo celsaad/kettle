@@ -25,6 +25,9 @@ here, next to what it describes.
 - **Paste or share a whole chat reply**: when an assistant's reply wraps the YAML in a code block,
   Import now reads the block and leaves the chat around it, so you don't have to copy just the code
   (#569).
+- **A share no longer costs you what you were typing**: a library shared from another app, or a
+  `kettle://` link, now opens over the editor you had open, and back takes you to it as you left it
+  (#569).
 - **An exercise can list its equipment in your library file**: `equipment: [barbell, bench]`. The
   exercise screens don't show it yet, but editing the exercise in the app doesn't lose it, and Import's
   preview lists the items a file adds or takes away, with a warning for those it takes away. The

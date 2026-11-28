@@ -138,10 +138,11 @@ class SharedLibraryInbox {
 }
 
 /**
- * Opens what another app shared in Import (#514), or holds it behind a running session, whose slot drops
- * every other move, and opens it once the session ends: a share is the user's data, and dropping it as a
- * `kettle://` link is dropped would lose it without a word. Over the sheet the session was started from,
- * so back returns to it; but not while a sheet opened since covers it, such as the session editor
+ * Opens what another app shared in Import (#514), over whatever sheet shows ([Navigator.arrive]), so an
+ * editor it lands on keeps its draft for back (#569). Or holds it behind a running session, whose slot
+ * drops every other move, and opens it once the session ends: a share is the user's data, and dropping it
+ * as a `kettle://` link is dropped would lose it without a word. Over the sheet the session was started
+ * from, so back returns to it; but not while a sheet opened since covers it, such as the session editor
  * straight after Done, which the share would otherwise bury.
  */
 class SharedOpener(
@@ -153,7 +154,7 @@ class SharedOpener(
         if (navigator.runnerShown) {
             inbox.held = SharedLibraryInbox.Held(token, navigator.sheet)
         } else {
-            navigator.navigate(route(token))
+            navigator.arrive(route(token))
         }
     }
 
@@ -173,7 +174,7 @@ class SharedOpener(
         val gone = held.beneath != null && held.beneath !in navigator.sheets
         if (navigator.runnerShown || (navigator.sheet != held.beneath && !gone)) return
         inbox.held = null
-        navigator.push(route(held.token))
+        navigator.arrive(route(held.token))
     }
 
     private fun route(token: String) = Route(Destination.Import, mapOf(IMPORT_SHARED_PARAM to token))

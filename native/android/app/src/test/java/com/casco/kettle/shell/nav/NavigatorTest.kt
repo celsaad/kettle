@@ -327,4 +327,71 @@ class NavigatorTest {
         navigator.restore(listOf("Workouts"))
         assertEquals(Tab.Today, navigator.tab)
     }
+
+    /** #569: a link or a share opens over the sheet showing, so back returns to it, its screen kept. */
+    @Test
+    fun `an arrival opens over the stack, and back returns to what it covered`() {
+        navigator.push(editor("pushups"))
+        val covered = navigator.entries.single()
+        navigator.arrive(support)
+        navigator.arrive(settings)
+
+        assertEquals(listOf(editor("pushups"), support, settings), navigator.sheets)
+        navigator.back()
+        navigator.back()
+        assertEquals(covered, navigator.entries.single())
+    }
+
+    @Test
+    fun `an arrival on a tab, to a tab, or of the runner goes as navigate does`() {
+        navigator.arrive(support)
+        assertEquals(listOf(support), navigator.sheets)
+
+        navigator.arrive(Route(Destination.Session, mapOf("workoutId" to "bench")))
+        assertEquals(bench, navigator.runner?.start)
+        assertEquals(listOf(support), navigator.sheets)
+        navigator.closeRunner()
+
+        navigator.arrive(Route.of(Section.SESSIONS))
+        assertEquals(Tab.Progress, navigator.tab)
+        assertTrue(navigator.sheets.isEmpty())
+    }
+
+    /** The runner's slot drops an arrival as it drops every move. */
+    @Test
+    fun `an arrival while the runner shows is dropped`() {
+        navigator.push(editor("pushups"))
+        navigator.openRunner(null)
+        navigator.arrive(support)
+
+        assertEquals(listOf(editor("pushups")), navigator.sheets)
+    }
+
+    /** The same opening stays, so nothing it holds is composed afresh. */
+    @Test
+    fun `an arrival equal to the top is no move`() {
+        navigator.push(editor("pushups"))
+        val shown = navigator.entries.single()
+        navigator.arrive(editor("pushups"))
+
+        assertEquals(shown, navigator.entries.single())
+    }
+
+    /** One of each destination, so arrivals can't grow the stack past the route table (#569). */
+    @Test
+    fun `an arrival replaces the screen of its destination, top or not`() {
+        navigator.push(editor("pushups"))
+        navigator.arrive(import("a"))
+        navigator.arrive(import("b"))
+        assertEquals(listOf(editor("pushups"), import("b")), navigator.sheets)
+
+        navigator.arrive(settings)
+        navigator.arrive(import("c"))
+        navigator.arrive(settings)
+        navigator.arrive(import("d"))
+
+        assertEquals(listOf(editor("pushups"), settings, import("d")), navigator.sheets)
+    }
+
+    private fun import(token: String) = Route(Destination.Import, mapOf("shared" to token))
 }

@@ -90,7 +90,7 @@ fun transitionBetween(
             if (push) Transition.Open else Transition.FadeIn
         }
 
-        // Nothing opens a pushed screen from a sheet today: a fade, rather than a motion of its own.
+        // Only a link opens a pushed screen over a sheet (Navigator.arrive): a fade, rather than a motion of its own.
         Place.Sheet to Place.Pushed -> {
             if (back) Transition.Close else Transition.FadeOut
         }

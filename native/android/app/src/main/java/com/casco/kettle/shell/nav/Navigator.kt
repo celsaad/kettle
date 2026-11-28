@@ -17,6 +17,7 @@ import com.casco.kettle.domain.RunnerStart
  * [onReselect] hears a tap on the tab already showing, which a tab's screen answers by scrolling to its
  * top.
  */
+@Suppress("TooManyFunctions") // A function per kind of move, each through the private `go` that holds the slot's rule.
 class Navigator(
     private val onReselect: (Tab) -> Unit = {},
 ) {
@@ -99,6 +100,26 @@ class Navigator(
             entries = if (route.stacked) listOf(StackEntry(nextId++, route)) else emptyList(),
             tabRoutes = if (to != null) tabRoutes + (to to route) else tabRoutes,
         )
+    }
+
+    /**
+     * Opens [route] as it arrives from outside the app, a `kettle://` link or a share (#569): over the sheet
+     * or pushed screen showing, so back returns to it with what was typed there still in it, where
+     * [navigate] would throw the stack away. A tab's route still goes to its tab, since no tab shows over a
+     * sheet, and the runner's opens over everything, as through [navigate]. On a tab it is [navigate]'s
+     * fade, as a link and a share have always come in.
+     *
+     * Arrivals keep one screen of each destination on the stack: one equal to the top is no move, and any
+     * other of the route's destination leaves as the route opens on top, in the top's place when it was
+     * the top. So shares never stack Imports, links can't grow the stack past the route table, and back
+     * never walks through look-alikes. The price is a link to the destination of an editor that's open,
+     * which takes that editor's place, draft and all: that link names that editor.
+     */
+    fun arrive(route: Route) {
+        if (!route.stacked || entries.isEmpty()) return navigate(route)
+        if (route == sheet) return
+        val kind = if (sheet?.destination == route.destination) MoveKind.Replace else MoveKind.Push
+        go(kind, entries = entries.filter { it.route.destination != route.destination } + StackEntry(nextId++, route))
     }
 
     /** Back: the top sheet, else Today. False when there is nowhere left, and the app should leave. */

@@ -241,7 +241,8 @@ class SheetTransitionTest {
         assertTrue(at("Screen Support").x > 0f)
         assertTrue(at("Screen Import").x < 0f)
         finish()
-        assertEquals(false, isAlive("Screen Import"))
+        // Covered, it stays composed for back to find as it was left (#569), out of sight under the frame.
+        assertTrue(isAlive("Screen Import"))
         assertEquals(0f, at("Screen Support").x)
     }
 
@@ -473,7 +474,7 @@ class SheetTransitionTest {
         assertEquals(Transition.Forward, playing)
         finish()
         assertEquals(sheetRest, at("Screen Support").y)
-        assertEquals(false, isAlive("Screen Import"))
+        assertTrue(isAlive("Screen Import"))
     }
 
     /**

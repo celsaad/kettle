@@ -19,13 +19,16 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.State
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
+import androidx.compose.runtime.movableContentOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -58,7 +61,8 @@ import kotlin.coroutines.cancellation.CancellationException
  *
  * Everything under the top layer stays drawn, live, and is [Inert]: it takes no touch and TalkBack
  * doesn't reach it. The sheet's transitions ([ShellMotion]) move these layers in place, so the screen a
- * sheet covers is the live one under its scrim, not a picture of it.
+ * sheet covers is the live one under its scrim, not a picture of it. A stacked screen none of them
+ * shows stays composed too, undrawn ([Covered]), so back to it finds it as it was left (#569).
  *
  * Every dismissal (the ×, hardware and predictive back, a grabber drag) is a back. Two of Material's are
  * left out on purpose: a scrim tap and a drag from the content would each drop an edit, and the editors
@@ -84,11 +88,17 @@ internal fun Shell(
     val dispatcher = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
     val requestBack: () -> Unit = { if (dispatcher != null) dispatcher.onBackPressed() else navigator.back() }
     SheetBack(navigator, motion)
+    val latestContent = rememberUpdatedState(content)
+    val screens = remember { StackedScreens(latestContent) }
 
     val shown = shownBy(navigator.entries)
     val playing = motion.playing
     val runner = navigator.runnerShown
+    val drawn = listOfNotNull(shown.beneath, shown.pushed, shown.sheet, playing?.leavingPushed, playing?.leavingSheet)
+    // Ids are never reused, so a screen in neither list now is gone for good.
+    SideEffect { screens.keepOnly((navigator.entries + drawn).mapTo(HashSet()) { it.id }) }
     Box(Modifier.fillMaxSize().onSizeChanged { size = it }) {
+        Covered(navigator.entries.filter { it !in drawn }, screens)
         SplashExit(LocalLatestFiles.current, LocalSplashExit.current)
         // The bar stays under what covers the tab, as it was under the sheet's scrim when that was a picture.
         Inert(navigator.sheets.isNotEmpty() || runner) {
@@ -107,7 +117,7 @@ internal fun Shell(
                         else -> Stacking.Beneath
                     }
                 val interactive = stacking == Stacking.Shown && shown.sheet == null && !runner
-                PushedScreen(stacking, interactive, motion, endward) { content(entry.route) }
+                PushedScreen(stacking, interactive, motion, endward) { screens.of(entry)(interactive) }
             }
         }
         if (shown.sheet != null || playing?.leavingSheet != null) {
@@ -119,7 +129,7 @@ internal fun Shell(
                 motion,
                 frameHeight = size.height.toFloat(),
                 requestBack,
-                content,
+                screens,
             )
         }
         // The runner (#302), full screen over everything, the sheet it grew from included.
@@ -167,7 +177,7 @@ private enum class Stacking { Beneath, Shown, Leaving }
  * chrome and no scrim, opaque in the theme's background.
  *
  * It stays composed under a sheet, under the screen pushed over it and under the runner, so it isn't
- * composed afresh when it shows again: [LocalUncovered] counts each time it does, for what it reads once.
+ * composed afresh when it shows again ([StackedScreens]).
  */
 @Composable
 private fun PushedScreen(
@@ -178,12 +188,6 @@ private fun PushedScreen(
     content: @Composable () -> Unit,
 ) {
     val playing = motion.playing
-    var uncovered by remember { mutableIntStateOf(0) }
-    val covered = remember { booleanArrayOf(!interactive) }
-    LaunchedEffect(interactive) {
-        if (interactive && covered[0]) uncovered++
-        covered[0] = !interactive
-    }
     Inert(
         !interactive,
         Modifier.fillMaxSize().graphicsLayer {
@@ -193,21 +197,77 @@ private fun PushedScreen(
             }
         },
     ) {
-        CompositionLocalProvider(LocalUncovered provides uncovered) {
-            Box(Modifier.fillMaxSize().background(KettleTheme.colors.background).statusBarsPadding()) { content() }
-        }
+        Box(Modifier.fillMaxSize().background(KettleTheme.colors.background).statusBarsPadding()) { content() }
     }
 }
 
 /**
- * How many times the pushed screen this is read in has shown again after something covered it: a sheet,
- * a screen pushed over it, or the runner (#377). Before #377 each of those composed it afresh as it
- * showed again; a screen that reads something once keys that read on this instead.
+ * How many times the stacked screen this is read in has shown again after something covered it: a sheet,
+ * a screen pushed over it, or the runner (#377). Before #377 each of those composed a pushed screen
+ * afresh as it showed again, and before #569 a sheet under a sheet; a screen that reads something once
+ * keys that read on this instead.
  *
- * Only pushed screens provide it. Everywhere else (a tab, a sheet, the runner) it stays 0: a tab was
- * never composed afresh as it showed again, and a sheet under a sheet still is.
+ * Every stacked screen provides it ([StackedScreens]). On a tab and in the runner it stays 0: a tab was
+ * never composed afresh as it showed again.
  */
 val LocalUncovered = compositionLocalOf { 0 }
+
+/**
+ * Each stacked screen's content by its opening's id, as movable content (#569): a screen keeps one
+ * composition, what it remembers and the holders it keeps, an editor's draft among them, as it moves
+ * between the pushed layers, the sheet's frame and [Covered], where each layer's own keyed loop would
+ * have composed it afresh. Each provides [LocalUncovered] from its own count, which moves with it.
+ *
+ * Not snapshot state: [of] makes a screen's content once, the first time it's composed, and [keepOnly]
+ * lets go of the screens no layer holds any more.
+ */
+private class StackedScreens(
+    private val content: State<@Composable (Route) -> Unit>,
+) {
+    private val made = HashMap<Long, @Composable (Boolean) -> Unit>()
+
+    /** [entry]'s screen, given whether it can be reached now: what [LocalUncovered] counts. */
+    fun of(entry: StackEntry): @Composable (Boolean) -> Unit =
+        made.getOrPut(entry.id) {
+            movableContentOf { interactive: Boolean -> Uncovering(interactive) { content.value(entry.route) } }
+        }
+
+    /** Lets go of every screen but those in [ids]. */
+    fun keepOnly(ids: Set<Long>) {
+        made.keys.retainAll(ids)
+    }
+}
+
+/** [content] with [LocalUncovered] counting each time it turns [interactive] again. */
+@Composable
+private fun Uncovering(
+    interactive: Boolean,
+    content: @Composable () -> Unit,
+) {
+    var uncovered by remember { mutableIntStateOf(0) }
+    val covered = remember { booleanArrayOf(!interactive) }
+    LaunchedEffect(interactive) {
+        if (interactive && covered[0]) uncovered++
+        covered[0] = !interactive
+    }
+    CompositionLocalProvider(LocalUncovered provides uncovered, content)
+}
+
+/**
+ * The stacked screens no layer shows (#569): a sheet under a sheet, a sheet under a pushed screen, or a
+ * pushed screen deeper than the one under the top. Composed, so each keeps what it holds for back, but
+ * neither drawn nor reachable, under everything else.
+ */
+@Composable
+private fun Covered(
+    entries: List<StackEntry>,
+    screens: StackedScreens,
+) {
+    if (entries.isEmpty()) return
+    Inert(true, Modifier.fillMaxSize().graphicsLayer { alpha = 0f }) {
+        for (entry in entries) key(entry.id) { screens.of(entry)(false) }
+    }
+}
 
 /** Material's scrim, black at 32%, over what the sheet covers. It takes every touch and does nothing with it. */
 @Composable
@@ -237,7 +297,7 @@ private fun SheetFrame(
     motion: ShellMotion,
     frameHeight: Float,
     requestBack: () -> Unit,
-    content: @Composable (Route) -> Unit,
+    screens: StackedScreens,
 ) {
     val playing = motion.playing
     val full = playing?.transition.growing()
@@ -262,7 +322,11 @@ private fun SheetFrame(
                 .semantics { isTraversalGroup = true },
         ) {
             for (entry in listOfNotNull(shown, leaving)) {
-                key(entry.id) { SheetScreen(entry == leaving, interactive, motion) { content(entry.route) } }
+                key(entry.id) {
+                    SheetScreen(entry == leaving, interactive, motion) {
+                        screens.of(entry)(entry != leaving && interactive)
+                    }
+                }
             }
             if (!full) {
                 val drag =

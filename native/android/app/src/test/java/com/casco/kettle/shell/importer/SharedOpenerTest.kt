@@ -96,14 +96,39 @@ class SharedOpenerTest {
         navigator.openRunner(null)
         opener.open(first)
         navigator.closeRunner()
-        navigator.push(Route(Destination.SessionEditor, mapOf("id" to "s1")))
+        val editor = Route(Destination.SessionEditor, mapOf("id" to "s1"))
+        navigator.push(editor)
         opener.open(second)
         assertEquals(second, inbox.take(shownToken()))
 
         navigator.back()
         opener.openHeld()
 
-        assertNull(navigator.sheet)
+        assertEquals(listOf(editor), navigator.sheets)
+    }
+
+    /** Over an open sheet, not in its place (#569): back returns to the editor the share arrived over. */
+    @Test
+    fun `a share over an open sheet opens on top of it`() {
+        val editor = Route(Destination.ExerciseEditor, mapOf("id" to "squat"))
+        navigator.navigate(editor)
+        opener.open(first)
+
+        assertEquals(first, inbox.take(shownToken()))
+        navigator.back()
+        assertEquals(editor, navigator.sheet)
+    }
+
+    /** A share over a share's Import takes its place: shares never stack Imports. */
+    @Test
+    fun `a share over a share's Import takes its place`() {
+        val editor = Route(Destination.ExerciseEditor, mapOf("id" to "squat"))
+        navigator.navigate(editor)
+        opener.open(first)
+        opener.open(second)
+
+        assertEquals(listOf(Destination.ExerciseEditor, Destination.Import), navigator.sheets.map { it.destination })
+        assertEquals(second, inbox.take(shownToken()))
     }
 
     /** Held over a sheet that has left the stack, as after a relaunch with none saved: it opens anyway (#569). */

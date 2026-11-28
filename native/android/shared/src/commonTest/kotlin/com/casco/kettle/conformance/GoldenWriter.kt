@@ -77,7 +77,14 @@ private fun StringBuilder.appendNumber(number: Double) {
     require(number.isFinite()) { "JSON has no $number" }
     // Adding 0.0 folds -0.0 into 0.0, which JSON.stringify writes as 0.
     val folded = number + 0.0
-    if (folded == Math.rint(folded) && kotlin.math.abs(folded) < 1e21) append(folded.toLong()) else append(folded)
+    // A golden is only ever written on the JVM, whose Double printing is the one this is tuned to.
+    if (folded == kotlin.math.round(folded) &&
+        kotlin.math.abs(folded) < 1e21
+    ) {
+        append(folded.toLong())
+    } else {
+        append(folded)
+    }
 }
 
 private fun StringBuilder.appendString(text: String) {
@@ -91,8 +98,10 @@ private fun StringBuilder.appendString(text: String) {
             '\t' -> append("\\t")
             '\b' -> append("\\b")
             '\u000C' -> append("\\f")
-            else -> if (char < ' ') append("\\u%04x".format(char.code)) else append(char)
+            else -> if (char < ' ') append("\\u").append(char.code.toString(HEX).padStart(4, '0')) else append(char)
         }
     }
     append('"')
 }
+
+private const val HEX = 16

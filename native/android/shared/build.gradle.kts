@@ -1,16 +1,22 @@
+import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.targets.native.tasks.KotlinNativeSimulatorTest
 
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
 }
 
 kotlin {
-    // JVM only for now: it is what `:app` and the corpus runner need, and an Android app consumes a
-    // JVM target as it is. `androidTarget()` waits for the first code that needs an Android API, and
-    // the iOS targets for M8 and a Mac.
+    // The JVM is what `:app` and the corpus runner need, and an Android app consumes a JVM target as
+    // it is. `androidTarget()` waits for the first code that needs an Android API.
     jvm {
         compilerOptions { jvmTarget.set(JvmTarget.JVM_17) }
     }
+    // M8's groundwork (#368): devices and the Apple-silicon simulator. No `iosX64`, since no Intel Mac
+    // builds or tests it. Only a Mac can compile these; on Linux KGP skips them, so CI's Linux job
+    // never needs one.
+    iosArm64()
+    iosSimulatorArm64()
 
     // The compiler's warnings held to the same zero as ktlint's and detekt's.
     compilerOptions { allWarningsAsErrors.set(true) }
@@ -25,6 +31,11 @@ kotlin {
             // The runner's state file. Its element API only, as `:strings` and `:theme` use it, so no
             // compiler plugin: the snapshot's JSON is written out by hand and versioned there.
             implementation(libs.kotlinx.serialization.json)
+        }
+        // The corpus runner, which runs on the JVM and the simulator, so `kotlin.test` rather than
+        // Jupiter (#368). On the JVM it runs on the Jupiter platform below, at KGP's own version.
+        commonTest.dependencies {
+            implementation(kotlin("test"))
         }
         jvmTest.dependencies {
             implementation(project.dependencies.platform(libs.junit.bom))
@@ -64,7 +75,31 @@ tasks.named<Test>("jvmTest") {
         systemProperty("kettle.updateConformance", "true")
         outputs.upToDateWhen { false }
     }
+    // In full, so a corpus failure names its case in the CI log: one test now holds every case (#368).
     testLogging {
         events("passed", "skipped", "failed")
+        exceptionFormat = TestExceptionFormat.FULL
+    }
+}
+
+// The same corpus on the simulator, which sees the Mac's file system, so it is read in place there
+// too. `simctl spawn` passes the test binary each `SIMCTL_CHILD_` variable with the prefix dropped,
+// left untracked so the checkout's absolute path stays out of the key; the directories are tracked as
+// inputs instead, and they are what reruns the task when a golden or shipped file changes, rather
+// than leave it up to date and green. It only ever checks the goldens: `-PupdateConformance` is the
+// JVM's.
+tasks.named<KotlinNativeSimulatorTest>("iosSimulatorArm64Test") {
+    environment(
+        "SIMCTL_CHILD_KETTLE_CONFORMANCE_DIR",
+        repoRoot.dir("conformance").asFile.absolutePath,
+        tracked = false,
+    )
+    listOf("conformance", "content", "site/examples").forEach {
+        inputs.dir(repoRoot.dir(it)).withPathSensitivity(PathSensitivity.RELATIVE)
+    }
+    // In full, so a corpus failure names its case in the CI log: one test now holds every case (#368).
+    testLogging {
+        events("passed", "skipped", "failed")
+        exceptionFormat = TestExceptionFormat.FULL
     }
 }

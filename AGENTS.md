@@ -18,6 +18,8 @@ plus a local session log, one file per session. No server, no account.
 - `./gradlew build` from `native/android` — every module's tests, ktlint, detekt, Android lint and
   compiler warnings, all failing on any finding. **Keep it at zero warnings.** A finding you
   genuinely can't fix wants a one-line suppression naming the reason, not a new accepted baseline.
+  On a Mac it also runs `:shared`'s conformance corpus on the iOS simulator (#368), so it needs Xcode
+  and an iOS simulator runtime there; Linux and Windows leave the iOS targets out.
   It covers more than the app: `:repo-checks` holds the docs, the site and the store copy, so a
   prose-only change runs it too. It needs no `pnpm install`, since it reads the repo's plain files
   and nothing from Node. `./gradlew ktlintFormat` formats the Kotlin; a single module's tests are

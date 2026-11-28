@@ -14,6 +14,14 @@ cases:
   - name: accent-insensitive-in-the-query
     query: flexão
     names: [Flexao de braco, Prancha]
+  - name: two-accents-in-the-query
+    why: Two precomposed marks, so typo tolerance can't forgive a platform whose NFD leaves them composed
+    query: elevação
+    names: [Elevacao lateral, Prancha]
+  - name: accent-insensitive-in-a-decomposed-query
+    why: The query's ç and ã arrive as a letter plus a combining mark, as some keyboards type them, and match as if precomposed
+    query: "elevac\u0327a\u0303o"
+    names: [Elevacao lateral, Prancha]
   - name: words-in-any-order
     query: press db
     names: [DB Floor Press, Bench Press, DB Row]

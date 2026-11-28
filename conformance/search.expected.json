@@ -15,6 +15,14 @@
     "ranked": ["Flexao de braco"],
     "filtered": ["Flexao de braco"]
   },
+  "two-accents-in-the-query": {
+    "ranked": ["Elevacao lateral"],
+    "filtered": ["Elevacao lateral"]
+  },
+  "accent-insensitive-in-a-decomposed-query": {
+    "ranked": ["Elevacao lateral"],
+    "filtered": ["Elevacao lateral"]
+  },
   "words-in-any-order": {
     "ranked": ["DB Floor Press"],
     "filtered": ["DB Floor Press"]

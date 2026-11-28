@@ -112,8 +112,11 @@ fun historySessionsView(
     library: Library,
     zone: TimeZone,
 ): List<HistorySessionView> {
-    // Newest first, as the log is read everywhere: the session a program's place is read from.
-    val newestTracked = sessions.firstOrNull { it.program != null && it.programWeek != null }
+    // Newest first, as the log is read everywhere: the session Home reads the program's place from.
+    // By NextUp's two rules: the active program is the newest session's with any program, week or not
+    // (#569), and its place is that program's newest session with a week.
+    val active = sessions.firstOrNull { it.program != null }?.program
+    val newestTracked = sessions.firstOrNull { it.program == active && it.programWeek != null }
     return sessions.map { session ->
         val worked = session.entries.withIndex().filter { (_, entry) -> entry !is SessionEntry.Rest }
         HistorySessionView(

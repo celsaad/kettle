@@ -4540,7 +4540,7 @@
       "programs": []
     }
   },
-  "tab-separating-in-flow-sequence-in-sequence": {
+  "tab-separating-in-nested-flow-sequence": {
     "ok": true,
     "value": {
       "version": 1,
@@ -4568,16 +4568,12 @@
           "name": "W",
           "blocks": [
             {
-              "kind": "circuit",
-              "rounds": 2,
-              "members": [
-                {
-                  "exerciseId": "a"
-                },
-                {
-                  "exerciseId": "b"
-                }
-              ]
+              "kind": "exercise",
+              "exerciseId": "a"
+            },
+            {
+              "kind": "exercise",
+              "exerciseId": "b"
             }
           ]
         }

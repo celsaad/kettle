@@ -247,8 +247,7 @@ private class MappingKeys {
  *
  * Not mirrored, deliberately: js-yaml 5 also refuses a TAB between tokens inside a flow collection under
  * a block node (`a: {b:<TAB>1}`), which YAML 1.2 allows as separation. Where the two part, the spec
- * decides (#382); the corpus pins it in `tab-separating-in-flow-mapping`, `tab-before-flow-value` and
- * `tab-separating-in-flow-sequence`.
+ * decides (#382); the corpus pins it in the `tab-separating-in-*` cases and `tab-before-flow-value`.
  *
  * On tokens rather than events, because no event carries where a sequence's `-` was. An indentless
  * sequence (`a:` / `- x`) opens no collection token, and needs none: it sits at its parent's column,

@@ -45,6 +45,21 @@ fun ExerciseDraft.stepping(
 }
 
 /**
+ * [field]'s count as typed into it (#463), kept as typed: Save's `validateConfig` refuses what's out of
+ * range, or not a whole number, in its own words, as it does for every typed field. A reps min typed
+ * past the max carries the max up with it, as stepping does, rather than leave a range the form refuses.
+ */
+fun ExerciseDraft.typing(
+    field: ConfigField,
+    text: String,
+): ExerciseDraft {
+    val typed = values + (field.key to text)
+    val count = text.trim().toLongOrNull()?.takeIf { field.key == ConfigKey.TargetRepsMin }
+    val carried = count?.takeIf { top -> countOf(ConfigKey.TargetRepsMax)?.let { it < top } == true }
+    return copy(values = if (carried == null) typed else typed + (ConfigKey.TargetRepsMax to "$carried"))
+}
+
+/**
  * A new exercise's starting target, per type (#456): 3 × 8–12 with a 1:30 rest, a 0:30 hold, a HIIT
  * of 0:30 on and off for 8 rounds. A name-only Save writes something a person would train, not the
  * least each field takes. No weight: there's no load that suits everyone.

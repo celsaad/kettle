@@ -167,6 +167,67 @@ class ExerciseEditorScreenTest {
         assertEquals(1, closed)
     }
 
+    // A 50-rep or 100-round count is dozens of presses (#463): a tap on the value types it, as the session
+    // editor's cells do.
+    @Test
+    fun `types a count by tapping its value, and saves it`() {
+        val files = Files()
+        show(null, files)
+
+        type("Nome", "Pull-ups")
+        press("Séries, 3")
+        type("Séries", "50")
+        press("Salvar")
+
+        assertEquals(
+            50L,
+            (
+                files.written
+                    .single()
+                    .exercises
+                    .single()
+                    .config as ExerciseConfig.Reps
+            ).sets,
+        )
+    }
+
+    // A typed count goes through validateConfig's ceilings, as every typed field does.
+    @Test
+    fun `refuses a typed count past its ceiling, and writes nothing`() {
+        val files = Files()
+        show(null, files)
+
+        type("Nome", "Pull-ups")
+        press("Séries, 3")
+        type("Séries", "501")
+        press("Salvar")
+
+        compose.onNodeWithText("Séries pode ser no máximo 500.").assertExists()
+        assertEquals(emptyList<Library>(), files.written)
+        assertEquals(0, closed)
+    }
+
+    // A min typed past the max carries it up, as the stepper does, rather than a range Save refuses.
+    @Test
+    fun `carries the reps max up with a min typed past it`() {
+        val files = Files()
+        show(null, files)
+
+        type("Nome", "Pull-ups")
+        press("Reps alvo, 8")
+        type("Reps alvo", "20")
+        press("Salvar")
+
+        val config =
+            files.written
+                .single()
+                .exercises
+                .single()
+                .config as ExerciseConfig.Reps
+        assertEquals(20L, config.targetRepsMin)
+        assertEquals(null, config.targetRepsMax)
+    }
+
     // Each type keys a different config: switching an existing one's would zero every field.
     @Test
     fun `locks the type of an exercise that already exists`() {
@@ -575,6 +636,7 @@ class ExerciseEditorScreenTest {
             "Salvar",
             "Excluir exercício",
             "Aumentar Séries",
+            "Séries, 3",
             "Descanso, 1 minuto 30 segundos. Alterar",
         )) {
             compose

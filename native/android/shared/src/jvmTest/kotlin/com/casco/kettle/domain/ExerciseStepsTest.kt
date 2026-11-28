@@ -46,6 +46,22 @@ class ExerciseStepsTest {
         assertEquals("9", stepped.values[ConfigKey.TargetRepsMax])
     }
 
+    // A count typed in (#463) is kept as typed, for Save's validation to judge.
+    @Test
+    fun `keeps a typed count as typed`() {
+        assertEquals("120", reps(ConfigKey.Sets to "3").typing(sets, "120").values[ConfigKey.Sets])
+        assertEquals("", reps(ConfigKey.Sets to "3").typing(sets, "").values[ConfigKey.Sets])
+    }
+
+    // "8 to 12" with 50 typed as the min is "50 to 50", as a stepped min carries it.
+    @Test
+    fun `carries the max up with a min typed past it, and leaves it below`() {
+        val typed = reps(ConfigKey.TargetRepsMin to "8", ConfigKey.TargetRepsMax to "12").typing(min, "50")
+        assertEquals("50", typed.values[ConfigKey.TargetRepsMax])
+        val lower = reps(ConfigKey.TargetRepsMin to "8", ConfigKey.TargetRepsMax to "12").typing(min, "10")
+        assertEquals("12", lower.values[ConfigKey.TargetRepsMax])
+    }
+
     // A name-only Save writes something a person would train (#456), not 1 × 1 with no rest.
     @Test
     fun `starts a new reps exercise at 3 x 8-12 with a 1-30 rest, and no weight`() {

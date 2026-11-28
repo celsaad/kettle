@@ -22,6 +22,8 @@ here, next to what it describes.
 
 ### What changed
 
+- **Type a count instead of tapping +**: in the exercise editor, tap a count, such as sets, reps or
+  rounds, and type the number. A 50-rep or 100-round exercise no longer takes dozens of taps (#463).
 - **Times read the same everywhere**: every time on screen is now minutes and seconds, as the timers
   show it: "work 0:30 · rest 0:30" rather than "30 s work · 30 s rest", in the library, the workout
   preview and editor, the workout screens, History and Progress. A HIIT, EMOM or AMRAP line names its

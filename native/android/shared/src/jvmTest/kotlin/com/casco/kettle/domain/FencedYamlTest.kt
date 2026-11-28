@@ -22,6 +22,7 @@ class FencedYamlTest {
         assertEquals(yaml, fencedYaml("```YAML title=\"lib.yaml\"\n$yaml```"))
         assertEquals(yaml, fencedYaml("Here:\n```\n$yaml```"))
         assertEquals(yaml, fencedYaml("~~~yaml\n$yaml~~~"))
+        assertEquals(yaml, fencedYaml("```yaml\ttitle\n$yaml```"))
     }
 
     @Test
@@ -53,6 +54,9 @@ class FencedYamlTest {
         assertNull(fencedYaml("```yaml\na: 1\n```\nrun:\n```bash\nls\n```\n"))
         assertNull(fencedYaml("```json\n{}\n```\nHere's the yaml:\n```yaml\nversion: 1\n```"))
         assertNull(fencedYaml("```bash\nls\n```"))
+        // Empty, or cut off at its opener: reviewed as it came, rather than nothing at all.
+        assertNull(fencedYaml("Sure, here it is:\n```yaml"))
+        assertNull(fencedYaml("```yaml\n```"))
     }
 
     /** One pass: 512 KB of unclosed fences took minutes through a lazy regex, on the main thread. */

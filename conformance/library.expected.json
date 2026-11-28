@@ -4460,6 +4460,44 @@
       "programs": []
     }
   },
+  "tab-separating-in-flow-mapping": {
+    "ok": true,
+    "value": {
+      "version": 1,
+      "exercises": [
+        {
+          "id": "a",
+          "name": "A",
+          "type": "reps",
+          "config": {
+            "sets": 3,
+            "targetRepsMin": 5,
+            "restSec": 60
+          }
+        }
+      ],
+      "workouts": [],
+      "programs": []
+    }
+  },
+  "tab-before-flow-value": {
+    "ok": true,
+    "value": {
+      "version": 1,
+      "exercises": [],
+      "workouts": [],
+      "programs": []
+    }
+  },
+  "tab-separating-in-flow-sequence": {
+    "ok": true,
+    "value": {
+      "version": 1,
+      "exercises": [],
+      "workouts": [],
+      "programs": []
+    }
+  },
   "unclosed-flow-sequence": {
     "ok": false,
     "kind": "invalidYaml"

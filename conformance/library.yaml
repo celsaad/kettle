@@ -183,6 +183,18 @@ cases:
     why: a TAB within a block-mapping value, quoted or plain, is content rather than indentation, and survives as is
     input: "version: 1\nexercises:\n  - id: a\n    name: \"Push\tups\"\n    type: reps\n    notes: Slow\tdown\n    config: { sets: 3, target_reps_min: 5, rest_sec: 60 }\nworkouts: []\nprograms: []\n"
 
+  - name: tab-separating-in-flow-mapping
+    why: a TAB between a flow mapping's entries, or after a key's colon, is separation, as a space is, even in a flow collection that is a block node's child; js-yaml 5 refused this as deficient indentation
+    input: "version: 1\nexercises:\n  - id: a\n    name: A\n    type: reps\n    config: { sets:\t3,\ttarget_reps_min: 5, rest_sec: 60 }\nworkouts: []\nprograms: []\n"
+
+  - name: tab-before-flow-value
+    why: a TAB between a block key's colon and its flow value, `[` or `{`, is separation too
+    input: "version: 1\nexercises:\t[]\nworkouts:\t[]\nprograms: []\nextra:\t{ b: 1 }\n"
+
+  - name: tab-separating-in-flow-sequence
+    why: a TAB between a flow sequence's entries, in a block mapping's value, in a block sequence's entry, and nested a level down; on the same line it is separation, never indentation
+    input: "version: 1\nexercises: []\nworkouts: []\nprograms: []\nextra: [b,\tc]\nlist:\n  - [a,\tb]\nnested:\n  b: [c,\td]\n"
+
   # --- Not YAML at all ---
 
   - name: unclosed-flow-sequence

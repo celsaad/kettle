@@ -8,8 +8,8 @@ import com.casco.kettle.domain.roundHalfUp
 import com.casco.kettle.domain.toDisplayWeight
 import com.casco.kettle.shell.R
 import com.casco.kettle.shell.i18n.pluralText
+import com.casco.kettle.shell.i18n.timeText
 import com.casco.kettle.shell.i18n.weightUnit
-import com.casco.kettle.shell.runner.timeText
 import kotlin.math.abs
 import kotlin.math.sign
 
@@ -34,12 +34,13 @@ class Readings(
 
     /**
      * An axis line's label, its [value] already in the reader's units: the [top] line carries the unit,
-     * "50 lb", and the rest are bare numbers under it, as an axis reads.
+     * "50 lb", and the rest are bare numbers under it, as an axis reads. A hold's lines are all m:ss
+     * (#462), which carries its own unit: "1:30" over a bare "60" read as minutes over seconds.
      */
     fun axis(
         value: Double,
         top: Boolean,
-    ): String = if (top) labelled(value) else jsNumber(value)
+    ): String = if (top || kind == RecordKind.LongestHold) labelled(value) else jsNumber(value)
 
     /** A value already in the reader's units, with its unit: what [reading] and the axis's top share. */
     private fun labelled(value: Double): String =

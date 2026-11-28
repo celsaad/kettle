@@ -7,7 +7,7 @@ import com.casco.kettle.domain.jsNumber
 import com.casco.kettle.domain.toDisplayWeight
 import com.casco.kettle.shell.R
 import com.casco.kettle.shell.i18n.pluralText
-import com.casco.kettle.shell.runner.timeText
+import com.casco.kettle.shell.i18n.timeText
 import com.casco.kettle.shell.runner.weightText
 
 /**
@@ -21,7 +21,7 @@ fun Resources.entryResultText(
 ): String =
     when (result) {
         is EntryResult.Holds -> {
-            result.holdSecs.joinToString(" · ") { seconds(it) }
+            result.holdSecs.joinToString(" · ") { timeText(it) }
         }
 
         is EntryResult.Reps -> {
@@ -46,13 +46,13 @@ fun Resources.entryResultText(
 
         is EntryResult.Cardio -> {
             listOfNotNull(
-                result.durationSec?.let { seconds(it) },
+                result.durationSec?.let { timeText(it) },
                 result.distanceMeters?.let { getString(R.string.format_metres, jsNumber(it)) },
             ).joinToString(" · ")
         }
 
         is EntryResult.Rest -> {
-            seconds(result.restTakenSec)
+            timeText(result.restTakenSec)
         }
     }
 
@@ -89,7 +89,5 @@ private fun Resources.repsText(
         }
     }
 }
-
-private fun seconds(seconds: Double) = timeText(seconds)
 
 private fun Resources.reps(count: Long) = pluralText(R.plurals.format_rep, R.string.format_rep_zero, count.toInt())

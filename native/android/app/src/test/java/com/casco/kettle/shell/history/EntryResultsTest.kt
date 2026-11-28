@@ -24,9 +24,9 @@ class EntryResultsTest {
         units: UnitSystem = UnitSystem.METRIC,
     ) = resources.entryResultText(result, units)
 
-    // As JS prints them: a whole second has no ".0", and a half keeps its ".5".
+    // As every time reads (#462), m:ss to the whole second: a half rounds up.
     @Test
-    fun `holds are each set's seconds`() {
+    fun `holds are each set's time`() {
         assertEquals("0:40 · 0:53", text(EntryResult.Holds(listOf(40.0, 52.5))))
     }
 

@@ -7,8 +7,9 @@ import com.casco.kettle.domain.UnitSystem
 import com.casco.kettle.domain.jsNumber
 import com.casco.kettle.domain.toDisplayWeight
 import com.casco.kettle.shell.R
+import com.casco.kettle.shell.i18n.timeRange
+import com.casco.kettle.shell.i18n.timeText
 import com.casco.kettle.shell.i18n.weightUnit
-import com.casco.kettle.shell.runner.timeText
 
 /**
  * An exercise's target in one line, its weight in the reader's [units]. Zeros read as absent, so a 0 kg
@@ -124,7 +125,7 @@ private fun repsSummary(
 @Composable
 private fun holdSummary(config: ExerciseConfig.TimedHold): String {
     val min = config.holdSecMin
-    // A max-effort hold has no duration to show, and "3 × s" is what the shared string reads without one.
+    // A max-effort hold has no duration to show, and "3 × " is what the shared string reads without one.
     return if (min == null) {
         stringResource(R.string.summary_holdOpen, timeText(config.restSec), config.sets)
     } else {
@@ -146,9 +147,3 @@ internal fun rangeLabel(
     min: Double,
     max: Double?,
 ): String = if (max == null || max == 0.0) jsNumber(min) else "${jsNumber(min)}–${jsNumber(max)}"
-
-/** "0:20–0:45", or "0:30" for a fixed time or a range whose top is 0 or missing. */
-internal fun timeRange(
-    min: Double,
-    max: Double?,
-): String = max?.takeIf { it != 0.0 }?.let { "${timeText(min)}–${timeText(it)}" } ?: timeText(min)

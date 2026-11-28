@@ -343,9 +343,9 @@
     },
     "hold": {
       "captionOpen": "no target · counting up",
-      "target": "Target {{range}} s · stops at {{end}}",
-      "targetOnly": "Target {{range}} s",
-      "stopsAt": "Stops at {{end}} s"
+      "target": "Target {{range}} · stops at {{end}}",
+      "targetOnly": "Target {{range}}",
+      "stopsAt": "Stops at {{end}}"
     },
     "notification": {
       "restTitle": "Rest complete",
@@ -1037,7 +1037,7 @@
     "oneRepMax": "Est. 1RM {{weight}}"
   },
   "summary": {
-    "hiit": "{{work}} work · rest {{rest}} · ×{{rounds}}",
+    "hiit": "work {{work}} · rest {{rest}} · ×{{rounds}}",
     "reps": "{{sets}} × {{reps}}{{weight}} · rest {{rest}}",
     "repsWeight": " · {{weight}} {{unit}}",
     "hold": "{{sets}} × {{hold}} · rest {{rest}}",

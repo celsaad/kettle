@@ -30,9 +30,11 @@ class ReadingsTest {
         assertEquals("0", weight.axis(0.0, top = false))
     }
 
+    /** A hold's every line is m:ss (#462): "1:30" over a bare "60" read as minutes over seconds. */
     @Test
-    fun `a hold's top line is in seconds, and reps' in reps`() {
+    fun `a hold's lines are all minutes and seconds, and reps' top in reps`() {
         assertEquals("1:00", readings(RecordKind.LongestHold).axis(60.0, top = true))
+        assertEquals("0:30", readings(RecordKind.LongestHold).axis(30.0, top = false))
         assertEquals("15 repetições", readings(RecordKind.MostReps).axis(15.0, top = true))
     }
 

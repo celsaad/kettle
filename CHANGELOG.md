@@ -23,7 +23,7 @@ here, next to what it describes.
 ### What changed
 
 - **Times read the same everywhere**: every time on screen is now minutes and seconds, as the timers
-  show it: "0:30 work · rest 0:30" rather than "30 s work · 30 s rest", in the library, the workout
+  show it: "work 0:30 · rest 0:30" rather than "30 s work · 30 s rest", in the library, the workout
   preview and editor, the workout screens, History and Progress. A HIIT, EMOM or AMRAP line names its
   type the way the library does, not as it's spelled in the file (#462).
 - **Open a library from another app**: share YAML from a chat, or open a `.yaml` file from Files or a

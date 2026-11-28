@@ -5,12 +5,12 @@ import androidx.compose.ui.res.stringResource
 import com.casco.kettle.domain.ExerciseConfig
 import com.casco.kettle.domain.UnitSystem
 import com.casco.kettle.shell.R
+import com.casco.kettle.shell.i18n.timeRange
+import com.casco.kettle.shell.i18n.timeText
 import com.casco.kettle.shell.library.exerciseSummary
 import com.casco.kettle.shell.library.exerciseTarget
 import com.casco.kettle.shell.library.rangeLabel
-import com.casco.kettle.shell.library.timeRange
 import com.casco.kettle.shell.library.weightSuffix
-import com.casco.kettle.shell.runner.timeText
 
 // What a block's row says under its name (#440), in m:ss where it's a time, as every timed line is
 // (#462). Reps and holds are written here; the timed types take the library's own line.

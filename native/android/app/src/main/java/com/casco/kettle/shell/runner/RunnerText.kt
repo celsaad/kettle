@@ -11,6 +11,7 @@ import com.casco.kettle.domain.jsNumber
 import com.casco.kettle.domain.toDisplayWeight
 import com.casco.kettle.shell.R
 import com.casco.kettle.shell.i18n.pluralText
+import com.casco.kettle.shell.i18n.timeText
 import com.casco.kettle.shell.i18n.weightUnit
 
 // The runner's words, as RN's formatter and the session components assembled them. In one

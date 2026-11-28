@@ -11,9 +11,10 @@ import com.casco.kettle.domain.WorkUnit
 import com.casco.kettle.domain.holdTarget
 import com.casco.kettle.domain.jsNumber
 import com.casco.kettle.domain.repsTarget
-import com.casco.kettle.domain.wholeSeconds
 import com.casco.kettle.shell.R
 import com.casco.kettle.shell.i18n.pluralText
+import com.casco.kettle.shell.i18n.timeRange
+import com.casco.kettle.shell.i18n.timeText
 
 // The step's own words: its clock and targets, what a screen reader hears as it comes up, and Home's
 // preview lines. Placeholders go in the alphabetical order of their names, as in RunnerText.
@@ -24,24 +25,21 @@ fun formatClock(totalSeconds: Double): String {
     return "${whole / SECONDS_PER_MINUTE}:${(whole % SECONDS_PER_MINUTE).toString().padStart(2, '0')}"
 }
 
-/**
- * A time as every visible line writes it (#462), `m:ss` to the whole second it rounds to, as the duration
- * picker shows it: a file's 74.6 s reads 1:15 everywhere. Spoken sentences keep their seconds.
- */
-fun timeText(seconds: Double): String = formatClock(wholeSeconds(seconds).toDouble())
-
 /** "0:15" or "0:15–0:25". */
-fun holdTargetText(target: HoldTarget): String =
-    target.maxSec?.let { "${timeText(target.minSec)}–${timeText(it)}" } ?: timeText(target.minSec)
+fun holdTargetText(target: HoldTarget): String = timeRange(target.minSec, target.maxSec)
 
 /** An interval variant's name, as the library's type filter and badges say it, never its YAML id (#462). */
 internal fun Resources.variantName(variant: IntervalVariant): String =
     getString(
         when (variant) {
             IntervalVariant.HIIT -> R.string.format_type_hiit
+
             IntervalVariant.EMOM -> R.string.format_type_emom
+
             IntervalVariant.AMRAP -> R.string.format_type_amrap
-            IntervalVariant.CARDIO -> R.string.format_type_cardio
+
+            // Its badge's: format.type's lower-case "cardio" is for lists, where it reads mid-sentence.
+            IntervalVariant.CARDIO -> R.string.library_badge_cardio
         },
     )
 
@@ -127,7 +125,7 @@ fun Resources.upcomingDetail(item: UpcomingItem.Exercise): String {
 }
 
 /**
- * "HIIT · round 2 of 4", "EMOM · 0:30" or "cardio · counting up": the variant by its name, then how far
+ * "HIIT · round 2 of 4", "EMOM · 0:30" or "Cardio · counting up": the variant by its name, then how far
  * in. [rounds] says the round when there are several; Coming up's targets don't.
  */
 internal fun Resources.intervalLine(

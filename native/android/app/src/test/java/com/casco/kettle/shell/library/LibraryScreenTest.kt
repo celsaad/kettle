@@ -178,7 +178,7 @@ class LibraryScreenTest {
         val others =
             listOf(
                 Exercise("burpees", "Burpees", ExerciseConfig.Hiit(40.0, 20.0, 8)) to
-                    "0:40 de trabalho · descanso 0:20 · ×8",
+                    "trabalho 0:40 · descanso 0:20 · ×8",
                 Exercise("swings", "Swings", ExerciseConfig.Emom(60.0, 10.0)) to "intervalo de 1:00 · 10 min",
                 Exercise("cindy", "Cindy", ExerciseConfig.Amrap(600.0)) to "limite de 10:00",
                 Exercise("run", "Run", ExerciseConfig.Cardio(distanceMeters = 5000.0)) to "5000 m",

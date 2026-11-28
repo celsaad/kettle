@@ -319,9 +319,9 @@
     },
     "hold": {
       "captionOpen": "目標なし · カウントアップ",
-      "target": "目標{{range}}秒 · {{end}}秒で終了",
-      "targetOnly": "目標{{range}}秒",
-      "stopsAt": "{{end}}秒で終了"
+      "target": "目標{{range}} · {{end}}で終了",
+      "targetOnly": "目標{{range}}",
+      "stopsAt": "{{end}}で終了"
     },
     "notification": {
       "restTitle": "休憩終了",
@@ -980,7 +980,7 @@
     "hold": "{{sets}} × {{hold}} · 休憩{{rest}}",
     "holdOpen": "{{sets}} × 最大ホールド · 休憩{{rest}}",
     "emom": "インターバル{{interval}} · {{minutes}}分",
-    "amrap": "制限{{cap}}",
+    "amrap": "制限時間{{cap}}",
     "cardioDistance": "{{n}} m"
   },
   "units": {

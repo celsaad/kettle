@@ -367,9 +367,9 @@
     },
     "hold": {
       "captionOpen": "sem meta · contando para cima",
-      "target": "Meta de {{range}} s · para em {{end}}",
-      "targetOnly": "Meta de {{range}} s",
-      "stopsAt": "Para em {{end}} s"
+      "target": "Meta de {{range}} · para em {{end}}",
+      "targetOnly": "Meta de {{range}}",
+      "stopsAt": "Para em {{end}}"
     },
     "notification": {
       "restTitle": "Descanso concluído",
@@ -1100,7 +1100,7 @@
     "oneRepMax": "1RM estimado {{weight}}"
   },
   "summary": {
-    "hiit": "{{work}} de trabalho · descanso {{rest}} · ×{{rounds}}",
+    "hiit": "trabalho {{work}} · descanso {{rest}} · ×{{rounds}}",
     "reps": "{{sets}} × {{reps}}{{weight}} · descanso {{rest}}",
     "repsWeight": " · {{weight}} {{unit}}",
     "hold": "{{sets}} × {{hold}} · descanso {{rest}}",

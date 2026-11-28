@@ -174,6 +174,13 @@ class SheetTransitionTest {
         assertEquals(Transition.Close, transitionBetween(Place.Sheet, Place.Pushed, MoveKind.Back))
     }
 
+    /** A link's Settings over the exercise editor (#569): it slides over the sheet, and back slides it off. */
+    @Test
+    fun `a pushed screen slides in over a sheet, and back slides it off`() {
+        assertEquals(Transition.PushIn, transitionBetween(Place.Sheet, Place.Pushed, MoveKind.Push))
+        assertEquals(Transition.PushOut, transitionBetween(Place.Pushed, Place.Sheet, MoveKind.Back))
+    }
+
     // The table, played.
 
     /** The first frame already draws the sheet's screen, below the frame, over the live tab: nothing blank. */
@@ -241,7 +248,8 @@ class SheetTransitionTest {
         assertTrue(at("Screen Support").x > 0f)
         assertTrue(at("Screen Import").x < 0f)
         finish()
-        assertEquals(false, isAlive("Screen Import"))
+        // Covered, it stays composed for back to find as it was left (#569), out of sight under the frame.
+        assertTrue(isAlive("Screen Import"))
         assertEquals(0f, at("Screen Support").x)
     }
 
@@ -411,6 +419,32 @@ class SheetTransitionTest {
         assertEquals(false, isAlive("Screen ProgramDetail base"))
     }
 
+    /** The sheet stays in its frame under the screen throughout, so back uncovers it rather than blinking it in. */
+    @Test
+    fun `PushIn over a sheet and PushOut back off it, the sheet resting in its frame`() {
+        show()
+        go { push(import) }
+
+        start { arrive(settings) }
+        assertEquals(Transition.PushIn, playing)
+        advance(PUSH_MS / 2)
+        assertTrue(at("Screen Settings").x > 0f)
+        assertEquals(sheetRest, at("Screen Import").y)
+        finish()
+        assertEquals(sheetRest, at("Screen Import").y)
+
+        start { back() }
+        assertEquals(Transition.PushOut, playing)
+        assertEquals(0f, at("Screen Settings").x)
+        assertEquals(sheetRest, at("Screen Import").y)
+        advance(POP_MS / 2)
+        assertTrue(at("Screen Settings").x > 0f)
+        assertEquals(sheetRest, at("Screen Import").y)
+        finish()
+        assertEquals(false, isAlive("Screen Settings"))
+        assertEquals(sheetRest, at("Screen Import").y)
+    }
+
     @Test
     fun `PushOut slides the leaving screen out by its side, live, over the tab`() {
         show()
@@ -473,7 +507,7 @@ class SheetTransitionTest {
         assertEquals(Transition.Forward, playing)
         finish()
         assertEquals(sheetRest, at("Screen Support").y)
-        assertEquals(false, isAlive("Screen Import"))
+        assertTrue(isAlive("Screen Import"))
     }
 
     /**

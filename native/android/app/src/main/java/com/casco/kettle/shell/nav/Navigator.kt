@@ -17,6 +17,7 @@ import com.casco.kettle.domain.RunnerStart
  * [onReselect] hears a tap on the tab already showing, which a tab's screen answers by scrolling to its
  * top.
  */
+@Suppress("TooManyFunctions") // A function per kind of move, each through the private `go` that holds the slot's rule.
 class Navigator(
     private val onReselect: (Tab) -> Unit = {},
 ) {
@@ -75,20 +76,16 @@ class Navigator(
     }
 
     /** Opens [route] over what shows: a sheet or a pushed screen stacks, and a tab's route goes to that tab. */
-    fun push(route: Route) {
-        if (!route.stacked) return navigate(route)
-        go(MoveKind.Push, entries = entries + StackEntry(nextId++, route))
-    }
+    fun push(route: Route) = stacking(route) { go(MoveKind.Push, entries = entries + StackEntry(nextId++, route)) }
 
     /** Opens [route] in the top sheet's place, so back skips the sheet it replaced. */
-    fun replace(route: Route) {
-        if (!route.stacked) return navigate(route)
-        go(MoveKind.Replace, entries = entries.dropLast(1) + StackEntry(nextId++, route))
-    }
+    fun replace(route: Route) =
+        stacking(route) { go(MoveKind.Replace, entries = entries.dropLast(1) + StackEntry(nextId++, route)) }
 
     /**
-     * Goes to [route] from the tabs, whatever is over them: a link, `NavigateReceiver`, a delete. The
-     * runner's route is the exception, opening over what shows as [openRunner] does.
+     * Goes to [route] from the tabs, whatever is over them: `NavigateReceiver`, a delete, a tab's section,
+     * and a link to a tab ([arrive]). The runner's route is the exception, opening over what shows as
+     * [openRunner] does.
      */
     fun navigate(route: Route) {
         if (route.destination.presentation == Presentation.Runner) return openRunner(route.runnerStart)
@@ -100,6 +97,54 @@ class Navigator(
             tabRoutes = if (to != null) tabRoutes + (to to route) else tabRoutes,
         )
     }
+
+    /**
+     * Opens [route] as it arrives from outside the app, a `kettle://` link or a share (#569): over the sheet
+     * or pushed screen showing, so back returns to it with what was typed there still in it, where
+     * [navigate] would throw the stack away. A tab's route still goes to its tab, since no tab shows over a
+     * sheet, and the runner's opens over everything, as through [navigate]. On a tab it is [navigate]'s
+     * fade, as a link and a share have always come in.
+     *
+     * Arrivals keep one screen of each destination on the stack: one equal to the top is no move, and any
+     * other of the route's destination leaves as the route opens on top, in the top's place when it was
+     * the top. So shares never stack Imports, links can't grow the stack past the route table, and back
+     * never walks through look-alikes. The price is a link to the destination of an editor that's open,
+     * on top or buried under what opened since, which removes that editor, draft and all: that link names
+     * that editor. A share likewise takes the place of an Import showing a library pasted by hand.
+     */
+    fun arrive(route: Route) {
+        if (entries.isEmpty()) return navigate(route)
+        stacking(route) {
+            if (route == sheet) return@stacking
+            val kind = if (sheet?.destination == route.destination) MoveKind.Replace else MoveKind.Push
+            go(
+                kind,
+                entries =
+                    entries.filter { it.route.destination != route.destination } + StackEntry(nextId++, route),
+            )
+        }
+    }
+
+    /**
+     * Closes the screen opened as [id], wherever it is on the stack (#569): an editor's Save or Delete that
+     * lands while a share covers it closes the editor, not the share. When it's on top that is [back],
+     * with its motion and the runner's rule; under the top nothing that shows changes, so nothing moves,
+     * though the runner's slot drops it too. Nothing when it has already gone.
+     */
+    fun close(id: Long) {
+        val entry = entries.firstOrNull { it.id == id } ?: return
+        if (entry == entries.last()) {
+            back()
+        } else if (!runnerShown) {
+            entries = entries - entry
+        }
+    }
+
+    /** [move] for a stacked [route], which a sheet or a pushed screen is; any other goes as [navigate] takes it. */
+    private inline fun stacking(
+        route: Route,
+        move: () -> Unit,
+    ) = if (route.stacked) move() else navigate(route)
 
     /** Back: the top sheet, else Today. False when there is nowhere left, and the app should leave. */
     fun back(): Boolean {

@@ -35,6 +35,7 @@ import com.casco.kettle.shell.files.ShippedContent
 import com.casco.kettle.shell.form.SheetColumn
 import com.casco.kettle.shell.i18n.deviceUnitSystem
 import com.casco.kettle.shell.i18n.pluralText
+import com.casco.kettle.shell.nav.LocalReachable
 import com.casco.kettle.shell.theme.KettleTheme
 import com.casco.kettle.shell.theme.KettleType
 import com.casco.kettle.shell.theme.Spacing
@@ -69,8 +70,11 @@ fun ImportScreen(
     // picker, not again on a rotation or after it came back cancelled, which leaves the row to try again;
     // a library another app handed over is reviewed as it lands (#514).
     var opened by rememberSaveable { mutableStateOf(false) }
-    LaunchedEffect(Unit) {
-        if (opened) return@LaunchedEffect
+    // Not while covered (#569): a stack put back after process death composes Import under what covers
+    // it, and its picker would open over that.
+    val reachable = LocalReachable.current
+    LaunchedEffect(reachable) {
+        if (opened || !reachable) return@LaunchedEffect
         opened = true
         if (shared != null) {
             // A share can cold-start the app, ahead of the library's first read: reviewed then, it would

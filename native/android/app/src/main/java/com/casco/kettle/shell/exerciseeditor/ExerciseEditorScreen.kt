@@ -53,7 +53,7 @@ import com.casco.kettle.shell.files.text
 import com.casco.kettle.shell.form.EditorTitleBar
 import com.casco.kettle.shell.i18n.deviceUnitSystem
 import com.casco.kettle.shell.list.ListRowSeparator
-import com.casco.kettle.shell.nav.LocalNavigator
+import com.casco.kettle.shell.nav.rememberCloseThis
 import com.casco.kettle.shell.theme.DialogAction
 import com.casco.kettle.shell.theme.KettleAlertDialog
 import com.casco.kettle.shell.theme.KettleTheme
@@ -71,11 +71,10 @@ import kotlinx.coroutines.withContext
  */
 @Composable
 fun ExerciseEditorRoute(params: Map<String, String>) {
-    val navigator = LocalNavigator.current
     ExerciseEditorScreen(
         params["id"],
         LocalLatestFiles.current,
-        ExerciseEditorActions(close = { navigator.back() }),
+        ExerciseEditorActions(close = rememberCloseThis()),
     )
 }
 
@@ -106,10 +105,10 @@ fun ExerciseEditorScreen(
     // Nothing before the library is read, so an exercise that is there is never offered as new.
     if (library == null) return
     // Taken from the first read and kept, as RN's form copied the exercise once: the shell reads again
-    // while the sheet is up, and from then on what's typed is the user's. Keyed on the units too, so the
-    // weight is never shown in one unit and converted back in the other.
-    val editor =
-        remember(id, units) { Editor(library.exercises.firstOrNull { it.id == id }, units, files, scope, actions) }
+    // while the sheet is up, and from then on what's typed is the user's. In the units it opened in, kept
+    // with it (#569): the weight is never shown in one unit and converted back in the other, and a units
+    // switch in Settings, pushed over the editor by a link, doesn't throw the draft away.
+    val editor = remember(id) { Editor(library.exercises.firstOrNull { it.id == id }, units, files, scope, actions) }
     val title = if (editor.existing == null) R.string.exerciseEditor_newTitle else R.string.exerciseEditor_editTitle
     Column(Modifier.fillMaxSize().imePadding()) {
         // Save pinned above what scrolls, as the program and workout editors' (#438, #440): the × is the cancel.
@@ -130,7 +129,7 @@ fun ExerciseEditorScreen(
                     .padding(bottom = Spacing.four)
                     .navigationBarsPadding(),
             ) {
-                Editing(editor, units)
+                Editing(editor, editor.units)
             }
         }
     }
@@ -140,7 +139,8 @@ fun ExerciseEditorScreen(
 private class Editor(
     /** The exercise being edited, or null for a new one: an `id` the library doesn't hold is one too. */
     val existing: Exercise?,
-    private val units: UnitSystem,
+    /** What the editor shows and reads a weight in: the units it opened in, whatever Settings says since. */
+    val units: UnitSystem,
     private val files: LatestFiles,
     private val scope: CoroutineScope,
     private val actions: ExerciseEditorActions,

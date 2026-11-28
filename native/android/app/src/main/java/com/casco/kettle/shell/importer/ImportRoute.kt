@@ -15,7 +15,7 @@ import com.casco.kettle.domain.MAX_IMPORT_BYTES
 import com.casco.kettle.shell.R
 import com.casco.kettle.shell.files.LocalLatestFiles
 import com.casco.kettle.shell.files.ShippedContent
-import com.casco.kettle.shell.nav.LocalNavigator
+import com.casco.kettle.shell.nav.rememberCloseThis
 import com.casco.kettle.shell.system.confirmCopy
 import com.casco.kettle.shell.system.copyToClipboard
 import com.casco.kettle.shell.system.readClipboard
@@ -36,7 +36,7 @@ fun ImportRoute(params: Map<String, String> = emptyMap()) {
     val pickFile = rememberFilePicker(activity)
     val view = LocalView.current
     val copied = stringResource(R.string.common_copied)
-    val navigator = LocalNavigator.current
+    val close = rememberCloseThis()
     // Taken once per screen: a recreated one finds the slot empty and opens on its sources as usual.
     val shared = remember { params[IMPORT_SHARED_PARAM]?.let(SharedLibraryInbox.process::take) }
     val incoming =
@@ -50,10 +50,10 @@ fun ImportRoute(params: Map<String, String> = emptyMap()) {
     ImportScreen(
         LocalLatestFiles.current,
         remember { ShippedContent(activity.assets) },
-        remember(pickFile, view, copied, navigator) {
+        remember(pickFile, view, copied, close) {
             ImportActions(
                 pickFile = pickFile,
-                close = { navigator.back() },
+                close = close,
                 copy = { text -> activity.copyToClipboard(text).also { if (it) view.confirmCopy(copied) } },
                 readClipboard = activity::readClipboard,
                 share = activity::shareText,

@@ -85,14 +85,24 @@ fun transitionBetween(
             if (back) Transition.Close else Transition.FadeOut
         }
 
-        // A sheet opened from a pushed screen covers it as it covers a tab, and closes back onto it.
+        // A sheet opened from a pushed screen covers it as it covers a tab, and closes back onto it. Back
+        // from a pushed screen a link opened over a sheet (#569) slides it off the sheet, still in its frame.
         Place.Pushed to Place.Sheet -> {
-            if (push) Transition.Open else Transition.FadeIn
+            when {
+                push -> Transition.Open
+                back -> Transition.PushOut
+                else -> Transition.FadeIn
+            }
         }
 
-        // Nothing opens a pushed screen from a sheet today: a fade, rather than a motion of its own.
+        // Only a link pushes a screen over a sheet (Navigator.arrive): it slides in over the sheet, which
+        // stays in its frame under it. A sheet closed onto a pushed screen closes as it does onto a tab.
         Place.Sheet to Place.Pushed -> {
-            if (back) Transition.Close else Transition.FadeOut
+            when {
+                push -> Transition.PushIn
+                back -> Transition.Close
+                else -> Transition.FadeOut
+            }
         }
 
         Place.Tab to Place.Pushed -> {

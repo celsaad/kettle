@@ -179,7 +179,8 @@ private fun Activity.openIncoming(
 }
 
 /**
- * A `kettle://` link in [intent], parsed natively (#309); one to nowhere is dropped. Not when Recents
+ * A `kettle://` link in [intent], parsed natively (#309), opened over what shows ([Navigator.arrive]), so
+ * an editor it lands on keeps its draft (#569); one to nowhere is dropped. Not when Recents
  * relaunches it: the system hands back the intent the task started with, and a `kettle://session` link
  * would start the workout it already ran.
  */
@@ -189,7 +190,7 @@ private fun Navigator.openLink(intent: Intent) {
     // Taken off, so a recreated activity, which is handed the same intent, doesn't open it again.
     intent.data = null
     val route = Route.fromLink(link)
-    if (route != null) navigate(route) else Log.w("MainActivity", "No route at $link; the link goes nowhere")
+    if (route != null) arrive(route) else Log.w("MainActivity", "No route at $link; the link goes nowhere")
 }
 
 /**

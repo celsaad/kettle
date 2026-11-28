@@ -60,6 +60,7 @@ class ImportSharedTest : ImportHarness() {
         files.nothingWritten()
     }
 
+    /** A share can cold-start the app ahead of the library's first read: it waits rather than refuse. */
     @Test
     fun `a share that lands before the library is read waits for it`() {
         sharedIn = Incoming.Text(serializeLibraryYaml(incoming))

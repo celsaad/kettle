@@ -289,8 +289,9 @@ internal class Importer(
     fun reviewPaste(text: String = pasted) {
         if (busy) return
         clear()
-        // A chat reply's one fenced block (#569), the box still showing all that arrived.
-        val text = (fencedYaml(text) ?: text).trim()
+        // A chat reply's one fenced block (#569), the box still showing all that arrived; past the import
+        // limit, the size refusal comes first, as it did.
+        val text = (if (exceedsImportSize(text)) text else fencedYaml(text) ?: text).trim()
         // Blank never reaches the parser, whose "the input is empty" would be an accusation before
         // anything was done wrong.
         pasteNote = null

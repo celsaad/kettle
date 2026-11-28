@@ -35,7 +35,8 @@ sealed interface SharedLibrary {
  * replays, which would import the same thing again.
  *
  * The launcher alias is exported, so an app can name it and skip the filters: a file is only ever a
- * `content:` URI ([fileUri]).
+ * `content:` URI ([fileUri]). An app naming it can open Import on any file, a picture say; the read is
+ * bounded and off the main thread, and the parser refuses it.
  */
 fun Intent.sharedLibrary(ownAuthority: String? = null): SharedLibrary? {
     val replayed = flags and Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY != 0
@@ -149,14 +150,10 @@ class SharedOpener(
 ) {
     fun open(shared: SharedLibrary) {
         val token = inbox.put(shared)
-        when {
-            navigator.runnerShown -> inbox.held = SharedLibraryInbox.Held(token, navigator.sheet)
-
-            // Over an open sheet, not in its place (#569): a share arriving while an editor is open threw
-            // away what was typed there. Back returns to it.
-            navigator.sheet != null -> navigator.push(route(token))
-
-            else -> navigator.navigate(route(token))
+        if (navigator.runnerShown) {
+            inbox.held = SharedLibraryInbox.Held(token, navigator.sheet)
+        } else {
+            navigator.navigate(route(token))
         }
     }
 
@@ -165,12 +162,15 @@ class SharedOpener(
         scope.launch { snapshotFlow { navigator.runnerShown to navigator.sheet }.collect { openHeld() } }
     }
 
-    /** A share held until now opens, if the runner has closed and no sheet since covers where it started. */
+    /**
+     * A share held until now opens, once the runner has closed and the screen is back on the sheet it
+     * started from, or that sheet has left the stack altogether, when it opens over whatever is there.
+     */
     fun openHeld() {
         val held = inbox.held ?: return
         // Or once the sheet it was held over has gone from the stack altogether (#569): after a relaunch
         // with no saved stack, or a link over the editor, it would otherwise wait for that sheet for good.
-        val gone = held.beneath != null && held.beneath.path !in navigator.saved().drop(1)
+        val gone = held.beneath != null && held.beneath !in navigator.sheets
         if (navigator.runnerShown || (navigator.sheet != held.beneath && !gone)) return
         inbox.held = null
         navigator.push(route(held.token))

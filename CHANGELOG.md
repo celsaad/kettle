@@ -23,6 +23,7 @@ here, next to what it describes.
 ### What changed
 
 - **Paste or share a whole chat reply**: when an assistant's reply wraps the YAML in a code block,
+  Import now reads the block and leaves the chat around it, so you don't have to copy just the code (#569).
   Import now reads the block and leaves the chat around it, so you don't have to copy just the code.
   A share that arrives while you're editing opens over the editor, so nothing you typed is lost
   (#569).

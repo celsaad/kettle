@@ -1,6 +1,7 @@
 package com.casco.kettle.shell.exerciseeditor
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -11,13 +12,15 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.LiveRegionMode
-import androidx.compose.ui.semantics.liveRegion
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.casco.kettle.domain.ConfigField
 import com.casco.kettle.domain.ConfigKey
@@ -30,6 +33,7 @@ import com.casco.kettle.domain.jsNumber
 import com.casco.kettle.domain.shownCount
 import com.casco.kettle.domain.stepping
 import com.casco.kettle.domain.storedWeightKg
+import com.casco.kettle.domain.typing
 import com.casco.kettle.shell.R
 import com.casco.kettle.shell.form.DurationButton
 import com.casco.kettle.shell.form.StepButton
@@ -136,7 +140,11 @@ private fun repsHint(
     return stringResource(R.string.exerciseEditor_repsHint, fixed, shape)
 }
 
-/** − value +, each button named by the field it moves, and the value announced as it changes. */
+/**
+ * − value +, each button named by the field it moves, and the value announced as it changes. A tap on
+ * the value types one (#463), as the session editor's cells do: a 50-rep or 100-round count is dozens of
+ * presses otherwise. Each keystroke is applied as [typing] takes it; Save judges its ceiling.
+ */
 @Composable
 private fun Stepper(
     field: ConfigField,
@@ -144,6 +152,14 @@ private fun Stepper(
     context: FieldContext,
 ) {
     val draft = context.draft
+    var open by remember(field.key) { mutableStateOf(false) }
+
+    /** What the field and the max it carries held as it opened: each keystroke is applied to these. */
+    var opened by remember(field.key) { mutableStateOf(emptyMap<ConfigKey, String?>()) }
+
+    // The draft as it is at each keystroke, not as it was when the field opened.
+    val latest by rememberUpdatedState(context)
+    val focus = LocalFocusManager.current
     Row(verticalAlignment = Alignment.CenterVertically) {
         val shown = "${draft.shownCount(field)}"
         StepButton(
@@ -152,24 +168,31 @@ private fun Stepper(
             draft.canStep(field, -1),
             shown,
         ) {
-            context.onChange(draft.stepping(field, -1))
+            // Closes any count left open first, this one or another's: a step under an open field
+            // was undone by its next keystroke, or left the field showing what Save wouldn't write.
+            focus.clearFocus()
+            latest.onChange(latest.draft.stepping(field, -1))
         }
-        Text(
-            shown,
-            // A live region still: TalkBack doesn't speak a focused button's state change (checked on the
-            // AVD for #456), so this is what says "4" after a press; the buttons' state says it on focus.
-            Modifier.widthIn(min = VALUE_WIDTH).semantics { liveRegion = LiveRegionMode.Polite },
-            style = KettleType.heading,
-            color = KettleTheme.colors.text,
-            textAlign = TextAlign.Center,
-        )
+        if (open) {
+            Box(Modifier.widthIn(min = TYPING_WIDTH, max = TYPING_WIDTH)) {
+                TypedCount(shown, label, onText = { text -> latest.retyped(field, opened, text) }) { open = false }
+            }
+        } else {
+            CountValue(shown, label) {
+                opened = typedKeys(field).associateWith { draft.values[it] }
+                open = true
+            }
+        }
         StepButton(
             R.drawable.icon_add,
             stringResource(R.string.common_increase, label),
             draft.canStep(field, +1),
             shown,
         ) {
-            context.onChange(draft.stepping(field, +1))
+            // Closes any count left open first, this one or another's: a step under an open field
+            // was undone by its next keystroke, or left the field showing what Save wouldn't write.
+            focus.clearFocus()
+            latest.onChange(latest.draft.stepping(field, +1))
         }
     }
 }
@@ -215,4 +238,6 @@ private fun WeightField(
 }
 
 private val ROW_HEIGHT = 52.dp
-private val VALUE_WIDTH = 40.dp
+
+/** Wide enough for a ceiling's digits at the default size; the field scrolls past it at a larger one. */
+private val TYPING_WIDTH = 72.dp

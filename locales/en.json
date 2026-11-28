@@ -854,6 +854,8 @@
     "load": "Load",
     "timing": "Timing",
     "repsTo": "to",
+    "countValue": "{{name}}, {{value}}",
+    "typeCount": "Type a number",
     "repsHint": "Reads as {{shape}}. The same number twice saves as a fixed count, {{fixed}}.",
     "storedAs": "Your file keeps it as {{kg}} kg.",
     "idLabel": "id: {{id}}",

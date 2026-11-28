@@ -12,13 +12,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.platform.LocalDensity
@@ -40,9 +37,9 @@ import com.casco.kettle.domain.isZeroForm
 import com.casco.kettle.domain.jsNumber
 import com.casco.kettle.domain.wholeSeconds
 import com.casco.kettle.shell.R
+import com.casco.kettle.shell.form.BLANK
 import com.casco.kettle.shell.form.DurationDialog
-import com.casco.kettle.shell.form.FieldOptions
-import com.casco.kettle.shell.form.FormField
+import com.casco.kettle.shell.form.InlineField
 import com.casco.kettle.shell.form.RemoveButton
 import com.casco.kettle.shell.library.ExerciseBadge
 import com.casco.kettle.shell.list.ListRowSeparator
@@ -249,32 +246,6 @@ private fun ShownValue(
     }
 }
 
-/** The cell as a field, focused at once, done when focus leaves it: the next cell tapped, or the keyboard closed. */
-@Composable
-private fun InlineField(
-    value: String,
-    name: String,
-    onChange: (String) -> Unit,
-    onDone: () -> Unit,
-) {
-    val focus = remember { FocusRequester() }
-    LaunchedEffect(Unit) { focus.requestFocus() }
-    // Not state: whether focus has arrived yet. The field starts unfocused, and that first report isn't
-    // a leaving; only a loss after it had focus closes it.
-    val focused = remember { booleanArrayOf(false) }
-    Box(
-        Modifier.onFocusChanged {
-            if (it.hasFocus) {
-                focused[0] = true
-            } else if (focused[0]) {
-                onDone()
-            }
-        },
-    ) {
-        FormField(value, onChange, name = name, placeholder = BLANK, FieldOptions(minHeight = 44.dp, focus = focus))
-    }
-}
-
 /**
  * The set column: as wide as its heading, measured, and never under 36dp. A fixed width broke "Série"
  * mid-word at 200% text (#456, on the AVD), and a width in sp only guessed at the face's letters.
@@ -290,6 +261,3 @@ private fun setWidth(): Dp {
 
 private val MIN_SET_WIDTH = 36.dp
 private val REMOVE_WIDTH = 44.dp
-
-/** A blank value's dash, as the log's own tables write none: a placeholder, not an icon, so read as "none". */
-private const val BLANK = "\u2013"

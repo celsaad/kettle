@@ -803,6 +803,8 @@
     "load": "負荷",
     "timing": "時間",
     "repsTo": "〜",
+    "countValue": "{{name}}、{{value}}",
+    "typeCount": "数値を入力",
     "repsHint": "{{shape}}になります。同じ数を2回選ぶと固定回数{{fixed}}として保存されます。",
     "storedAs": "ファイルには{{kg}} kgで保存されます。",
     "idLabel": "id: {{id}}",

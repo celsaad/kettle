@@ -46,6 +46,40 @@ class ExerciseStepsTest {
         assertEquals("9", stepped.values[ConfigKey.TargetRepsMax])
     }
 
+    // A count typed in (#463) is kept as typed, for Save's validation to judge.
+    @Test
+    fun `takes a typed whole number of any size, for Save to judge`() {
+        assertEquals("120", reps(ConfigKey.Sets to "3").typing(sets, "120").values[ConfigKey.Sets])
+        assertEquals("501", reps(ConfigKey.Sets to "3").typing(sets, " 501 ").values[ConfigKey.Sets])
+        assertEquals("50", reps(ConfigKey.Sets to "3").typing(sets, "050").values[ConfigKey.Sets])
+        val huge = "123456789012345678901234"
+        assertEquals(huge, reps(ConfigKey.Sets to "3").typing(sets, huge).values[ConfigKey.Sets])
+    }
+
+    // A blank or a "8.5" closed into the count it can't be would read as accepted.
+    @Test
+    fun `leaves the count as it was for anything but a whole number`() {
+        for (text in listOf("", " ", "8.5", "-", ".", "-2", "1e2")) {
+            assertEquals("3", reps(ConfigKey.Sets to "3").typing(sets, text).values[ConfigKey.Sets], text)
+        }
+    }
+
+    // As the steppers keep it: a max below the min disabled both of them.
+    @Test
+    fun `holds a reps max typed below the min at the min`() {
+        val typed = reps(ConfigKey.TargetRepsMin to "8", ConfigKey.TargetRepsMax to "12").typing(max, "5")
+        assertEquals("8", typed.values[ConfigKey.TargetRepsMax])
+    }
+
+    // "8 to 12" with 50 typed as the min is "50 to 50", as a stepped min carries it.
+    @Test
+    fun `carries the max up with a min typed past it, and leaves it below`() {
+        val typed = reps(ConfigKey.TargetRepsMin to "8", ConfigKey.TargetRepsMax to "12").typing(min, "50")
+        assertEquals("50", typed.values[ConfigKey.TargetRepsMax])
+        val lower = reps(ConfigKey.TargetRepsMin to "8", ConfigKey.TargetRepsMax to "12").typing(min, "10")
+        assertEquals("12", lower.values[ConfigKey.TargetRepsMax])
+    }
+
     // A name-only Save writes something a person would train (#456), not 1 × 1 with no rest.
     @Test
     fun `starts a new reps exercise at 3 x 8-12 with a 1-30 rest, and no weight`() {

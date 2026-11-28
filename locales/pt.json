@@ -905,6 +905,8 @@
     "load": "Carga",
     "timing": "Tempo",
     "repsTo": "a",
+    "countValue": "{{name}}, {{value}}",
+    "typeCount": "Digitar um número",
     "repsHint": "Fica {{shape}}. O mesmo número duas vezes salva uma contagem fixa, {{fixed}}.",
     "storedAs": "Seu arquivo guarda como {{kg}} kg.",
     "idLabel": "id: {{id}}",

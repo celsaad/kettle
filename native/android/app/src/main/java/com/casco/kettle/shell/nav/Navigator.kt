@@ -35,12 +35,21 @@ class Navigator(
         var current: Navigator? = null
     }
 
-    /** The sheet stack, bottom first: read anywhere, moved only through this navigator's moves. */
-    var sheets by mutableStateOf(emptyList<Route>())
+    /**
+     * The stack over the tabs, bottom first, each screen with the id it was opened with, which the shell
+     * keys its composition by: read anywhere, moved only through this navigator's moves.
+     */
+    var entries by mutableStateOf(emptyList<StackEntry>())
         private set
 
+    /** The id the next screen opened takes: none is ever used twice by one navigator. */
+    private var nextId = 0L
+
+    /** The sheet stack's routes, bottom first: its sheets and pushed screens. */
+    val sheets: List<Route> get() = entries.map { it.route }
+
     /** The top of the stack, a sheet or a pushed screen; null on a tab. */
-    val sheet: Route? get() = sheets.lastOrNull()
+    val sheet: Route? get() = entries.lastOrNull()?.route
 
     /** The runner, over everything while it shows; null when it doesn't. */
     var runner by mutableStateOf<RunnerSlot?>(null)
@@ -50,13 +59,13 @@ class Navigator(
     val runnerShown: Boolean get() = runner != null
 
     /** The bar shows on a tab, with nothing over it. */
-    val barShown: Boolean get() = sheets.isEmpty() && runner == null
+    val barShown: Boolean get() = entries.isEmpty() && runner == null
 
-    /** Hears every move, before and after: the sheet animates from it. The current activity's sheet. */
+    /** Hears every move, before and after: the shell animates from it ([ShellMotion]). */
     var moves: MoveListener? = null
 
     /** Where the shell is: which of the tabs, the sheet and the runner shows. */
-    val place: Place get() = placeOf(sheets, runner)
+    val place: Place get() = placeOf(entries, runner)
 
     /** A tap on the bar. */
     fun select(tab: Tab) {
@@ -68,13 +77,13 @@ class Navigator(
     /** Opens [route] over what shows: a sheet or a pushed screen stacks, and a tab's route goes to that tab. */
     fun push(route: Route) {
         if (!route.stacked) return navigate(route)
-        go(MoveKind.Push, sheets = sheets + route)
+        go(MoveKind.Push, entries = entries + StackEntry(nextId++, route))
     }
 
     /** Opens [route] in the top sheet's place, so back skips the sheet it replaced. */
     fun replace(route: Route) {
         if (!route.stacked) return navigate(route)
-        go(MoveKind.Replace, sheets = sheets.dropLast(1) + route)
+        go(MoveKind.Replace, entries = entries.dropLast(1) + StackEntry(nextId++, route))
     }
 
     /**
@@ -87,7 +96,7 @@ class Navigator(
         go(
             MoveKind.Navigate,
             tab = to ?: tab,
-            sheets = if (route.stacked) listOf(route) else emptyList(),
+            entries = if (route.stacked) listOf(StackEntry(nextId++, route)) else emptyList(),
             tabRoutes = if (to != null) tabRoutes + (to to route) else tabRoutes,
         )
     }
@@ -96,7 +105,7 @@ class Navigator(
     fun back(): Boolean {
         when {
             runnerShown -> Unit
-            sheets.isNotEmpty() -> go(MoveKind.Back, sheets = sheets.dropLast(1))
+            entries.isNotEmpty() -> go(MoveKind.Back, entries = entries.dropLast(1))
             tab != Tab.Today -> go(MoveKind.Back, tab = Tab.Today)
             else -> return false
         }
@@ -123,21 +132,33 @@ class Navigator(
      * path. The runner's slot isn't in it: a running session is attached to again at launch
      * (`MainActivity`), and a finished one has nothing to come back to.
      */
-    fun saved(): List<String> = listOf(tabRoute(tab).path) + sheets.map { it.path }
+    fun saved(): List<String> = listOf(tabRoute(tab).path) + entries.map { it.route.path }
 
     /**
      * Puts back a stack [saved] wrote, as a navigate, so the sheet hears it: what no longer parses (a
      * route since renamed) is left out, and a tab that doesn't is Today. The four-tab shell saved a tab's
      * name instead of its path (#411); one of those lands where its screen now is.
+     *
+     * Each screen takes back the id [ids] saved for it, so state saved under it finds its screen again;
+     * one with none (a stack saved before ids were) takes a new one. Ids opened later start past them all.
      */
-    fun restore(saved: List<String>) {
+    fun restore(
+        saved: List<String>,
+        ids: LongArray? = null,
+    ) {
         val first = saved.firstOrNull()
         val tabRoute = (LEGACY_TABS[first] ?: first)?.let(Route::parse)?.takeIf { Tab.of(it.destination) != null }
         val to = tabRoute?.let { Tab.of(it.destination) } ?: Tab.Today
+        val paths = saved.drop(1)
+        nextId = maxOf(nextId, (ids?.maxOrNull() ?: -1) + 1)
+        val restored =
+            paths.mapIndexedNotNull { i, path ->
+                Route.parse(path)?.takeIf { it.stacked }?.let { StackEntry(ids?.getOrNull(i) ?: nextId++, it) }
+            }
         go(
             MoveKind.Navigate,
             tab = to,
-            sheets = saved.drop(1).mapNotNull(Route::parse).filter { it.stacked },
+            entries = restored,
             tabRoutes = if (tabRoute != null) tabRoutes + (to to tabRoute) else tabRoutes,
         )
     }
@@ -145,17 +166,17 @@ class Navigator(
     private fun go(
         kind: MoveKind,
         tab: Tab = this.tab,
-        sheets: List<Route> = this.sheets,
+        entries: List<StackEntry> = this.entries,
         runner: RunnerSlot? = this.runner,
         tabRoutes: Map<Tab, Route> = this.tabRoutes,
     ) {
         // The slot's rule, in one place: while it's filled, the only move is the one that empties it.
         if (this.runner != null && runner != null) return
-        val move = Move(place, placeOf(sheets, runner), kind)
+        val move = Move(place, placeOf(entries, runner), kind)
         moves?.willMove(move)
         this.tab = tab
         this.tabRoutes = tabRoutes
-        this.sheets = sheets
+        this.entries = entries
         this.runner = runner
         moves?.moved(move)
     }
@@ -163,6 +184,9 @@ class Navigator(
 
 /** The route [tab] shows: its section, once one has been picked or linked to. */
 fun Navigator.tabRoute(tab: Tab): Route = tabRoutes[tab] ?: Route(tab.destination)
+
+/** Each stacked screen's id, in [Navigator.saved]'s order: a screen's saved state is keyed by it (#377). */
+fun Navigator.savedIds(): LongArray = entries.map { it.id }.toLongArray()
 
 /**
  * The tab names the four-tab shell saved, as the paths that now lead where each went (#411). Library was
@@ -177,14 +201,14 @@ private val LEGACY_TABS =
     )
 
 /**
- * Where a back stack of [sheets] under the runner's [runner] slot is: the runner covers everything, and
+ * Where a back stack of [entries] under the runner's [runner] slot is: the runner covers everything, and
  * otherwise the top of the stack says whether a sheet or a pushed screen shows.
  */
 private fun placeOf(
-    sheets: List<Route>,
+    entries: List<StackEntry>,
     runner: RunnerSlot?,
 ): Place {
-    val top = sheets.lastOrNull()
+    val top = entries.lastOrNull()?.route
     return when {
         runner != null -> Place.Runner
         top == null -> Place.Tab
@@ -192,6 +216,16 @@ private fun placeOf(
         else -> Place.Sheet
     }
 }
+
+/**
+ * One screen on the stack: its [route], and an [id] no other opening shares (#377). The shell keys a
+ * screen's composition by it, so a route opened again, even while its last opening is still leaving,
+ * is a new screen with nothing remembered from the last.
+ */
+data class StackEntry(
+    val id: Long,
+    val route: Route,
+)
 
 /** What the runner's slot holds: the start it was opened with, null for none. */
 data class RunnerSlot(
@@ -222,7 +256,7 @@ data class Move(
 
 /** The sheet's ears on the [Navigator]. */
 interface MoveListener {
-    /** Before [move] lands: the screen still shows where it starts, so this is when to picture it. */
+    /** Before [move] lands: the navigator still holds where it starts, so this is when to read what shows. */
     fun willMove(move: Move)
 
     /** After [move] landed in the navigator's state, before anything has drawn it. */

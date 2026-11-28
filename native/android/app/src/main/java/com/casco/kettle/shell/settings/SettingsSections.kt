@@ -18,6 +18,7 @@ import com.casco.kettle.domain.UnitSystem
 import com.casco.kettle.shell.R
 import com.casco.kettle.shell.i18n.pluralText
 import com.casco.kettle.shell.library.LIBRARY_FILE_NAME
+import com.casco.kettle.shell.nav.LocalUncovered
 import com.casco.kettle.shell.support.SupporterFile
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -95,7 +96,8 @@ internal fun YourFile(open: () -> Unit) =
 
 /**
  * Kettle: Support, then the two ways to reach the developer, as the board draws them in one block. The
- * supporter count is read from the file each time Settings opens, since native is its writer (#188).
+ * supporter count is read from the file each time Settings opens or shows again, since native is its
+ * writer (#188).
  */
 @Composable
 internal fun KettleSection(
@@ -105,7 +107,9 @@ internal fun KettleSection(
     openSupport: () -> Unit,
 ) = Section(R.string.settings_kettle) {
     var tipped by remember { mutableStateOf(false) }
-    LaunchedEffect(supporter) { tipped = withContext(Dispatchers.IO) { supporter.read().hasTipped } }
+    // Again each time Settings shows from under the Support sheet a tip was made in: it stays composed there.
+    val uncovered = LocalUncovered.current
+    LaunchedEffect(supporter, uncovered) { tipped = withContext(Dispatchers.IO) { supporter.read().hasTipped } }
     ActionRow(
         stringResource(R.string.support_row),
         stringResource(if (tipped) R.string.support_rowDetailTipped else R.string.support_rowDetail),

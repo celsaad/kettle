@@ -8,8 +8,6 @@ import androidx.activity.ComponentActivity
 import androidx.activity.addCallback
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
@@ -30,33 +28,29 @@ import com.casco.kettle.shell.importer.sharedLibrary
 import com.casco.kettle.shell.nav.LocalNavigator
 import com.casco.kettle.shell.nav.LocalSplashExit
 import com.casco.kettle.shell.nav.LocalTabReselects
-import com.casco.kettle.shell.nav.ModalSheet
 import com.casco.kettle.shell.nav.Navigator
 import com.casco.kettle.shell.nav.Route
-import com.casco.kettle.shell.nav.ShellLayout
+import com.casco.kettle.shell.nav.ShellView
 import com.casco.kettle.shell.nav.SplashHold
 import com.casco.kettle.shell.nav.Tab
+import com.casco.kettle.shell.nav.savedIds
 import com.casco.kettle.shell.reminder.reconcileReminder
 import com.casco.kettle.shell.runner.LaunchRecovery
 import com.casco.kettle.shell.runner.RunnerHost
 import com.casco.kettle.shell.runner.RunnerService
 import com.casco.kettle.shell.runner.runnerStateDir
-import com.casco.kettle.shell.theme.KettleTheme
 import com.casco.kettle.shell.theme.LocalRunnerBars
 import com.casco.kettle.shell.theme.PreferredKettleTheme
 import com.casco.kettle.shell.theme.RunnerBars
-import com.casco.kettle.shell.theme.preferredColors
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
 
 /**
- * The app's entry point: the shell's tabs, sheet and runner (`ShellLayout`), routed by its own
- * [Navigator], with links parsed here, under the system splash it holds until Home is drawn
- * ([SplashHold]) and drawn edge to edge.
+ * The app's entry point: the shell's tabs, pushed screens, sheet and runner, one composition in one
+ * view ([ShellView]), routed by its own [Navigator], with links parsed here, under the system splash it
+ * holds until Home is drawn ([SplashHold]) and drawn edge to edge.
  */
 class MainActivity : ComponentActivity() {
-    private var sheet: ModalSheet? = null
-
     /** Lazy, since `filesDir` needs the context the activity is given after construction. */
     private val paths by lazy { StoragePaths(filesDir) }
 
@@ -78,7 +72,7 @@ class MainActivity : ComponentActivity() {
     private val tabReselects =
         MutableSharedFlow<Tab>(extraBufferCapacity = 1, onBufferOverflow = BufferOverflow.DROP_OLDEST)
 
-    /** What [LocalRunnerBars] carries: one for the four Compose views, so they agree over the runner. */
+    /** What [LocalRunnerBars] carries: the runner's choice of bar icons, for the shell's theme to keep over it. */
     private val runnerBars = RunnerBars()
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -104,7 +98,7 @@ class MainActivity : ComponentActivity() {
         rereadOnStart(latestFiles)
         val preferences = paths.preferences
         val layout =
-            ShellLayout(
+            ShellView(
                 this,
                 navigator,
                 theme = { content ->
@@ -121,44 +115,21 @@ class MainActivity : ComponentActivity() {
                             reread = navigator.barShown,
                             runnerShown = navigator.runnerShown,
                             splashExits = splash.exits,
-                        ) {
-                            // The chrome the shell draws itself follows the scheme Compose draws, so
-                            // Settings' Appearance repaints the × under the finger. Colors from here,
-                            // not the file, which the write may not have reached yet.
-                            val colors = KettleTheme.colors
-                            // And the text size: font scale no longer recreates the activity (#456), so
-                            // the ×, sized in sp, is resized here. Density still recreates it, since the
-                            // sheet's views read theirs once.
-                            val fontScale = LocalConfiguration.current.fontScale
-                            LaunchedEffect(colors, fontScale) { sheet?.repaint(colors) }
-                            content()
-                        }
+                            content = content,
+                        )
                     }
                 },
-            ) { content, shell ->
-                ModalSheet(
-                    content,
-                    shell,
-                    navigator,
-                    colors = { preferredColors(preferences, resources.configuration) },
-                    // Through the dispatcher, as hardware back goes, so a screen's own back handler hears it.
-                    requestBack = onBackPressedDispatcher::onBackPressed,
-                )
-            }
-        // The field the repaint above reads: a local of the same name shadowed it, and the repaint never ran.
-        val sheet = layout.sheet.also { this.sheet = it }
-        navigator.moves = sheet
-        // The shell's back, then the sheet's after it, which comes first while the sheet is up: the
-        // predictive shrink is the sheet's. A screen's own handler, the runner's, composes later still.
+            )
+        // The shell's back. The sheet's, with its predictive motion, composes after it (`Shell`), so comes
+        // first while a sheet or a pushed screen shows; a screen's own handler, the runner's, later still.
         onBackPressedDispatcher.addCallback(this) { if (!navigator.back()) leave() }
-        onBackPressedDispatcher.addCallback(this, sheet.backCallback)
         listenForWrites(latestFiles)
         hearNavigateReceiver(navigator)
         setContentView(layout)
         // The stack this activity's predecessor saved, when it was made again (a font or display size
         // change, the process brought back).
         val saved = savedInstanceState?.getStringArrayList(BACK_STACK)
-        if (saved != null) navigator.restore(saved)
+        if (saved != null) navigator.restore(saved, savedInstanceState.getLongArray(BACK_STACK_IDS))
         // Any launch with the service alive attaches, the shade notification's tap or not (#297): a Recents
         // swipe leaves the session running, and the relaunch comes back to it with no prompt. Before the
         // link, which a running session then drops. A restored stack's link was opened the first time.
@@ -172,6 +143,7 @@ class MainActivity : ComponentActivity() {
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         outState.putStringArrayList(BACK_STACK, ArrayList(navigator.saved()))
+        outState.putLongArray(BACK_STACK_IDS, navigator.savedIds())
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -242,6 +214,9 @@ private fun Activity.recoverRunner(paths: StoragePaths) {
 
 /** Where [MainActivity] saves its [Navigator]'s back stack. */
 private const val BACK_STACK = "com.casco.kettle.shell.BACK_STACK"
+
+/** Where [MainActivity] saves the ids of its back stack's screens, which their saved state is keyed by (#377). */
+private const val BACK_STACK_IDS = "com.casco.kettle.shell.BACK_STACK_IDS"
 
 /** Whether this process has run [recoverRunner]: on the main thread only, as onCreate is. */
 private var runnerRecovered = false

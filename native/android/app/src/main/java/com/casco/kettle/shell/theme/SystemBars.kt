@@ -23,11 +23,9 @@ import java.io.File
  * Each of [splashExits] sets them again: on API 31 and 32
  * the splash's exit resets them from the window's theme, with nothing here recomposing to undo it.
  *
- * Each of the shell's Compose views is wrapped in one, so each sets the same window's icons, and each
- * has to arrive at the same value: from the same file and configuration, and over the runner from the
- * one [RunnerBars] they all read. Any one of them recomposes on its own (the preferences reread on
- * Resume, for one); while the runner's choice lived in the runner's view alone, that one set the
- * shell's light icons back over the orange field (#470).
+ * The shell's composition is wrapped in one, which recomposes on its own (the preferences reread on
+ * Resume, for one) while the runner shows: over the runner it reads the runner's choice from
+ * [RunnerBars], or it would set the shell's light icons back over the orange field (#470).
  */
 @Suppress("LongParameterList") // Each is an input the bars follow; a holder would serve one call site.
 @Composable
@@ -59,8 +57,8 @@ fun PreferredKettleTheme(
 }
 
 /**
- * What the runner's field asks of the system bars' icons, held for every one of the shell's views to
- * read ([PreferredKettleTheme]); one per activity, provided as [LocalRunnerBars].
+ * What the runner's field asks of the system bars' icons, held for the shell's theme to read
+ * ([PreferredKettleTheme]); one per activity, provided as [LocalRunnerBars].
  */
 @Stable
 class RunnerBars {
@@ -73,7 +71,7 @@ val LocalRunnerBars = staticCompositionLocalOf<RunnerBars?> { null }
 /**
  * The bars' icons over the runner's field, which decides them (`RunnerField.darkBarIcons`): over the
  * orange one light icons would measure 2.96:1. Set on the window at once, and handed to [RunnerBars],
- * whose change recomposes every view's [PreferredKettleTheme] to the same value; once the runner
+ * whose change recomposes the shell's [PreferredKettleTheme] to the same value; once the runner
  * closes, `runnerShown` changing sets the shell's icons back. Cleared as it leaves, so the next
  * session's first frame can't show the last one's orange-field icons over its black count-in.
  */

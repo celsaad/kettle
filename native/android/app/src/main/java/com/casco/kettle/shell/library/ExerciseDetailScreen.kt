@@ -39,6 +39,7 @@ import com.casco.kettle.shell.form.SheetColumn
 import com.casco.kettle.shell.nav.BackRow
 import com.casco.kettle.shell.nav.Destination
 import com.casco.kettle.shell.nav.LocalNavigator
+import com.casco.kettle.shell.nav.LocalUncovered
 import com.casco.kettle.shell.nav.Route
 import com.casco.kettle.shell.theme.KettleTheme
 import com.casco.kettle.shell.theme.KettleType
@@ -58,8 +59,10 @@ const val EXERCISE_PARAM = "id"
 /** What the route table draws at `Destination.ExerciseDetail`, opened from Library's Exercises and Getting stronger. */
 @Composable
 fun ExerciseDetailRoute(params: Map<String, String>) {
-    // Once per opening: the window doesn't creep under a reader who leaves the screen up.
-    val now = remember { Clock.System.now() }
+    // Once per opening, and again each time it shows from under what covered it (it stays composed there):
+    // the window doesn't creep under a reader who leaves the screen up.
+    val uncovered = LocalUncovered.current
+    val now = remember(uncovered) { Clock.System.now() }
     ExerciseDetailScreen(
         params[EXERCISE_PARAM],
         LocalLatestFiles.current,

@@ -492,6 +492,7 @@ it) came from the runner still being RN. Once RN draws nothing it is mostly dele
 - `kettle://` links are parsed natively, `kettle://session` included.
 - `NavigateReceiver` and the route-check scripts stay, retargeted.
 - The View sheet stays as it is; whether a Compose sheet should follow is #229.
+  (Done in #377: the sheet is drawn in the shell's own Compose tree.)
 
 **Gate: a `:benchmark` cold-start run**, folded into M7's: `.bench` can't be built from 0.15.0, so
 the one run against #168's baseline in #365 is routing's gate too.

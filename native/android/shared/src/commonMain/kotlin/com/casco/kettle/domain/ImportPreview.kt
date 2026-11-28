@@ -13,12 +13,14 @@ data class ChangedItem(
 /**
  * What an import is about to do (#244), as RN's Import screen worked it out inline: the ids it adds and
  * replaces, counted, and what each replaced one loses. [before] is the library the merge was made
- * against, [merged] what Merge would write.
+ * against, [merged] what Merge would write, and [knownEquipment] the equipment vocabulary's keys,
+ * which decide whether an item's change of spelling is a change.
  */
 class ImportPreview(
     private val before: Library,
     val merged: Library,
     summary: MergeSummary,
+    private val knownEquipment: Set<String>,
 ) {
     /**
      * Programs are listed and counted with the rest because the merge writes all three: a program-only
@@ -59,7 +61,7 @@ class ImportPreview(
                     Library::exercises,
                     Exercise::id,
                     item.id,
-                ) { b, a -> diffExercise(b, a, units) }
+                ) { b, a -> diffExercise(b, a, units, knownEquipment) }
             }
 
             LibraryItemKind.Workout -> {

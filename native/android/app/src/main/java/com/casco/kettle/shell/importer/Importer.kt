@@ -200,6 +200,8 @@ internal class Importer(
     private val files: LatestFiles,
     private val scope: CoroutineScope,
     private val actions: ImportActions,
+    /** The equipment vocabulary's keys, which the preview compares items by (#393). */
+    private val knownEquipment: Set<String>,
 ) {
     /** The picker and the read after it, which is when a second source could race the first. */
     var busy by mutableStateOf(false)
@@ -381,8 +383,14 @@ internal class Importer(
             return
         }
         when (val merged = mergeLibraries(current, incoming)) {
-            is MergeResult.Ok -> ready = ReadyMerge(source, ImportPreview(current, merged.library, merged.summary))
-            is MergeResult.Refused -> refuse(ImportRefusal.Merge(merged.error), source.site)
+            is MergeResult.Ok -> {
+                ready =
+                    ReadyMerge(source, ImportPreview(current, merged.library, merged.summary, knownEquipment))
+            }
+
+            is MergeResult.Refused -> {
+                refuse(ImportRefusal.Merge(merged.error), source.site)
+            }
         }
     }
 }

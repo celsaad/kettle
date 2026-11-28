@@ -12,8 +12,11 @@ sealed interface DiffLabel {
 
     data object Notes : DiffLabel
 
-    /** An exercise's equipment (#393), the items it needs at hand. */
-    data object Equipment : DiffLabel
+    /** Equipment items (#393) the update takes away, as the workout's exercises are listed. */
+    data object EquipmentRemoved : DiffLabel
+
+    /** Equipment items the update adds. */
+    data object EquipmentAdded : DiffLabel
 
     data object Blocks : DiffLabel
 
@@ -60,8 +63,9 @@ sealed interface DiffValue {
     /**
      * Equipment items as the file spells them, never empty (#393). A list rather than [Text], because
      * a known item reads in the reader's language and only the screen can name it; the user's own
-     * words stay verbatim. Uncut: an item is at most [MAX_EQUIPMENT_LENGTH] long, and a cut taken
-     * before the names are known would cut a different string from the one shown.
+     * words stay verbatim. Uncut, since a cut taken here, before the names are known, would cut a
+     * different string from the one shown. What keeps it short is that it holds only the items that
+     * moved, one row for those that go and one for those that come; a long hand-written list wraps.
      */
     data class Items(
         val items: List<String>,
@@ -95,7 +99,8 @@ data class FieldChange(
 }
 
 /**
- * What moved between [before] and [after], the same exercise by id, with weights in [units]. A type
+ * What moved between [before] and [after], the same exercise by id, with weights in [units] and
+ * [knownEquipment] the vocabulary's keys, which decide how two items are compared. A type
  * change is reported instead of the config, not beside it: listing both configs would call every field
  * changed and bury the one line that explains it. Only what the new type has no place for is listed,
  * as cleared, since that is what the import takes away (#456).
@@ -104,6 +109,7 @@ fun diffExercise(
     before: Exercise,
     after: Exercise,
     units: UnitSystem,
+    knownEquipment: Set<String>,
 ): List<FieldChange> {
     val retyped = before.config.type != after.config.type
     val changes =
@@ -112,8 +118,7 @@ fun diffExercise(
             FieldChange(DiffLabel.Type, DiffValue.Type(before.config.type), DiffValue.Type(after.config.type))
                 .takeIf { retyped },
             change(DiffLabel.Notes, before.notes, after.notes),
-            equipmentChange(before.equipment, after.equipment),
-        )
+        ) + equipmentChanges(before.equipment, after.equipment, knownEquipment)
     val beforeValues = draftOf(before, units).values
     val afterValues = draftOf(after, units).values
     if (retyped) {
@@ -184,27 +189,39 @@ fun diffWorkout(
 }
 
 /**
- * The items compared as known items are matched, [equipmentMatchKey], so `Dumbbell` → `dumbbell`
- * is no change: it is the same item, and a row for it would warn about nothing. Order is not compared
- * either, since an exercise's items are what it needs, not a sequence. [FieldChange.cleared] counts
- * the items the update takes away, so dropping two of three marks two (#456).
+ * Two rows, as the workout's exercises are listed: the items that go, counted as [FieldChange.cleared]
+ * so dropping two of three marks two (#456), and the items that come. A known item is compared as it
+ * is matched, [equipmentMatchKey], so `Dumbbell` → `dumbbell` is the same item and a row for it would
+ * warn about nothing. The user's own words are compared as written, trimmed, because they are shown
+ * as written: `fat grips` → `Fat Grips` changes what the exercise reads. Order is not compared at
+ * all, deliberately: an exercise's items are what it needs at hand, not a sequence, so a reorder
+ * alone shows no row even though the file changed.
  */
-private fun equipmentChange(
+private fun equipmentChanges(
     before: List<String>,
     after: List<String>,
-): FieldChange? {
-    val had = before.map(::equipmentMatchKey).toSet()
-    val has = after.map(::equipmentMatchKey).toSet()
-    if (had == has) return null
-    return FieldChange(
-        DiffLabel.Equipment,
-        items(before),
-        items(after),
-        cleared = (had - has).size,
+    known: Set<String>,
+): List<FieldChange> {
+    val beforeKeys = before.map { equipmentIdentity(it, known) }.toSet()
+    val afterKeys = after.map { equipmentIdentity(it, known) }.toSet()
+    val gone = before.filter { equipmentIdentity(it, known) !in afterKeys }
+    val added = after.filter { equipmentIdentity(it, known) !in beforeKeys }
+    return listOfNotNull(
+        FieldChange(
+            DiffLabel.EquipmentRemoved,
+            DiffValue.Items(gone),
+            NO_VALUE,
+            cleared = gone.size,
+        ).takeIf { gone.isNotEmpty() },
+        FieldChange(DiffLabel.EquipmentAdded, NO_VALUE, DiffValue.Items(added)).takeIf { added.isNotEmpty() },
     )
 }
 
-private fun items(list: List<String>): DiffValue = if (list.isEmpty()) DiffValue.Unset else DiffValue.Items(list)
+/** What two items are compared by: a known item by its key, anything else by its trimmed words. */
+private fun equipmentIdentity(
+    item: String,
+    known: Set<String>,
+): Pair<Boolean, String> = knownEquipment(item, known)?.let { true to it } ?: (false to trimEquipment(item))
 
 private fun measured(
     field: ConfigField,

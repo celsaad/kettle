@@ -9,6 +9,9 @@ import org.junit.jupiter.api.Test
  * the screen's (`ImportScreenTest` drives them in `pt`); these are the rules under them.
  */
 class LibraryDiffTest {
+    // A vocabulary of the test's own, the keys these cases name: content/equipment.json's are the app's.
+    private val known = setOf("barbell", "bench", "rack", "dumbbell", "pull_up_bar")
+
     private fun reps(config: ExerciseConfig.Reps = ExerciseConfig.Reps(5, 5, targetWeightKg = 60.0, restSec = 120.0)) =
         Exercise("bench", "Bench Press", config)
 
@@ -18,7 +21,7 @@ class LibraryDiffTest {
     fun `names the config field that moved, and only that field`() {
         assertEquals(
             listOf(FieldChange(DiffLabel.Field(FieldName.Sets), DiffValue.Text("5"), DiffValue.Text("6"))),
-            diffExercise(reps(), reps(base.copy(sets = 6)), UnitSystem.METRIC),
+            diffExercise(reps(), reps(base.copy(sets = 6)), UnitSystem.METRIC, known),
         )
     }
 
@@ -32,7 +35,7 @@ class LibraryDiffTest {
                     DiffValue.Measured("65", FieldUnit.Weight),
                 ),
             ),
-            diffExercise(reps(), reps(base.copy(targetWeightKg = 65.0)), UnitSystem.METRIC),
+            diffExercise(reps(), reps(base.copy(targetWeightKg = 65.0)), UnitSystem.METRIC, known),
         )
     }
 
@@ -47,7 +50,7 @@ class LibraryDiffTest {
                     DiffValue.Measured("143.3", FieldUnit.Weight),
                 ),
             ),
-            diffExercise(reps(), reps(base.copy(targetWeightKg = 65.0)), UnitSystem.IMPERIAL),
+            diffExercise(reps(), reps(base.copy(targetWeightKg = 65.0)), UnitSystem.IMPERIAL, known),
         )
     }
 
@@ -55,7 +58,7 @@ class LibraryDiffTest {
     fun `reads a removed optional field as unset rather than as blank`() {
         assertEquals(
             listOf(FieldChange(DiffLabel.Field(FieldName.TargetRepsMax), DiffValue.Text("8"), DiffValue.Unset)),
-            diffExercise(reps(base.copy(targetRepsMax = 8)), reps(), UnitSystem.METRIC),
+            diffExercise(reps(base.copy(targetRepsMax = 8)), reps(), UnitSystem.METRIC, known),
         )
     }
 
@@ -74,13 +77,13 @@ class LibraryDiffTest {
                     DiffValue.Unset,
                 ),
             ),
-            diffExercise(reps(), hold, UnitSystem.METRIC),
+            diffExercise(reps(), hold, UnitSystem.METRIC, known),
         )
     }
 
     @Test
     fun `says nothing about an identical definition`() {
-        assertEquals(emptyList<FieldChange>(), diffExercise(reps(), reps(), UnitSystem.METRIC))
+        assertEquals(emptyList<FieldChange>(), diffExercise(reps(), reps(), UnitSystem.METRIC, known))
     }
 
     // RN's order: name, type, notes, then the config in the order the form shows it.
@@ -93,7 +96,7 @@ class LibraryDiffTest {
                 FieldChange(DiffLabel.Notes, DiffValue.Unset, DiffValue.Text("Pause at the chest")),
                 FieldChange(DiffLabel.Field(FieldName.Sets), DiffValue.Text("5"), DiffValue.Text("6")),
             ),
-            diffExercise(reps(), after, UnitSystem.METRIC),
+            diffExercise(reps(), after, UnitSystem.METRIC, known),
         )
     }
 
@@ -111,7 +114,7 @@ class LibraryDiffTest {
                         DiffValue.Text("Slower down."),
                     ),
                 ),
-                diffExercise(reps().copy(notes = long), reps().copy(notes = "Slower down."), UnitSystem.METRIC),
+                diffExercise(reps().copy(notes = long), reps().copy(notes = "Slower down."), UnitSystem.METRIC, known),
             )
         }
 
@@ -123,6 +126,7 @@ class LibraryDiffTest {
                     reps().copy(notes = "$long — three sets"),
                     reps().copy(notes = "$long — four sets"),
                     UnitSystem.METRIC,
+                    known,
                 )
             assertEquals(listOf(DiffLabel.Notes), changes.map { it.label })
         }
@@ -132,18 +136,18 @@ class LibraryDiffTest {
     inner class Equipment {
         private fun needing(vararg items: String) = reps().copy(equipment = items.toList())
 
+        private fun removed(vararg items: String) =
+            FieldChange(DiffLabel.EquipmentRemoved, DiffValue.Items(items.toList()), NO_VALUE, cleared = items.size)
+
+        private fun added(vararg items: String) =
+            FieldChange(DiffLabel.EquipmentAdded, NO_VALUE, DiffValue.Items(items.toList()))
+
+        // As the workout's exercises are: an item still listed is never shown, or spoken, as taken away.
         @Test
-        fun `lists a change as the items on each side, spelled as each file spells them`() {
+        fun `lists a swap as the item that goes and the item that comes, each as its file spells it`() {
             assertEquals(
-                listOf(
-                    FieldChange(
-                        DiffLabel.Equipment,
-                        DiffValue.Items(listOf("Barbell", "bench")),
-                        DiffValue.Items(listOf("Barbell", "rack")),
-                        cleared = 1,
-                    ),
-                ),
-                diffExercise(needing("Barbell", "bench"), needing("Barbell", "rack"), UnitSystem.METRIC),
+                listOf(removed("bench"), added("Rack")),
+                diffExercise(needing("Barbell", "bench"), needing("Barbell", "Rack"), UnitSystem.METRIC, known),
             )
         }
 
@@ -151,32 +155,61 @@ class LibraryDiffTest {
         @Test
         fun `counts each item a removal takes away`() {
             assertEquals(
-                listOf(
-                    FieldChange(
-                        DiffLabel.Equipment,
-                        DiffValue.Items(listOf("Barbell", "bench", "my old belt")),
-                        DiffValue.Unset,
-                        cleared = 3,
-                    ),
-                ),
-                diffExercise(needing("Barbell", "bench", "my old belt"), reps(), UnitSystem.METRIC),
+                listOf(removed("Barbell", "bench", "my old belt")),
+                diffExercise(needing("Barbell", "bench", "my old belt"), reps(), UnitSystem.METRIC, known),
             )
         }
 
         @Test
         fun `reads equipment gained as nothing taken away`() {
+            val changes = diffExercise(reps(), needing("Dumbbell"), UnitSystem.METRIC, known)
+            assertEquals(listOf(added("Dumbbell")), changes)
+            assertEquals(0, changes.sumOf { it.cleared })
+        }
+
+        // The same known item, matched as known items are: a row for it would warn about nothing.
+        @Test
+        fun `says nothing about a known item's change of spelling`() {
             assertEquals(
-                listOf(FieldChange(DiffLabel.Equipment, DiffValue.Unset, DiffValue.Items(listOf("Dumbbell")))),
-                diffExercise(reps(), needing("Dumbbell"), UnitSystem.METRIC),
+                emptyList<FieldChange>(),
+                diffExercise(
+                    needing("Dumbbell", "Pull-up bar"),
+                    needing("dumbbell", "pull_up_bar"),
+                    UnitSystem.METRIC,
+                    known,
+                ),
             )
         }
 
-        // The same item, matched as known items are: a row for it would warn about nothing.
+        // The user's own words are shown as written, so a change to how they're written is a change.
         @Test
-        fun `says nothing about a change of spelling or order alone`() {
+        fun `lists a change of case in the user's own words`() {
+            assertEquals(
+                listOf(removed("fat grips"), added("Fat Grips")),
+                diffExercise(needing("fat grips"), needing("Fat Grips"), UnitSystem.METRIC, known),
+            )
+        }
+
+        // Only what is known folds: with no vocabulary, `Dumbbell` is the user's own words too.
+        @Test
+        fun `folds only the items the vocabulary knows`() {
+            assertEquals(
+                listOf(removed("Dumbbell"), added("dumbbell")),
+                diffExercise(needing("Dumbbell"), needing("dumbbell"), UnitSystem.METRIC, emptySet()),
+            )
+        }
+
+        // Accepted: an exercise's items are what it needs at hand, not a sequence.
+        @Test
+        fun `says nothing about a change of order alone`() {
             assertEquals(
                 emptyList<FieldChange>(),
-                diffExercise(needing("Dumbbell", "Pull-up bar"), needing("pull_up_bar", "dumbbell"), UnitSystem.METRIC),
+                diffExercise(
+                    needing("Barbell", "fat grips"),
+                    needing("fat grips", "Barbell"),
+                    UnitSystem.METRIC,
+                    known,
+                ),
             )
         }
 
@@ -184,9 +217,26 @@ class LibraryDiffTest {
         fun `lists equipment after the notes and before the config`() {
             val after = needing("Bench").copy(notes = "Pause", config = base.copy(sets = 6))
             assertEquals(
-                listOf(DiffLabel.Notes, DiffLabel.Equipment, DiffLabel.Field(FieldName.Sets)),
-                diffExercise(reps(), after, UnitSystem.METRIC).map { it.label },
+                listOf(DiffLabel.Notes, DiffLabel.EquipmentAdded, DiffLabel.Field(FieldName.Sets)),
+                diffExercise(reps(), after, UnitSystem.METRIC, known).map { it.label },
             )
+        }
+
+        // A type change replaces the config's rows, never the equipment's.
+        @Test
+        fun `still lists an equipment change beside a type change`() {
+            val hold =
+                Exercise("bench", "Bench Press", ExerciseConfig.TimedHold(5, holdSecMin = 20.0, restSec = 120.0))
+                    .copy(equipment = listOf("Rack"))
+            val changes = diffExercise(needing("Barbell"), hold, UnitSystem.METRIC, known)
+            assertEquals(
+                listOf(removed("Barbell"), added("Rack")),
+                changes.filter {
+                    it.label != DiffLabel.Type &&
+                        it.label !is DiffLabel.Field
+                },
+            )
+            assertEquals(DiffLabel.Type, changes.first().label)
         }
     }
 

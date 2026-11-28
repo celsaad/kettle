@@ -421,15 +421,26 @@ class ImportScreenTest : ImportHarness() {
 
     // A known item reads in the reader's language; the user's own words stay as they wrote them.
     @Test
-    fun `names an equipment change, a known item translated and the user's own words verbatim`() {
+    fun `names equipment added, a known item translated and the user's own words verbatim`() {
         val gripped = pullUps.copy(equipment = listOf("Pull-up bar", "fat grips"))
         picks(Library(1, listOf(gripped), emptyList(), emptyList()))
         chooseFile()
 
         compose
-            .onNodeWithContentDescription(
-                "Equipamento: era não definido, agora: Barra fixa, fat grips",
-            ).assertExists()
+            .onNodeWithContentDescription("Equipamento adicionado: era —, agora: Barra fixa, fat grips")
+            .assertExists()
+    }
+
+    // An item still listed is never heard as taken away: TalkBack says "removed" of the bench alone.
+    @Test
+    fun `speaks a swap as the item that goes and the item that comes`() {
+        val before = current.copy(exercises = listOf(pullUps.copy(equipment = listOf("Barbell", "bench"))))
+        picks(Library(1, listOf(pullUps.copy(equipment = listOf("Barbell", "rack"))), emptyList(), emptyList()))
+        chooseFile(Files(library = before))
+
+        compose.onNodeWithContentDescription("Equipamento removido: era Banco, agora: removido").assertExists()
+        compose.onNodeWithContentDescription("Equipamento adicionado: era —, agora: Rack").assertExists()
+        compose.onAllNodes(hasContentDescription("Barra", substring = true)).assertCountEquals(0)
     }
 
     @Test

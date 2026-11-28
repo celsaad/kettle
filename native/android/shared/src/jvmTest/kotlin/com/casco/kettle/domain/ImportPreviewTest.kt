@@ -15,7 +15,7 @@ class ImportPreviewTest {
 
     private fun preview(incoming: Library) =
         when (val merged = mergeLibraries(current, incoming)) {
-            is MergeResult.Ok -> ImportPreview(current, merged.library, merged.summary)
+            is MergeResult.Ok -> ImportPreview(current, merged.library, merged.summary, emptySet())
             is MergeResult.Refused -> error("refused: ${merged.error}")
         }
 
@@ -57,7 +57,10 @@ class ImportPreviewTest {
         val merged = mergeLibraries(before, Library(1, listOf(pullUps), emptyList(), emptyList())) as MergeResult.Ok
 
         // The notes, the top of the range and the weight go; nothing else changed.
-        assertEquals(3, ImportPreview(before, merged.library, merged.summary).clearedTotal(UnitSystem.METRIC))
+        assertEquals(
+            3,
+            ImportPreview(before, merged.library, merged.summary, emptySet()).clearedTotal(UnitSystem.METRIC),
+        )
     }
 
     private fun cleared(
@@ -65,7 +68,7 @@ class ImportPreviewTest {
         incoming: Library,
     ): Int {
         val merged = mergeLibraries(before, incoming) as MergeResult.Ok
-        return ImportPreview(before, merged.library, merged.summary).clearedTotal(UnitSystem.METRIC)
+        return ImportPreview(before, merged.library, merged.summary, emptySet()).clearedTotal(UnitSystem.METRIC)
     }
 
     // The tile once counted only unset exercise fields, and read 0 for an import that took a lot away (#456).
@@ -159,6 +162,7 @@ class ImportPreviewTest {
                 before,
                 merged.library,
                 merged.summary,
+                emptySet(),
             ).changes(ChangedItem("base", LibraryItemKind.Program, false), UnitSystem.METRIC)
 
         assertEquals(
@@ -182,7 +186,7 @@ class ImportPreviewTest {
             )
         val hold = pullUps.copy(config = ExerciseConfig.TimedHold(3, 30.0, restSec = 60.0))
         val merged = mergeLibraries(before, Library(1, listOf(hold), emptyList(), emptyList())) as MergeResult.Ok
-        val preview = ImportPreview(before, merged.library, merged.summary)
+        val preview = ImportPreview(before, merged.library, merged.summary, emptySet())
         val item = ChangedItem("pull-ups", LibraryItemKind.Exercise, false)
 
         assertEquals(3, preview.changes(item, UnitSystem.METRIC).count { it.clears })
@@ -200,6 +204,7 @@ class ImportPreviewTest {
                 before,
                 merged.library,
                 merged.summary,
+                emptySet(),
             ).changes(ChangedItem("push-day", LibraryItemKind.Workout, false), UnitSystem.METRIC)
 
         assertEquals(listOf(true, false), rows.filter { it.label == DiffLabel.Exercises }.map { it.clears })

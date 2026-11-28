@@ -710,7 +710,8 @@
     "diff": {
       "type": "Tipo",
       "notes": "Notas",
-      "equipment": "Equipamento",
+      "equipmentRemoved": "Equipamento removido",
+      "equipmentAdded": "Equipamento adicionado",
       "blocks": "Blocos",
       "exercises": "Exercícios",
       "weeks": "Semanas",

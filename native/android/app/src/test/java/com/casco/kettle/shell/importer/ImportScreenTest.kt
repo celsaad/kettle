@@ -432,6 +432,16 @@ class ImportScreenTest : ImportHarness() {
     }
 
     // An item still listed is never heard as taken away: TalkBack says "removed" of the bench alone.
+    // Known by the shipped vocabulary, which only Import hands the preview: without it, these differ.
+    @Test
+    fun `reads a known item's change of spelling as no change`() {
+        val before = current.copy(exercises = listOf(pullUps.copy(equipment = listOf("Pull-up bar"))))
+        picks(Library(1, listOf(pullUps.copy(equipment = listOf("pull_up_bar"))), emptyList(), emptyList()))
+        chooseFile(Files(library = before))
+
+        compose.onAllNodesWithText(SAME_VALUES).assertCountEquals(1)
+    }
+
     @Test
     fun `speaks a swap as the item that goes and the item that comes`() {
         val before = current.copy(exercises = listOf(pullUps.copy(equipment = listOf("Barbell", "bench"))))

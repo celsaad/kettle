@@ -119,10 +119,11 @@ Every one of these has a case, because each is a default that differs between YA
   more leading spaces than the column of the block mapping or sequence it sits in, none at the top
   level. A TAB may follow those spaces but never counts, a line of only spaces and TABs is empty and
   passes, and so does a comment line. Some loaders skip TABs here or don't check quoted scalars.
-- **A TAB on the same line inside a flow collection is separation**, as a space is, wherever the
-  collection sits: between entries, after a key's colon, and between a block key's colon and the
-  `[` or `{`. js-yaml 5 refused these as "deficient indentation" once the collection was a block
-  node's child.
+- **A TAB between tokens of a flow collection is separation**, as a space is, on any of its lines
+  and wherever the collection sits: between entries, after a key's colon, and between a block key's
+  colon and the `[` or `{`. Only before a continuation line's first token is it indentation, and
+  that never counts (above). js-yaml 5 refused these as "deficient indentation" once the collection
+  was a block node's child.
 - **At most 1000 aliases** per document. The 1001st is a YAML error, raised before the schema runs.
 - **Repair clamps what the schema reports as past a ceiling, and the top of the safe-integer range
   is one.** `target_reps_min: 1e16` has no ceiling of its own, and still repairs to 2^53 − 1.

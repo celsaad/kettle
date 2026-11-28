@@ -4484,7 +4484,16 @@
     "ok": true,
     "value": {
       "version": 1,
-      "exercises": [],
+      "exercises": [
+        {
+          "id": "a",
+          "name": "A",
+          "type": "rest",
+          "config": {
+            "durationSec": 1
+          }
+        }
+      ],
       "workouts": [],
       "programs": []
     }
@@ -4493,8 +4502,86 @@
     "ok": true,
     "value": {
       "version": 1,
-      "exercises": [],
+      "exercises": [
+        {
+          "id": "a",
+          "name": "A",
+          "type": "rest",
+          "config": {
+            "durationSec": 1
+          }
+        },
+        {
+          "id": "b",
+          "name": "B",
+          "type": "rest",
+          "config": {
+            "durationSec": 1
+          }
+        },
+        {
+          "id": "c",
+          "name": "C",
+          "type": "rest",
+          "config": {
+            "durationSec": 1
+          }
+        },
+        {
+          "id": "d",
+          "name": "D",
+          "type": "rest",
+          "config": {
+            "durationSec": 1
+          }
+        }
+      ],
       "workouts": [],
+      "programs": []
+    }
+  },
+  "tab-separating-in-flow-sequence-in-sequence": {
+    "ok": true,
+    "value": {
+      "version": 1,
+      "exercises": [
+        {
+          "id": "a",
+          "name": "A",
+          "type": "rest",
+          "config": {
+            "durationSec": 1
+          }
+        },
+        {
+          "id": "b",
+          "name": "B",
+          "type": "rest",
+          "config": {
+            "durationSec": 1
+          }
+        }
+      ],
+      "workouts": [
+        {
+          "id": "w",
+          "name": "W",
+          "blocks": [
+            {
+              "kind": "circuit",
+              "rounds": 2,
+              "members": [
+                {
+                  "exerciseId": "a"
+                },
+                {
+                  "exerciseId": "b"
+                }
+              ]
+            }
+          ]
+        }
+      ],
       "programs": []
     }
   },

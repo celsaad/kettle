@@ -188,12 +188,16 @@ cases:
     input: "version: 1\nexercises:\n  - id: a\n    name: A\n    type: reps\n    config: { sets:\t3,\ttarget_reps_min: 5, rest_sec: 60 }\nworkouts: []\nprograms: []\n"
 
   - name: tab-before-flow-value
-    why: a TAB between a block key's colon and its flow value, `[` or `{`, is separation too
-    input: "version: 1\nexercises:\t[]\nworkouts:\t[]\nprograms: []\nextra:\t{ b: 1 }\n"
+    why: a TAB between a block key's colon and its flow value, `[` or `{`, is separation, as a space is; js-yaml 5 refused it as deficient indentation
+    input: "version: 1\nexercises:\t[{ id: a, name: A, type: rest, config:\t{ duration_sec: 1 } }]\nworkouts: []\nprograms: []\n"
 
   - name: tab-separating-in-flow-sequence
-    why: a TAB between a flow sequence's entries, in a block mapping's value, in a block sequence's entry, and nested a level down; on the same line it is separation, never indentation
-    input: "version: 1\nexercises: []\nworkouts: []\nprograms: []\nextra: [b,\tc]\nlist:\n  - [a,\tb]\nnested:\n  b: [c,\td]\n"
+    why: a TAB between a flow sequence's entries in a block mapping's value, on its first line and between entries of a continuation line; js-yaml 5 refused it as deficient indentation
+    input: "version: 1\nexercises: [{ id: a, name: A, type: rest, config: { duration_sec: 1 } },\t{ id: b, name: B, type: rest, config: { duration_sec: 1 } },\n  { id: c, name: C, type: rest, config: { duration_sec: 1 } },\t{ id: d, name: D, type: rest, config: { duration_sec: 1 } }]\nworkouts: []\nprograms: []\n"
+
+  - name: tab-separating-in-flow-sequence-in-sequence
+    why: a TAB between a flow sequence's entries when the sequence is a block sequence's entry, a level down; js-yaml 5 refused it as deficient indentation
+    input: "version: 1\nexercises: [{ id: a, name: A, type: rest, config: { duration_sec: 1 } }, { id: b, name: B, type: rest, config: { duration_sec: 1 } }]\nworkouts:\n  - id: w\n    name: W\n    blocks:\n      - { type: circuit, rounds: 2, exercises: [{ exercise: a },\t{ exercise: b }] }\nprograms: []\n"
 
   # --- Not YAML at all ---
 

@@ -92,10 +92,26 @@ class ExerciseStepsTest {
 
     // Past a Long, the count clamps; the stepper shows what was typed (#569).
     @Test
-    fun `shows a count too big for a Long as typed`() {
+    fun `shows a count past 2^53 or past a Long as typed, a blank max mirroring the min's`() {
         val huge = "123456789012345678901234"
         assertEquals(huge, reps(ConfigKey.Sets to huge).shownText(sets))
-        assertEquals("12", reps(ConfigKey.Sets to "12").shownText(sets))
+        assertEquals("12345678901234567", reps(ConfigKey.Sets to "12345678901234567").shownText(sets))
+        assertEquals("12", reps(ConfigKey.Sets to "012").shownText(sets))
+        assertEquals(huge, reps(ConfigKey.TargetRepsMin to huge).shownText(max))
+    }
+
+    // No step reads a count past a Long right: − jumped to an unrelated 19 digits, + wrapped.
+    @Test
+    fun `steps neither way a count too big for a Long`() {
+        val huge = reps(ConfigKey.TargetRepsMin to "123456789012345678901234")
+        assertEquals(false, huge.canStep(min, -1))
+        assertEquals(false, huge.canStep(min, +1))
+    }
+
+    // Only ASCII digits are a typed count: another script's read as 1 by the steppers.
+    @Test
+    fun `takes only ASCII digits as a typed count`() {
+        assertEquals("3", reps(ConfigKey.Sets to "3").typing(sets, "\u0661\u0662").values[ConfigKey.Sets])
     }
 
     // A name-only Save writes something a person would train (#456), not 1 × 1 with no rest.

@@ -3,7 +3,7 @@ package com.casco.kettle.shell.i18n
 import com.casco.kettle.domain.wholeSeconds
 
 // Times as every visible line writes them (#462): m:ss, as the runner's clocks and the duration picker
-// show them. The runner's spoken step announcements keep their seconds, as full sentences do.
+// show them. The runner's spoken step announcements keep their seconds.
 
 /** `m:ss`, minutes uncapped: an hour reads "60:00", as the runner's clock counts it. */
 fun formatClock(totalSeconds: Double): String {

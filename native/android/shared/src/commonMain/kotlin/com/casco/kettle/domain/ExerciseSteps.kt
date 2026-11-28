@@ -4,7 +4,8 @@ package com.casco.kettle.domain
 // kept in order, "8 to 12", so the form can't hold a range Save would refuse.
 
 /** [key]'s whole-number value, or null for a blank or a value that isn't one. */
-fun ExerciseDraft.countOf(key: ConfigKey): Long? = values[key]?.trim()?.let(::jsNumberOrNull)?.toLong()
+fun ExerciseDraft.countOf(key: ConfigKey): Long? =
+    values[key]?.trim()?.let { it.toLongOrNull() ?: jsNumberOrNull(it)?.toLong() }
 
 /**
  * The count [field] holds, as its stepper shows it: the value, or for a blank reps max the min, since
@@ -15,19 +16,12 @@ fun ExerciseDraft.shownCount(field: ConfigField): Long =
         ?: (if (field.key == ConfigKey.TargetRepsMax) countOf(ConfigKey.TargetRepsMin) else null)
         ?: field.min.toLong()
 
-/**
- * [field]'s count as its stepper writes it: the whole number typed, kept as typed past a Long's range
- * (#569), where the count itself is clamped; else the count.
- */
-fun ExerciseDraft.shownText(field: ConfigField): String =
-    values[field.key]?.trim()?.takeIf { it.isNotEmpty() && it.all(Char::isDigit) && it.toLongOrNull() == null }
-        ?: "${shownCount(field)}"
-
 /** Whether [field]'s stepper can move [by]: within its bounds, and a reps max never below the min. */
 fun ExerciseDraft.canStep(
     field: ConfigField,
     by: Int,
 ): Boolean {
+    if (overflows(field)) return false
     val next = steppedCount(field, by)
     return next >= lowest(field) && next <= (field.max?.toLong() ?: Long.MAX_VALUE)
 }
@@ -76,7 +70,7 @@ fun ExerciseDraft.typing(
     field: ConfigField,
     text: String,
 ): ExerciseDraft {
-    val digits = text.trim().takeIf { it.isNotEmpty() && it.all(Char::isDigit) }
+    val digits = text.trim().takeIf { it.isCount() }
     // Past a Long, it's still a whole number, and Save's ceiling says so; dropped, it read as accepted.
     val count = digits?.toLongOrNull()
     val held = count?.let { if (field.key == ConfigKey.TargetRepsMax) maxOf(it, lowest(field)) else it }

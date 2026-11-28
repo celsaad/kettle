@@ -69,7 +69,7 @@ internal fun PasteSection(importer: Importer) {
             .heightIn(min = 48.dp)
             .clip(ButtonShape)
             .background(colors.accentSoft.dimmedUnless(canReview))
-            .clickable(enabled = canReview, role = Role.Button, onClick = importer::reviewPaste),
+            .clickable(enabled = canReview, role = Role.Button, onClick = { importer.reviewPaste() }),
         contentAlignment = Alignment.Center,
     ) {
         Text(

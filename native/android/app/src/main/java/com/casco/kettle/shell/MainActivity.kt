@@ -24,6 +24,9 @@ import com.casco.kettle.shell.files.LocalLatestFiles
 import com.casco.kettle.shell.files.Stamped
 import com.casco.kettle.shell.files.StoragePaths
 import com.casco.kettle.shell.files.adoptTargetWeight
+import com.casco.kettle.shell.importer.SharedOpener
+import com.casco.kettle.shell.importer.forgetSharedLibrary
+import com.casco.kettle.shell.importer.sharedLibrary
 import com.casco.kettle.shell.nav.LocalNavigator
 import com.casco.kettle.shell.nav.LocalSplashExit
 import com.casco.kettle.shell.nav.LocalTabReselects
@@ -67,6 +70,9 @@ class MainActivity : ComponentActivity() {
     }
 
     private val navigator = Navigator(onReselect = { tabReselects.tryEmit(it) })
+
+    /** Opens a share in Import, or holds it behind a running session until nothing covers the screen (#514). */
+    private val sharedOpener = SharedOpener(navigator)
 
     /** What [LocalTabReselects] carries. One slot, since a tap's scroll replaces the one before it. */
     private val tabReselects =
@@ -157,7 +163,10 @@ class MainActivity : ComponentActivity() {
         // swipe leaves the session running, and the relaunch comes back to it with no prompt. Before the
         // link, which a running session then drops. A restored stack's link was opened the first time.
         attachRunner(navigator)
-        if (saved == null) navigator.openLink(intent)
+        // After the stack and the runner are back: a share held through a recreation would otherwise open
+        // on the empty navigator this activity starts with, then be covered by both.
+        sharedOpener.watch(lifecycleScope)
+        if (saved == null) openIncoming(intent, navigator, sharedOpener)
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -169,7 +178,7 @@ class MainActivity : ComponentActivity() {
         super.onNewIntent(intent)
         setIntent(intent)
         if (intent.takeOpenRunner()) attachRunner(navigator)
-        navigator.openLink(intent)
+        openIncoming(intent, navigator, sharedOpener)
     }
 }
 
@@ -180,6 +189,21 @@ class MainActivity : ComponentActivity() {
  */
 private fun Activity.leave() {
     if (!moveTaskToBack(false)) finish()
+}
+
+/** A library another app handed over (#514), opened in Import's preview; else a `kettle://` link. */
+private fun Activity.openIncoming(
+    intent: Intent,
+    navigator: Navigator,
+    opener: SharedOpener,
+) {
+    val shared = intent.sharedLibrary(contentResolver::getType, ownAuthority = "$packageName.shell.files")
+    if (shared == null) {
+        navigator.openLink(intent)
+        return
+    }
+    intent.forgetSharedLibrary()
+    opener.open(shared)
 }
 
 /**

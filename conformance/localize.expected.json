@@ -635,7 +635,8 @@
           "targetRepsMax": 12,
           "restSec": 90
         },
-        "notes": "Nenhuma carga vem definida — escolha a sua na primeira sessão e depois adicione o menor incremento que você tiver quando alcançar 12 em todas as séries."
+        "notes": "Nenhuma carga vem definida — escolha a sua na primeira sessão e depois adicione o menor incremento que você tiver quando alcançar 12 em todas as séries.",
+        "equipment": ["dumbbell"]
       },
       {
         "id": "db-floor-press",
@@ -647,7 +648,8 @@
           "targetRepsMax": 12,
           "restSec": 90
         },
-        "notes": "Feito no chão, então dispensa banco. Aumente a carga quando alcançar 12 em todas as séries."
+        "notes": "Feito no chão, então dispensa banco. Aumente a carga quando alcançar 12 em todas as séries.",
+        "equipment": ["dumbbell"]
       },
       {
         "id": "db-row",
@@ -659,7 +661,8 @@
           "targetRepsMax": 12,
           "restSec": 90
         },
-        "notes": "As repetições são por lado."
+        "notes": "As repetições são por lado.",
+        "equipment": ["dumbbell"]
       },
       {
         "id": "db-romanian-deadlift",
@@ -670,7 +673,8 @@
           "targetRepsMin": 8,
           "targetRepsMax": 12,
           "restSec": 90
-        }
+        },
+        "equipment": ["dumbbell"]
       },
       {
         "id": "db-overhead-press",
@@ -681,7 +685,8 @@
           "targetRepsMin": 6,
           "targetRepsMax": 10,
           "restSec": 90
-        }
+        },
+        "equipment": ["dumbbell"]
       },
       {
         "id": "farmers-carry",
@@ -693,7 +698,8 @@
           "holdSecMax": 45,
           "restSec": 60
         },
-        "notes": "Aumente o tempo antes de aumentar a carga."
+        "notes": "Aumente o tempo antes de aumentar a carga.",
+        "equipment": ["dumbbell"]
       },
       {
         "id": "burpees",
@@ -1553,7 +1559,8 @@
           "targetRepsMax": 12,
           "restSec": 90
         },
-        "notes": "重量は最初から入っていません。初回のセッションで自分の重さを決め、全セットで12回に届いたら手持ちのいちばん小さい増分を足していきます。"
+        "notes": "重量は最初から入っていません。初回のセッションで自分の重さを決め、全セットで12回に届いたら手持ちのいちばん小さい増分を足していきます。",
+        "equipment": ["dumbbell"]
       },
       {
         "id": "db-floor-press",
@@ -1565,7 +1572,8 @@
           "targetRepsMax": 12,
           "restSec": 90
         },
-        "notes": "床から押すのでベンチは要りません。全セットで12回に届いたら重量を足します。"
+        "notes": "床から押すのでベンチは要りません。全セットで12回に届いたら重量を足します。",
+        "equipment": ["dumbbell"]
       },
       {
         "id": "db-row",
@@ -1577,7 +1585,8 @@
           "targetRepsMax": 12,
           "restSec": 90
         },
-        "notes": "レップ数は片側あたりです。"
+        "notes": "レップ数は片側あたりです。",
+        "equipment": ["dumbbell"]
       },
       {
         "id": "db-romanian-deadlift",
@@ -1588,7 +1597,8 @@
           "targetRepsMin": 8,
           "targetRepsMax": 12,
           "restSec": 90
-        }
+        },
+        "equipment": ["dumbbell"]
       },
       {
         "id": "db-overhead-press",
@@ -1599,7 +1609,8 @@
           "targetRepsMin": 6,
           "targetRepsMax": 10,
           "restSec": 90
-        }
+        },
+        "equipment": ["dumbbell"]
       },
       {
         "id": "farmers-carry",
@@ -1611,7 +1622,8 @@
           "holdSecMax": 45,
           "restSec": 60
         },
-        "notes": "重量を増やす前に、まず時間を伸ばします。"
+        "notes": "重量を増やす前に、まず時間を伸ばします。",
+        "equipment": ["dumbbell"]
       },
       {
         "id": "burpees",
@@ -2451,7 +2463,8 @@
           "targetRepsMax": 12,
           "restSec": 60
         },
-        "notes": "O elástico é a carga, então um passo para trás é o menor incremento que você tem quando alcançar 12 em todas as séries."
+        "notes": "O elástico é a carga, então um passo para trás é o menor incremento que você tem quando alcançar 12 em todas as séries.",
+        "equipment": ["resistance_band"]
       },
       {
         "id": "ss-hip-hinge",
@@ -2874,7 +2887,8 @@
           "targetRepsMax": 12,
           "restSec": 60
         },
-        "notes": "バンドが負荷なので、全セットで12回に届いたら一歩下がるのがいちばん小さい増分です。"
+        "notes": "バンドが負荷なので、全セットで12回に届いたら一歩下がるのがいちばん小さい増分です。",
+        "equipment": ["resistance_band"]
       },
       {
         "id": "ss-hip-hinge",
@@ -3237,7 +3251,8 @@
           "targetRepsMax": 8,
           "restSec": 180
         },
-        "notes": "Nenhuma carga vem definida — escolha a sua na primeira sessão e depois adicione o menor par de anilhas da academia quando alcançar 8 em todas as séries."
+        "notes": "Nenhuma carga vem definida — escolha a sua na primeira sessão e depois adicione o menor par de anilhas da academia quando alcançar 8 em todas as séries.",
+        "equipment": ["barbell", "plates", "rack"]
       },
       {
         "id": "gym-bench-press",
@@ -3249,7 +3264,8 @@
           "targetRepsMax": 8,
           "restSec": 180
         },
-        "notes": "Aumente a carga quando alcançar 8 em todas as séries, não apenas na melhor delas."
+        "notes": "Aumente a carga quando alcançar 8 em todas as séries, não apenas na melhor delas.",
+        "equipment": ["barbell", "plates", "bench", "rack"]
       },
       {
         "id": "gym-deadlift",
@@ -3261,7 +3277,8 @@
           "targetRepsMax": 5,
           "restSec": 180
         },
-        "notes": "Uma faixa mais curta do que a do resto do bloco, então o topo dela chega mais cedo. Aumente a carga com 5 em todas as séries."
+        "notes": "Uma faixa mais curta do que a do resto do bloco, então o topo dela chega mais cedo. Aumente a carga com 5 em todas as séries.",
+        "equipment": ["barbell", "plates"]
       },
       {
         "id": "gym-overhead-press",
@@ -3273,7 +3290,8 @@
           "targetRepsMax": 8,
           "restSec": 150
         },
-        "notes": "O menor incremento que você tem já é grande aqui. Espere ficar no topo da faixa por um tempo."
+        "notes": "O menor incremento que você tem já é grande aqui. Espere ficar no topo da faixa por um tempo.",
+        "equipment": ["barbell", "plates", "rack"]
       },
       {
         "id": "gym-barbell-row",
@@ -3284,7 +3302,8 @@
           "targetRepsMin": 6,
           "targetRepsMax": 10,
           "restSec": 150
-        }
+        },
+        "equipment": ["barbell", "plates"]
       },
       {
         "id": "gym-pullups",
@@ -3296,7 +3315,8 @@
           "targetRepsMax": 8,
           "restSec": 120
         },
-        "notes": "Registre as repetições assistidas como repetições. O número que você vai superar da próxima vez é seu de qualquer forma."
+        "notes": "Registre as repetições assistidas como repetições. O número que você vai superar da próxima vez é seu de qualquer forma.",
+        "equipment": ["pull_up_bar"]
       },
       {
         "id": "gym-cooldown",
@@ -3697,7 +3717,8 @@
           "targetRepsMax": 8,
           "restSec": 180
         },
-        "notes": "重量は最初から入っていません。初回のセッションで自分の重さを決め、全セットで8回に届いたらジムにあるいちばん小さいプレートを1組足します。"
+        "notes": "重量は最初から入っていません。初回のセッションで自分の重さを決め、全セットで8回に届いたらジムにあるいちばん小さいプレートを1組足します。",
+        "equipment": ["barbell", "plates", "rack"]
       },
       {
         "id": "gym-bench-press",
@@ -3709,7 +3730,8 @@
           "targetRepsMax": 8,
           "restSec": 180
         },
-        "notes": "調子のよい1セットではなく、全セットで8回に届いてから重量を足します。"
+        "notes": "調子のよい1セットではなく、全セットで8回に届いてから重量を足します。",
+        "equipment": ["barbell", "plates", "bench", "rack"]
       },
       {
         "id": "gym-deadlift",
@@ -3721,7 +3743,8 @@
           "targetRepsMax": 5,
           "restSec": 180
         },
-        "notes": "ほかの種目より範囲が狭いので、上限に届くのが早くなります。全セットで5回に届いたら重量を足します。"
+        "notes": "ほかの種目より範囲が狭いので、上限に届くのが早くなります。全セットで5回に届いたら重量を足します。",
+        "equipment": ["barbell", "plates"]
       },
       {
         "id": "gym-overhead-press",
@@ -3733,7 +3756,8 @@
           "targetRepsMax": 8,
           "restSec": 150
         },
-        "notes": "ここでは手持ちのいちばん小さい増分でも大きく感じます。しばらく上限に留まるつもりでいてください。"
+        "notes": "ここでは手持ちのいちばん小さい増分でも大きく感じます。しばらく上限に留まるつもりでいてください。",
+        "equipment": ["barbell", "plates", "rack"]
       },
       {
         "id": "gym-barbell-row",
@@ -3744,7 +3768,8 @@
           "targetRepsMin": 6,
           "targetRepsMax": 10,
           "restSec": 150
-        }
+        },
+        "equipment": ["barbell", "plates"]
       },
       {
         "id": "gym-pullups",
@@ -3756,7 +3781,8 @@
           "targetRepsMax": 8,
           "restSec": 120
         },
-        "notes": "補助ありの回数もそのまま記録します。次に超えるべき数字は、どちらにしてもあなた自身のものです。"
+        "notes": "補助ありの回数もそのまま記録します。次に超えるべき数字は、どちらにしてもあなた自身のものです。",
+        "equipment": ["pull_up_bar"]
       },
       {
         "id": "gym-cooldown",
@@ -4156,7 +4182,8 @@
           "restSec": 30,
           "rounds": 8
         },
-        "notes": "Trabalho e descanso são de 30s cada, então o bloco inteiro dura oito minutos. Aumente as rodadas antes de aumentar a carga."
+        "notes": "Trabalho e descanso são de 30s cada, então o bloco inteiro dura oito minutos. Aumente as rodadas antes de aumentar a carga.",
+        "equipment": ["kettlebell"]
       },
       {
         "id": "kb-goblet-squat",
@@ -4168,7 +4195,8 @@
           "targetRepsMax": 12,
           "restSec": 90
         },
-        "notes": "Um único kettlebell junto ao peito. Aumente a carga quando alcançar 12 em todas as séries."
+        "notes": "Um único kettlebell junto ao peito. Aumente a carga quando alcançar 12 em todas as séries.",
+        "equipment": ["kettlebell"]
       },
       {
         "id": "kb-clean-press",
@@ -4180,7 +4208,8 @@
           "targetRepsMax": 8,
           "restSec": 90
         },
-        "notes": "As repetições são por lado — registre o lado mais fraco, para que o número a superar da próxima vez seja o honesto."
+        "notes": "As repetições são por lado — registre o lado mais fraco, para que o número a superar da próxima vez seja o honesto.",
+        "equipment": ["kettlebell"]
       },
       {
         "id": "kb-single-leg-deadlift",
@@ -4192,7 +4221,8 @@
           "targetRepsMax": 10,
           "restSec": 75
         },
-        "notes": "As repetições são por perna."
+        "notes": "As repetições são por perna.",
+        "equipment": ["kettlebell"]
       },
       {
         "id": "kb-row",
@@ -4204,7 +4234,8 @@
           "targetRepsMax": 12,
           "restSec": 75
         },
-        "notes": "As repetições são por lado."
+        "notes": "As repetições são por lado.",
+        "equipment": ["kettlebell"]
       },
       {
         "id": "kb-halo",
@@ -4216,7 +4247,8 @@
           "targetRepsMax": 10,
           "restSec": 60
         },
-        "notes": "Um círculo para cada lado é uma repetição."
+        "notes": "Um círculo para cada lado é uma repetição.",
+        "equipment": ["kettlebell"]
       },
       {
         "id": "kb-carry",
@@ -4228,7 +4260,8 @@
           "holdSecMax": 60,
           "restSec": 60
         },
-        "notes": "Aumente o tempo antes de aumentar a carga."
+        "notes": "Aumente o tempo antes de aumentar a carga.",
+        "equipment": ["kettlebell"]
       }
     ],
     "workouts": [
@@ -4590,7 +4623,8 @@
           "restSec": 30,
           "rounds": 8
         },
-        "notes": "運動も休憩も30秒ずつなので、ブロック全体で8分です。重量を足す前に、まずラウンド数を増やします。"
+        "notes": "運動も休憩も30秒ずつなので、ブロック全体で8分です。重量を足す前に、まずラウンド数を増やします。",
+        "equipment": ["kettlebell"]
       },
       {
         "id": "kb-goblet-squat",
@@ -4602,7 +4636,8 @@
           "targetRepsMax": 12,
           "restSec": 90
         },
-        "notes": "1個のベルを胸の前で保持します。全セットで12回に届いたら重量を足します。"
+        "notes": "1個のベルを胸の前で保持します。全セットで12回に届いたら重量を足します。",
+        "equipment": ["kettlebell"]
       },
       {
         "id": "kb-clean-press",
@@ -4614,7 +4649,8 @@
           "targetRepsMax": 8,
           "restSec": 90
         },
-        "notes": "レップ数は片側あたりです。弱いほうを記録すると、次に超えるべき数字が正直なものになります。"
+        "notes": "レップ数は片側あたりです。弱いほうを記録すると、次に超えるべき数字が正直なものになります。",
+        "equipment": ["kettlebell"]
       },
       {
         "id": "kb-single-leg-deadlift",
@@ -4626,7 +4662,8 @@
           "targetRepsMax": 10,
           "restSec": 75
         },
-        "notes": "レップ数は片脚あたりです。"
+        "notes": "レップ数は片脚あたりです。",
+        "equipment": ["kettlebell"]
       },
       {
         "id": "kb-row",
@@ -4638,7 +4675,8 @@
           "targetRepsMax": 12,
           "restSec": 75
         },
-        "notes": "レップ数は片側あたりです。"
+        "notes": "レップ数は片側あたりです。",
+        "equipment": ["kettlebell"]
       },
       {
         "id": "kb-halo",
@@ -4650,7 +4688,8 @@
           "targetRepsMax": 10,
           "restSec": 60
         },
-        "notes": "左右に1周ずつで1レップです。"
+        "notes": "左右に1周ずつで1レップです。",
+        "equipment": ["kettlebell"]
       },
       {
         "id": "kb-carry",
@@ -4662,7 +4701,8 @@
           "holdSecMax": 60,
           "restSec": 60
         },
-        "notes": "重量を増やす前に、まず時間を伸ばします。"
+        "notes": "重量を増やす前に、まず時間を伸ばします。",
+        "equipment": ["kettlebell"]
       }
     ],
     "workouts": [

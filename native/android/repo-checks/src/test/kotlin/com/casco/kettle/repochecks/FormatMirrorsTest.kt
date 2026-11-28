@@ -6,6 +6,7 @@ import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 /**
@@ -127,7 +128,75 @@ class FormatMirrorsTest {
         assertEquals(expected, site())
     }
 
+    /**
+     * Each mirror lists the known equipment (#393) as the vocabulary file has it, in its order: the
+     * list an author copies a spelling from, so a key renamed in the file and not on the page is a
+     * spelling the page teaches and the app reads as the author's own words, untranslated.
+     */
+    @Test
+    fun `every mirror lists the known equipment as the vocabulary file does`() {
+        val listed =
+            mapOf(
+                "site/format.html" to
+                    INLINE_CODE
+                        .findAll(
+                            repoText("site/format.html")
+                                .substringAfter("<p data-known-equipment>")
+                                .substringBefore("</p>"),
+                        ).map { it.groupValues[1] }
+                        .toList(),
+                "docs/authoring-exercises-yaml.md" to
+                    markdownKeys("docs/authoring-exercises-yaml.md", "<!-- known-equipment -->"),
+                "docs/product-plan.md" to
+                    markdownKeys("docs/product-plan.md", "The known items are `content/equipment.json`'s:"),
+                // The assistant brief carries the schema file whole, so its description is what steers an
+                // assistant's spelling toward known items.
+                "content/library-schema.json" to
+                    schemaEquipment()
+                        .getValue("description")
+                        .jsonPrimitive.content
+                        .substringAfter("Known items: ")
+                        .removeSuffix(".")
+                        .split(", "),
+            )
+        assertTrue(vocabulary.isNotEmpty())
+        assertEquals(listed.mapValues { vocabulary }, listed)
+    }
+
+    /** The schema file's one statement of `equipment`, which every exercise type refers to. */
+    private fun schemaEquipment(): JsonObject {
+        val schema = Json.parseToJsonElement(repoText("content/library-schema.json")).jsonObject
+        val ref = "#/\$defs/equipment"
+        val refs =
+            schema
+                .path("properties", "exercises", "items")
+                .getValue("oneOf")
+                .jsonArray
+                .map {
+                    it.jsonObject
+                        .path("properties", "equipment")
+                        .getValue("\$ref")
+                        .jsonPrimitive.content
+                }
+        assertEquals(List(EXERCISE_TYPES) { ref }, refs)
+        return schema.path("\$defs", "equipment")
+    }
+
+    /** The backticked keys on the lines after [anchor]'s, up to the first that isn't one. */
+    private fun markdownKeys(
+        path: String,
+        anchor: String,
+    ): List<String> =
+        repoText(path)
+            .substringAfter(anchor)
+            .lines()
+            .drop(1)
+            .takeWhile { it.trim().startsWith('`') }
+            .flatMap { line -> Regex("`([^`]+)`").findAll(line).map { it.groupValues[1] } }
+
     private companion object {
+        val INLINE_CODE = Regex("""<code class="inl">([^<]+)</code>""")
+
         /** `| type | fields | notes |` splits into five, both ends empty. */
         const val MIN_ROW_CELLS = 4
 

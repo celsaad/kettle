@@ -3,8 +3,8 @@
 # Four weeks, two sessions a week, and the four timer types the other examples
 # don't use: `hiit` (work/rest intervals), `emom` (every minute on the minute),
 # `amrap` (one time cap, as many rounds as you can) and `cardio` (time and/or
-# distance). Equipment: a kettlebell or a single dumbbell, and somewhere to run,
-# row or ride.
+# distance). Equipment: a kettlebell for the swings and the AMRAP, and a rowing
+# machine for the 2k test. The easy runs are run, bike or row, whatever you have.
 #
 # The timed types have no notion of sets or rounds you log per movement — the
 # round itself lives in `notes`, which Kettle shows on screen while the clock is
@@ -48,15 +48,19 @@ exercises:
   - id: cnd-swings
     name: Kettlebell Swings
     type: emom
+    equipment: [kettlebell]
     config:
       interval_sec: 60
       total_minutes: 12
       target_reps: 15
-    notes: 15 swings at the top of each minute; the rest of the minute is the rest.
+    notes: >-
+      15 swings at the top of each minute; the rest of the minute is the rest.
+      A single dumbbell works if you have no kettlebell.
 
   - id: cnd-amrap-12
     name: AMRAP 12
     type: amrap
+    equipment: [kettlebell]
     config:
       time_cap_sec: 720
     notes: One round is 10 swings, 10 push-ups, 15 air squats. Count the rounds.
@@ -64,6 +68,7 @@ exercises:
   - id: cnd-row-2k
     name: Row 2k
     type: cardio
+    equipment: [rower]
     config:
       distance_meters: 2000
     notes: A repeatable test. Same machine, same damper, log the time.

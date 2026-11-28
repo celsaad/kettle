@@ -3,12 +3,19 @@ package com.casco.kettle.domain
 // The exercise form's other half (#241): an exercise as the strings a form holds, back again, and
 // what Save makes of them. `ExerciseForm.kt` holds the fields and their validation.
 
-/** What the form holds: every field as the text typed, keyed so a type switch keeps what the two share. */
+/**
+ * What the form holds: every field as the text typed, keyed so a type switch keeps what the two share.
+ *
+ * [equipment] is carried through as the exercise has it, though the form doesn't show it yet (#393):
+ * Save builds a whole new [Exercise] from the draft, so a field the draft didn't carry would be
+ * dropped from the file by any edit.
+ */
 data class ExerciseDraft(
     val name: String,
     val type: ExerciseType,
     val values: Map<ConfigKey, String>,
     val notes: String,
+    val equipment: List<String> = emptyList(),
 ) {
     companion object {
         /** A new exercise's empty form, on the first type the form offers. */
@@ -79,6 +86,7 @@ fun draftOf(
         exercise.config.type,
         values.filterValues { it != null }.mapValues { it.value.orEmpty() },
         exercise.notes.orEmpty(),
+        exercise.equipment,
     )
 }
 
@@ -97,7 +105,7 @@ fun buildExercise(
     previousWeightKg: Double? = null,
 ): Exercise {
     val config = configOf(draft.type, draft.values, draft.values.weightKg(system, previousWeightKg))
-    return Exercise(id, draft.name.trim(), config, draft.notes.trim().ifEmpty { null })
+    return Exercise(id, draft.name.trim(), config, draft.notes.trim().ifEmpty { null }, draft.equipment)
 }
 
 /** The kilograms Save would write for the weight field (#441): what "Your file keeps it as 22 kg" says. */

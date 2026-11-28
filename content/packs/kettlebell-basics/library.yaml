@@ -15,6 +15,7 @@ exercises:
   - id: kb-swing
     name: Kettlebell Swing
     type: hiit
+    equipment: [kettlebell]
     config:
       work_sec: 30
       rest_sec: 30
@@ -25,6 +26,7 @@ exercises:
   - id: kb-goblet-squat
     name: Kettlebell Goblet Squat
     type: reps
+    equipment: [kettlebell]
     config:
       sets: 3
       target_reps_min: 8
@@ -34,6 +36,7 @@ exercises:
   - id: kb-clean-press
     name: Clean & Press
     type: reps
+    equipment: [kettlebell]
     config:
       sets: 3
       target_reps_min: 5
@@ -45,6 +48,7 @@ exercises:
   - id: kb-single-leg-deadlift
     name: Single-leg Deadlift
     type: reps
+    equipment: [kettlebell]
     config:
       sets: 3
       target_reps_min: 6
@@ -54,6 +58,7 @@ exercises:
   - id: kb-row
     name: Kettlebell Row
     type: reps
+    equipment: [kettlebell]
     config:
       sets: 3
       target_reps_min: 8
@@ -63,6 +68,7 @@ exercises:
   - id: kb-halo
     name: Halo
     type: reps
+    equipment: [kettlebell]
     config:
       sets: 3
       target_reps_min: 5
@@ -72,6 +78,7 @@ exercises:
   - id: kb-carry
     name: Rack Carry
     type: timed_hold
+    equipment: [kettlebell]
     config:
       sets: 3
       hold_sec_min: 30

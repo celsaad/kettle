@@ -68,6 +68,7 @@ exercises:
   - id: ss-band-row
     name: Band Row
     type: reps
+    equipment: [resistance_band]
     config:
       sets: 3
       target_reps_min: 8

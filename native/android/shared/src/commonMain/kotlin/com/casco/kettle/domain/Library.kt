@@ -17,12 +17,17 @@ data class Library(
 /**
  * One exercise. TS spells its type as a `type` discriminant beside a matching config; here the
  * config's class is the type, so the two can't disagree.
+ *
+ * [equipment] is what it needs at hand, trimmed and each item once (`Equipment.kt`), as the file
+ * spells it. Empty is none, the one exception to the null-is-absent rule: `equipment: []` and no
+ * key at all mean the same, so the model has one spelling of it and the writer leaves it out.
  */
 data class Exercise(
     val id: String,
     val name: String,
     val config: ExerciseConfig,
     val notes: String? = null,
+    val equipment: List<String> = emptyList(),
 )
 
 /** What one exercise type is configured with. [Reps.targetWeightKg] is kilograms, as every stored weight. */

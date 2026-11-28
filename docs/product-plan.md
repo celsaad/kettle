@@ -99,6 +99,7 @@ exercises:
   - id: bench-press
     name: Bench Press
     type: reps
+    equipment: [barbell, plates, bench, rack]   # optional; known items read in the reader's language
     config:
       sets: 5
       target_reps_min: 5        # add target_reps_max for a range ("5 to 8")
@@ -174,6 +175,15 @@ the rep/hold *range* fields appear there and only in passing here.
 - **Per-block config overrides** reuse one definition with tweaks (e.g. longer rest on the last block) without duplicating definitions.
 - **An override's `config` is a free map of numbers and strings in the file, but the *merged result* must satisfy the target's own config schema.** The patch shape stays loose so it can be partial and hand-written; the check moved to where the week is resolved. A week whose merge the schema refuses — or that names a key the target doesn't have — imports fine, runs the base definition, and is shown as not applied. The authoring reference carries the rule per type.
 - **Workouts live in the same file** so everything the user authors is in one place. If it grows, split into `workouts.yaml` later — the model doesn't change.
+- **`equipment` is a property of the exercise alone**, an optional list of what it needs at hand: at most 20 items, counted before repeats collapse, each 1 to 60 code points on one line once trimmed of whitespace, with `[]` the same as no key and never written back. A workout's equipment is derived from its exercises, combined in the order the workout reaches them, and never stored; workouts, programs and overrides have no field for it. Known items are preferred, but any words are accepted. One that matches a known item, after trimming, lowercasing and turning spaces and hyphens into `_`, is shown in the reader's language; any other is the user's own words and is shown as written, as a name is. Two items in one exercise that match the same way are kept once, the first spelling kept. An alternative ("dumbbell or kettlebell") goes in `notes`, not in the list. The known items are `content/equipment.json`'s:
+  `barbell` `dumbbell` `kettlebell` `plates` `ez_bar` `trap_bar` `bench` `rack` `smith_machine`
+  `cable_machine` `leg_press` `lat_pulldown` `landmine` `dip_belt` `weight_vest` `sandbag`
+  `ankle_weights` `pull_up_bar` `dip_bars` `rings` `parallettes` `suspension_trainer`
+  `resistance_band` `mini_band` `ab_wheel` `climbing_rope` `mat` `reformer` `pilates_ring`
+  `stability_ball` `foam_roller` `yoga_block` `yoga_strap` `balance_board` `sliders` `chair` `wall`
+  `step` `box` `towel` `table` `jump_rope` `medicine_ball` `slam_ball` `wall_ball` `battle_ropes`
+  `sled` `tire` `treadmill` `bike` `rower` `ski_erg` `elliptical` `stair_climber` `ball` `cones`
+  `agility_ladder` `hurdles` `racket` `net`
 - **The repeat counts are bounded**, not just positive: `sets` and `rounds` cap at 500, `total_minutes` at 1440, and `emom`'s derived interval count at 500. The session runner materializes one step per set, per round and per interval before it renders, so an unbounded count is a workout that can't be started rather than a long one. The exact numbers live in `:shared`'s schema readers and `library-schema.json`; the authoring reference carries them per type.
 
 ### 4.2 `sessions/<id>.yaml` — one file per session (app-written)

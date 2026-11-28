@@ -47,6 +47,9 @@
               },
               "notes": {
                 "type": "string"
+              },
+              "equipment": {
+                "$ref": "#/$defs/equipment"
               }
             },
             "required": ["id", "name", "type", "config"]
@@ -88,6 +91,9 @@
               },
               "notes": {
                 "type": "string"
+              },
+              "equipment": {
+                "$ref": "#/$defs/equipment"
               }
             },
             "required": ["id", "name", "type", "config"]
@@ -119,6 +125,9 @@
               },
               "notes": {
                 "type": "string"
+              },
+              "equipment": {
+                "$ref": "#/$defs/equipment"
               }
             },
             "required": ["id", "name", "type", "config"]
@@ -169,6 +178,9 @@
               },
               "notes": {
                 "type": "string"
+              },
+              "equipment": {
+                "$ref": "#/$defs/equipment"
               }
             },
             "required": ["id", "name", "type", "config"]
@@ -213,6 +225,9 @@
               },
               "notes": {
                 "type": "string"
+              },
+              "equipment": {
+                "$ref": "#/$defs/equipment"
               }
             },
             "required": ["id", "name", "type", "config"]
@@ -247,6 +262,9 @@
               },
               "notes": {
                 "type": "string"
+              },
+              "equipment": {
+                "$ref": "#/$defs/equipment"
               }
             },
             "required": ["id", "name", "type", "config"]
@@ -278,6 +296,9 @@
               },
               "notes": {
                 "type": "string"
+              },
+              "equipment": {
+                "$ref": "#/$defs/equipment"
               }
             },
             "required": ["id", "name", "type", "config"]
@@ -461,5 +482,18 @@
       }
     }
   },
-  "required": ["version", "exercises", "workouts", "programs"]
+  "required": ["version", "exercises", "workouts", "programs"],
+  "$defs": {
+    "equipment": {
+      "description": "What the exercise needs at hand. Prefer the known items below: the app shows each in the reader's own language. Any other item is accepted, kept and shown exactly as written. An item is a known one if it matches after trimming, ignoring case and treating spaces, hyphens and underscores alike, so \"Pull-up bar\" is pull_up_bar. Two items that match the same way are kept once, but the 20-item limit counts both. Alternatives (\"dumbbell or kettlebell\") go in notes, not here. Each item is trimmed of whitespace before its 60-code-point limit is counted, which maxLength can't state: it counts the padding too. A line break inside an item is refused. Known items: barbell, dumbbell, kettlebell, plates, ez_bar, trap_bar, bench, rack, smith_machine, cable_machine, leg_press, lat_pulldown, landmine, dip_belt, weight_vest, sandbag, ankle_weights, pull_up_bar, dip_bars, rings, parallettes, suspension_trainer, resistance_band, mini_band, ab_wheel, climbing_rope, mat, reformer, pilates_ring, stability_ball, foam_roller, yoga_block, yoga_strap, balance_board, sliders, chair, wall, step, box, towel, table, jump_rope, medicine_ball, slam_ball, wall_ball, battle_ropes, sled, tire, treadmill, bike, rower, ski_erg, elliptical, stair_climber, ball, cones, agility_ladder, hurdles, racket, net.",
+      "type": "array",
+      "maxItems": 20,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 60,
+        "pattern": "^[\\t\\n\\u000b\\f\\r \\u00a0\\u1680\\u2000-\\u200a\\u2028\\u2029\\u202f\\u205f\\u3000\\ufeff]*[^\\t\\n\\u000b\\f\\r \\u00a0\\u1680\\u2000-\\u200a\\u2028\\u2029\\u202f\\u205f\\u3000\\ufeff](?:[^\\n\\r\\u2028\\u2029]*[^\\t\\n\\u000b\\f\\r \\u00a0\\u1680\\u2000-\\u200a\\u2028\\u2029\\u202f\\u205f\\u3000\\ufeff])?[\\t\\n\\u000b\\f\\r \\u00a0\\u1680\\u2000-\\u200a\\u2028\\u2029\\u202f\\u205f\\u3000\\ufeff]*$"
+      }
+    }
+  }
 }

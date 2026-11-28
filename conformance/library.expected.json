@@ -53,7 +53,8 @@
             "targetWeightKg": 82.5,
             "restSec": 180
           },
-          "notes": "Brace"
+          "notes": "Brace",
+          "equipment": ["barbell", "Bench"]
         },
         {
           "id": "reps-bare",
@@ -248,7 +249,8 @@
             "targetRepsMax": 12,
             "restSec": 90
           },
-          "notes": "Add weight once you hit 12 on every set, then start again at 8."
+          "notes": "Add weight once you hit 12 on every set, then start again at 8.",
+          "equipment": ["dumbbell"]
         },
         {
           "id": "bfb-floor-press",
@@ -260,7 +262,8 @@
             "targetRepsMax": 12,
             "restSec": 90
           },
-          "notes": "Same rule — top of the range on all sets, then add weight."
+          "notes": "Same rule — top of the range on all sets, then add weight.",
+          "equipment": ["dumbbell"]
         },
         {
           "id": "bfb-row",
@@ -272,7 +275,8 @@
             "targetRepsMax": 12,
             "restSec": 90
           },
-          "notes": "Reps are per side; log the harder side."
+          "notes": "Reps are per side; log the harder side.",
+          "equipment": ["dumbbell"]
         },
         {
           "id": "bfb-romanian-deadlift",
@@ -283,7 +287,8 @@
             "targetRepsMin": 8,
             "targetRepsMax": 12,
             "restSec": 90
-          }
+          },
+          "equipment": ["dumbbell"]
         },
         {
           "id": "bfb-overhead-press",
@@ -294,7 +299,8 @@
             "targetRepsMin": 6,
             "targetRepsMax": 10,
             "restSec": 90
-          }
+          },
+          "equipment": ["dumbbell"]
         },
         {
           "id": "bfb-glute-bridge",
@@ -1095,7 +1101,8 @@
             "totalMinutes": 12,
             "targetReps": 15
           },
-          "notes": "15 swings at the top of each minute; the rest of the minute is the rest."
+          "notes": "15 swings at the top of each minute; the rest of the minute is the rest. A single dumbbell works if you have no kettlebell.",
+          "equipment": ["kettlebell"]
         },
         {
           "id": "cnd-amrap-12",
@@ -1104,7 +1111,8 @@
           "config": {
             "timeCapSec": 720
           },
-          "notes": "One round is 10 swings, 10 push-ups, 15 air squats. Count the rounds."
+          "notes": "One round is 10 swings, 10 push-ups, 15 air squats. Count the rounds.",
+          "equipment": ["kettlebell"]
         },
         {
           "id": "cnd-row-2k",
@@ -1113,7 +1121,8 @@
           "config": {
             "distanceMeters": 2000
           },
-          "notes": "A repeatable test. Same machine, same damper, log the time."
+          "notes": "A repeatable test. Same machine, same damper, log the time.",
+          "equipment": ["rower"]
         },
         {
           "id": "cnd-easy-run",
@@ -1434,7 +1443,8 @@
             "targetWeightKg": 50,
             "restSec": 180
           },
-          "notes": "Add 2.5 kg once all sets reach 8."
+          "notes": "Add 2.5 kg once all sets reach 8.",
+          "equipment": ["barbell", "plates", "bench", "rack"]
         },
         {
           "id": "ppl-overhead-press",
@@ -1446,7 +1456,8 @@
             "targetRepsMax": 10,
             "targetWeightKg": 30,
             "restSec": 120
-          }
+          },
+          "equipment": ["barbell", "plates", "rack"]
         },
         {
           "id": "ppl-dips",
@@ -1458,7 +1469,8 @@
             "targetRepsMax": 12,
             "restSec": 90
           },
-          "notes": "Bodyweight until 3 × 12, then hang weight from a belt."
+          "notes": "Bodyweight until 3 × 12, then hang weight from a belt.",
+          "equipment": ["dip_bars"]
         },
         {
           "id": "ppl-lateral-raise",
@@ -1470,7 +1482,8 @@
             "targetRepsMax": 15,
             "targetWeightKg": 8,
             "restSec": 60
-          }
+          },
+          "equipment": ["dumbbell"]
         },
         {
           "id": "ppl-deadlift",
@@ -1482,7 +1495,8 @@
             "targetWeightKg": 80,
             "restSec": 180
           },
-          "notes": "A fixed target of 5 — no range, so no `target_reps_max` here."
+          "notes": "A fixed target of 5 — no range, so no `target_reps_max` here.",
+          "equipment": ["barbell", "plates"]
         },
         {
           "id": "ppl-pullups",
@@ -1494,7 +1508,8 @@
             "targetRepsMax": 8,
             "restSec": 120
           },
-          "notes": "Bands or a machine count. Log what you actually did."
+          "notes": "Bands or a machine count. Log what you actually did.",
+          "equipment": ["pull_up_bar"]
         },
         {
           "id": "ppl-barbell-row",
@@ -1506,7 +1521,8 @@
             "targetRepsMax": 10,
             "targetWeightKg": 40,
             "restSec": 120
-          }
+          },
+          "equipment": ["barbell", "plates"]
         },
         {
           "id": "ppl-curl",
@@ -1518,7 +1534,8 @@
             "targetRepsMax": 12,
             "targetWeightKg": 12,
             "restSec": 60
-          }
+          },
+          "equipment": ["dumbbell"]
         },
         {
           "id": "ppl-back-squat",
@@ -1529,7 +1546,8 @@
             "targetRepsMin": 5,
             "targetWeightKg": 60,
             "restSec": 180
-          }
+          },
+          "equipment": ["barbell", "plates", "rack"]
         },
         {
           "id": "ppl-romanian-deadlift",
@@ -1541,7 +1559,8 @@
             "targetRepsMax": 10,
             "targetWeightKg": 50,
             "restSec": 120
-          }
+          },
+          "equipment": ["barbell", "plates"]
         },
         {
           "id": "ppl-walking-lunge",
@@ -2122,7 +2141,8 @@
             "targetRepsMax": 12,
             "restSec": 90
           },
-          "notes": "No weight is seeded — set yours on the first session, then add the smallest jump you own once you hit 12 on every set."
+          "notes": "No weight is seeded — set yours on the first session, then add the smallest jump you own once you hit 12 on every set.",
+          "equipment": ["dumbbell"]
         },
         {
           "id": "db-floor-press",
@@ -2134,7 +2154,8 @@
             "targetRepsMax": 12,
             "restSec": 90
           },
-          "notes": "Pressed off the floor, so it needs no bench. Add weight once you hit 12 on every set."
+          "notes": "Pressed off the floor, so it needs no bench. Add weight once you hit 12 on every set.",
+          "equipment": ["dumbbell"]
         },
         {
           "id": "db-row",
@@ -2146,7 +2167,8 @@
             "targetRepsMax": 12,
             "restSec": 90
           },
-          "notes": "Reps are per side."
+          "notes": "Reps are per side.",
+          "equipment": ["dumbbell"]
         },
         {
           "id": "db-romanian-deadlift",
@@ -2157,7 +2179,8 @@
             "targetRepsMin": 8,
             "targetRepsMax": 12,
             "restSec": 90
-          }
+          },
+          "equipment": ["dumbbell"]
         },
         {
           "id": "db-overhead-press",
@@ -2168,7 +2191,8 @@
             "targetRepsMin": 6,
             "targetRepsMax": 10,
             "restSec": 90
-          }
+          },
+          "equipment": ["dumbbell"]
         },
         {
           "id": "farmers-carry",
@@ -2180,7 +2204,8 @@
             "holdSecMax": 45,
             "restSec": 60
           },
-          "notes": "Add time before adding weight."
+          "notes": "Add time before adding weight.",
+          "equipment": ["dumbbell"]
         },
         {
           "id": "burpees",
@@ -3023,7 +3048,8 @@
             "targetRepsMax": 12,
             "restSec": 60
           },
-          "notes": "The band is the load, so a step further back is the smallest jump you have once you hit 12 on every set."
+          "notes": "The band is the load, so a step further back is the smallest jump you have once you hit 12 on every set.",
+          "equipment": ["resistance_band"]
         },
         {
           "id": "ss-hip-hinge",
@@ -3389,7 +3415,8 @@
             "targetRepsMax": 8,
             "restSec": 180
           },
-          "notes": "No weight is seeded — set yours on the first session, then add the smallest plate pair the gym has once you hit 8 on every set."
+          "notes": "No weight is seeded — set yours on the first session, then add the smallest plate pair the gym has once you hit 8 on every set.",
+          "equipment": ["barbell", "plates", "rack"]
         },
         {
           "id": "gym-bench-press",
@@ -3401,7 +3428,8 @@
             "targetRepsMax": 8,
             "restSec": 180
           },
-          "notes": "Add weight once you hit 8 on every set, not on your best one."
+          "notes": "Add weight once you hit 8 on every set, not on your best one.",
+          "equipment": ["barbell", "plates", "bench", "rack"]
         },
         {
           "id": "gym-deadlift",
@@ -3413,7 +3441,8 @@
             "targetRepsMax": 5,
             "restSec": 180
           },
-          "notes": "A shorter range than the rest of the block, so the top of it arrives sooner. Add weight at 5 on every set."
+          "notes": "A shorter range than the rest of the block, so the top of it arrives sooner. Add weight at 5 on every set.",
+          "equipment": ["barbell", "plates"]
         },
         {
           "id": "gym-overhead-press",
@@ -3425,7 +3454,8 @@
             "targetRepsMax": 8,
             "restSec": 150
           },
-          "notes": "The smallest jump you own is a big one here. Expect to sit at the top of the range for a while."
+          "notes": "The smallest jump you own is a big one here. Expect to sit at the top of the range for a while.",
+          "equipment": ["barbell", "plates", "rack"]
         },
         {
           "id": "gym-barbell-row",
@@ -3436,7 +3466,8 @@
             "targetRepsMin": 6,
             "targetRepsMax": 10,
             "restSec": 150
-          }
+          },
+          "equipment": ["barbell", "plates"]
         },
         {
           "id": "gym-pullups",
@@ -3448,7 +3479,8 @@
             "targetRepsMax": 8,
             "restSec": 120
           },
-          "notes": "Log assisted reps as reps. The number you beat next time is your own either way."
+          "notes": "Log assisted reps as reps. The number you beat next time is your own either way.",
+          "equipment": ["pull_up_bar"]
         },
         {
           "id": "gym-cooldown",
@@ -3851,7 +3883,8 @@
             "restSec": 30,
             "rounds": 8
           },
-          "notes": "Work and rest are both 30s, so the whole block is eight minutes. Add rounds before you add weight."
+          "notes": "Work and rest are both 30s, so the whole block is eight minutes. Add rounds before you add weight.",
+          "equipment": ["kettlebell"]
         },
         {
           "id": "kb-goblet-squat",
@@ -3863,7 +3896,8 @@
             "targetRepsMax": 12,
             "restSec": 90
           },
-          "notes": "A single bell held at the chest. Add weight once you hit 12 on every set."
+          "notes": "A single bell held at the chest. Add weight once you hit 12 on every set.",
+          "equipment": ["kettlebell"]
         },
         {
           "id": "kb-clean-press",
@@ -3875,7 +3909,8 @@
             "targetRepsMax": 8,
             "restSec": 90
           },
-          "notes": "Reps are per side — log the weaker one, so the number you beat next time is the honest one."
+          "notes": "Reps are per side — log the weaker one, so the number you beat next time is the honest one.",
+          "equipment": ["kettlebell"]
         },
         {
           "id": "kb-single-leg-deadlift",
@@ -3887,7 +3922,8 @@
             "targetRepsMax": 10,
             "restSec": 75
           },
-          "notes": "Reps are per leg."
+          "notes": "Reps are per leg.",
+          "equipment": ["kettlebell"]
         },
         {
           "id": "kb-row",
@@ -3899,7 +3935,8 @@
             "targetRepsMax": 12,
             "restSec": 75
           },
-          "notes": "Reps are per side."
+          "notes": "Reps are per side.",
+          "equipment": ["kettlebell"]
         },
         {
           "id": "kb-halo",
@@ -3911,7 +3948,8 @@
             "targetRepsMax": 10,
             "restSec": 60
           },
-          "notes": "One circle each way is one rep."
+          "notes": "One circle each way is one rep.",
+          "equipment": ["kettlebell"]
         },
         {
           "id": "kb-carry",
@@ -3923,7 +3961,8 @@
             "holdSecMax": 60,
             "restSec": 60
           },
-          "notes": "Add time before adding weight."
+          "notes": "Add time before adding weight.",
+          "equipment": ["kettlebell"]
         }
       ],
       "workouts": [
@@ -4972,6 +5011,163 @@
       ],
       "programs": []
     }
+  },
+  "equipment-known-and-own": {
+    "ok": true,
+    "value": {
+      "version": 1,
+      "exercises": [
+        {
+          "id": "a",
+          "name": "A",
+          "type": "reps",
+          "config": {
+            "sets": 3,
+            "targetRepsMin": 5,
+            "restSec": 60
+          },
+          "equipment": ["Dumbbell", "pull-up bar", "Foam Thing"]
+        }
+      ],
+      "workouts": [],
+      "programs": []
+    }
+  },
+  "equipment-items-trimmed": {
+    "ok": true,
+    "value": {
+      "version": 1,
+      "exercises": [
+        {
+          "id": "a",
+          "name": "A",
+          "type": "reps",
+          "config": {
+            "sets": 3,
+            "targetRepsMin": 5,
+            "restSec": 60
+          },
+          "equipment": ["bench", "Mini band"]
+        }
+      ],
+      "workouts": [],
+      "programs": []
+    }
+  },
+  "equipment-empty-is-none": {
+    "ok": true,
+    "value": {
+      "version": 1,
+      "exercises": [
+        {
+          "id": "a",
+          "name": "A",
+          "type": "rest",
+          "config": {
+            "durationSec": 1
+          }
+        },
+        {
+          "id": "b",
+          "name": "B",
+          "type": "rest",
+          "config": {
+            "durationSec": 1
+          }
+        }
+      ],
+      "workouts": [],
+      "programs": []
+    }
+  },
+  "equipment-at-ceilings": {
+    "ok": true,
+    "value": {
+      "version": 1,
+      "exercises": [
+        {
+          "id": "a",
+          "name": "A",
+          "type": "rest",
+          "config": {
+            "durationSec": 1
+          },
+          "equipment": [
+            "item-1",
+            "item-2",
+            "item-3",
+            "item-4",
+            "item-5",
+            "item-6",
+            "item-7",
+            "item-8",
+            "item-9",
+            "item-10",
+            "item-11",
+            "item-12",
+            "item-13",
+            "item-14",
+            "item-15",
+            "item-16",
+            "item-17",
+            "item-18",
+            "item-19",
+            "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy"
+          ]
+        }
+      ],
+      "workouts": [],
+      "programs": []
+    }
+  },
+  "equipment-too-many-items": {
+    "ok": false,
+    "kind": "schemaMismatch",
+    "paths": ["exercises.0.equipment"]
+  },
+  "equipment-item-too-long": {
+    "ok": false,
+    "kind": "schemaMismatch",
+    "paths": ["exercises.0.equipment.1"]
+  },
+  "equipment-item-blank": {
+    "ok": false,
+    "kind": "schemaMismatch",
+    "paths": ["exercises.0.equipment.1"]
+  },
+  "equipment-item-ideographic-blank": {
+    "ok": false,
+    "kind": "schemaMismatch",
+    "paths": ["exercises.0.equipment.1"]
+  },
+  "equipment-item-with-line-break": {
+    "ok": false,
+    "kind": "schemaMismatch",
+    "paths": ["exercises.0.equipment.1"]
+  },
+  "equipment-padded-item-at-ceiling": {
+    "ok": true,
+    "value": {
+      "version": 1,
+      "exercises": [
+        {
+          "id": "a",
+          "name": "A",
+          "type": "rest",
+          "config": {
+            "durationSec": 1
+          },
+          "equipment": ["yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy"]
+        }
+      ],
+      "workouts": [],
+      "programs": []
+    }
+  },
+  "equipment-bare-string-refused": {
+    "ok": false,
+    "kind": "schemaMismatch",
+    "paths": ["exercises.0.equipment"]
   },
   "week-without-workout": {
     "ok": false,

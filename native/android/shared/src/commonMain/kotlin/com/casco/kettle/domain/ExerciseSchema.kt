@@ -20,7 +20,11 @@ internal fun SchemaReader.exercise(
             val name = fields.required("name", SchemaReader::nonEmpty)
             val config = fields.required("config") { v, p -> fields(v, p)?.let { readConfig(it) } }
             val notes = fields.optional("notes", SchemaReader::string)
-            if (id != null && name != null && config != null) Exercise(id, name, config, notes) else null
+            // Absent is none; present and refused is null, which refuses the exercise.
+            val equipment = if (fields.has("equipment")) fields.optional("equipment", equipmentList) else emptyList()
+            equipment?.let {
+                if (id != null && name != null && config != null) Exercise(id, name, config, notes, it) else null
+            }
         }
     }
 }
@@ -48,6 +52,41 @@ internal fun SchemaReader.exerciseConfig(
     type: String,
     fields: Fields,
 ): ExerciseConfig? = configReaders.getValue(type)(fields)
+
+/**
+ * `equipment:`, at most [MAX_EQUIPMENT_ITEMS] items of 1 to [MAX_EQUIPMENT_LENGTH] characters each,
+ * counted after trimming and in code points, as JSON Schema's `maxLength` counts, and none with a
+ * line break inside it. Any spelling is accepted; two that match the same item are one, the first
+ * kept, and the ceiling on items counts what was written, before they collapse. Neither ceiling
+ * reports a [SchemaReader.ceilings] maximum, since repair clamps numbers and can't shorten a list.
+ */
+private val equipmentList: Read<List<String>> = { value, path ->
+    list(value, path, maxSize = MAX_EQUIPMENT_ITEMS) { item, at ->
+        string(item, at)?.let(::trimEquipment)?.let { trimmed ->
+            when {
+                trimmed.isEmpty() -> {
+                    refuse(at, "must not be blank", fatal = false)
+                }
+
+                codePoints(trimmed).size > MAX_EQUIPMENT_LENGTH -> {
+                    refuse(at, "must be at most $MAX_EQUIPMENT_LENGTH characters", fatal = false)
+                }
+
+                // One item is one line: a break inside it is two items written as one, or a pasted note.
+                trimmed.any { it in LINE_BREAKS } -> {
+                    refuse(at, "must not contain a line break", fatal = false)
+                }
+
+                else -> {
+                    trimmed
+                }
+            }
+        }
+    }?.let(::distinctEquipment)
+}
+
+/** ECMAScript's LineTerminator: what JSON Schema's pattern for an item refuses inside one. */
+private const val LINE_BREAKS = "\n\r\u2028\u2029"
 
 /** `int().positive().max(…)`, for the counts the runner builds a step per unit of. */
 internal fun countUpTo(max: Int): Read<Long> =

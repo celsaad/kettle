@@ -22,9 +22,11 @@ import com.casco.kettle.domain.diffExerciseOverride
 import com.casco.kettle.domain.dropLastSetForMember
 import com.casco.kettle.domain.emomIntervalCount
 import com.casco.kettle.domain.entryBest
+import com.casco.kettle.domain.equipmentMatchKey
 import com.casco.kettle.domain.filterByName
 import com.casco.kettle.domain.findProgramWeek
 import com.casco.kettle.domain.fromDisplayWeight
+import com.casco.kettle.domain.knownEquipment
 import com.casco.kettle.domain.libraryTranslationOf
 import com.casco.kettle.domain.localizeLibrary
 import com.casco.kettle.domain.mergeBlockOverride
@@ -52,6 +54,7 @@ import com.casco.kettle.domain.toDisplayWeight
 import com.casco.kettle.domain.translationFor
 import com.casco.kettle.domain.upcomingOutline
 import com.casco.kettle.domain.weightStep
+import com.casco.kettle.domain.workoutEquipment
 import com.casco.kettle.storage.listFileNames
 import com.casco.kettle.storage.readTextOrNull
 import it.krzeminski.snakeyaml.engine.kmp.api.Load
@@ -76,6 +79,7 @@ import kotlin.test.fail
 class ConformanceTest {
     private val runners: Map<String, (Case) -> Any?> =
         mapOf(
+            "equipment" to ::runEquipment,
             "library" to ::runLibrary,
             "localize" to ::runLocalize,
             "merge" to ::runMerge,
@@ -363,6 +367,34 @@ class ConformanceTest {
             "emomIntervalCount" -> emomIntervalCount(case.number("interval_sec"), case.number("total_minutes"))
             else -> error("unknown op $op")
         }
+    }
+
+    private fun runEquipment(case: Case): Any =
+        when (val op = case.string("op")) {
+            "match" -> {
+                case.strings("values").map { value ->
+                    mapOf(
+                        "value" to value,
+                        "matchKey" to equipmentMatchKey(value),
+                        "known" to knownEquipment(value, vocabulary),
+                    )
+                }
+            }
+
+            "workout" -> {
+                val library = mustParseLibrary(case.string("library")!!)
+                workoutEquipment(library, library.workouts.single { it.id == case.string("workout") })
+            }
+
+            else -> {
+                error("unknown op $op")
+            }
+        }
+
+    /** The shipped vocabulary, read in place: `match` cases say which values it knows. */
+    private val vocabulary: Set<String> by lazy {
+        @Suppress("UNCHECKED_CAST")
+        (Load().loadOne(readRepoFile("content/equipment.json")) as List<String>).toSet()
     }
 
     private fun runSearch(case: Case): Any {

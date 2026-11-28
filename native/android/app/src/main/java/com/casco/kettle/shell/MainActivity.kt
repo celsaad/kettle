@@ -33,6 +33,7 @@ import com.casco.kettle.shell.nav.Route
 import com.casco.kettle.shell.nav.ShellView
 import com.casco.kettle.shell.nav.SplashHold
 import com.casco.kettle.shell.nav.Tab
+import com.casco.kettle.shell.nav.savedIds
 import com.casco.kettle.shell.reminder.reconcileReminder
 import com.casco.kettle.shell.runner.LaunchRecovery
 import com.casco.kettle.shell.runner.RunnerHost
@@ -128,7 +129,7 @@ class MainActivity : ComponentActivity() {
         // The stack this activity's predecessor saved, when it was made again (a font or display size
         // change, the process brought back).
         val saved = savedInstanceState?.getStringArrayList(BACK_STACK)
-        if (saved != null) navigator.restore(saved)
+        if (saved != null) navigator.restore(saved, savedInstanceState.getLongArray(BACK_STACK_IDS))
         // Any launch with the service alive attaches, the shade notification's tap or not (#297): a Recents
         // swipe leaves the session running, and the relaunch comes back to it with no prompt. Before the
         // link, which a running session then drops. A restored stack's link was opened the first time.
@@ -142,6 +143,7 @@ class MainActivity : ComponentActivity() {
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         outState.putStringArrayList(BACK_STACK, ArrayList(navigator.saved()))
+        outState.putLongArray(BACK_STACK_IDS, navigator.savedIds())
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -212,6 +214,9 @@ private fun Activity.recoverRunner(paths: StoragePaths) {
 
 /** Where [MainActivity] saves its [Navigator]'s back stack. */
 private const val BACK_STACK = "com.casco.kettle.shell.BACK_STACK"
+
+/** Where [MainActivity] saves the ids of its back stack's screens, which their saved state is keyed by (#377). */
+private const val BACK_STACK_IDS = "com.casco.kettle.shell.BACK_STACK_IDS"
 
 /** Whether this process has run [recoverRunner]: on the main thread only, as onCreate is. */
 private var runnerRecovered = false

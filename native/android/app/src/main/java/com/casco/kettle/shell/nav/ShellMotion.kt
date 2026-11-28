@@ -145,6 +145,7 @@ internal class ShellMotion(
         dragY.floatValue = 0f
         backScale.floatValue = 1f
         backX.floatValue = 0f
+        grabbedAt = 0f
         val timing = timingOf(transition) ?: return
         playing = next
         progress.floatValue = 0f
@@ -165,7 +166,14 @@ internal class ShellMotion(
         stop()
         settle?.cancel()
         settling = false
+        grabbedAt = dragY.floatValue
     }
+
+    /**
+     * Where the sheet was when the hand took it: a cut-short Open leaves it part way down, and only the
+     * hand's own travel from there counts towards closing it.
+     */
+    private var grabbedAt = 0f
 
     private fun stop() {
         val cut = playing
@@ -189,8 +197,9 @@ internal class ShellMotion(
     }
 
     /**
-     * Let go of the grabber: past a quarter of the frame, or flung down, it goes back through [requestBack],
-     * the system's back, which a screen's own back handler hears first; anything else settles back.
+     * Let go of the grabber: dragged a quarter of the frame from where it was grabbed, or flung down, it
+     * goes back through [requestBack], the system's back, which a screen's own back handler hears first;
+     * anything else settles back to rest.
      */
     fun letGo(
         velocity: Float,
@@ -198,7 +207,8 @@ internal class ShellMotion(
         flingAt: Float,
         requestBack: () -> Unit,
     ) {
-        if (dragY.floatValue > frameHeight * DISMISS_FRACTION || velocity > flingAt) requestBack() else settleBack()
+        val travel = dragY.floatValue - grabbedAt
+        if (travel > frameHeight * DISMISS_FRACTION || velocity > flingAt) requestBack() else settleBack()
     }
 
     /** Back where it belongs, from wherever a drag or a predictive back left it. */

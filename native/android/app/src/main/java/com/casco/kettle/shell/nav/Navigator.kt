@@ -138,21 +138,27 @@ class Navigator(
      * Puts back a stack [saved] wrote, as a navigate, so the sheet hears it: what no longer parses (a
      * route since renamed) is left out, and a tab that doesn't is Today. The four-tab shell saved a tab's
      * name instead of its path (#411); one of those lands where its screen now is.
+     *
+     * Each screen takes back the id [ids] saved for it, so state saved under it finds its screen again;
+     * one with none (a stack saved before ids were) takes a new one. Ids opened later start past them all.
      */
-    fun restore(saved: List<String>) {
+    fun restore(
+        saved: List<String>,
+        ids: LongArray? = null,
+    ) {
         val first = saved.firstOrNull()
         val tabRoute = (LEGACY_TABS[first] ?: first)?.let(Route::parse)?.takeIf { Tab.of(it.destination) != null }
         val to = tabRoute?.let { Tab.of(it.destination) } ?: Tab.Today
+        val paths = saved.drop(1)
+        nextId = maxOf(nextId, (ids?.maxOrNull() ?: -1) + 1)
+        val restored =
+            paths.mapIndexedNotNull { i, path ->
+                Route.parse(path)?.takeIf { it.stacked }?.let { StackEntry(ids?.getOrNull(i) ?: nextId++, it) }
+            }
         go(
             MoveKind.Navigate,
             tab = to,
-            // Fresh ids: a restored stack is composed afresh anyway, so nothing keys on the old ones.
-            entries =
-                saved
-                    .drop(1)
-                    .mapNotNull(Route::parse)
-                    .filter { it.stacked }
-                    .map { StackEntry(nextId++, it) },
+            entries = restored,
             tabRoutes = if (tabRoute != null) tabRoutes + (to to tabRoute) else tabRoutes,
         )
     }
@@ -178,6 +184,9 @@ class Navigator(
 
 /** The route [tab] shows: its section, once one has been picked or linked to. */
 fun Navigator.tabRoute(tab: Tab): Route = tabRoutes[tab] ?: Route(tab.destination)
+
+/** Each stacked screen's id, in [Navigator.saved]'s order: a screen's saved state is keyed by it (#377). */
+fun Navigator.savedIds(): LongArray = entries.map { it.id }.toLongArray()
 
 /**
  * The tab names the four-tab shell saved, as the paths that now lead where each went (#411). Library was

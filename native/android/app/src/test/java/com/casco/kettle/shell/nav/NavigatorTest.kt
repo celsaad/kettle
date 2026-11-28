@@ -234,6 +234,33 @@ class NavigatorTest {
         assertEquals(editor("pushups"), restored.sheet)
     }
 
+    /**
+     * Each screen comes back with the id it was opened with, which its saved state is keyed by (#377), and
+     * a screen opened after takes an id none of them has. A stack saved with no ids takes fresh ones.
+     */
+    @Test
+    fun `a saved back stack restores each screen's id, and opens past them`() {
+        navigator.push(editor("pushups"))
+        navigator.push(settings)
+        val ids = navigator.savedIds()
+
+        val restored = Navigator().apply { restore(navigator.saved(), ids) }
+        assertEquals(navigator.entries, restored.entries)
+
+        restored.push(Route(Destination.Support))
+        assertEquals(ids.max() + 1, restored.entries.last().id)
+
+        val unkeyed = Navigator().apply { restore(navigator.saved()) }
+        assertEquals(navigator.sheets, unkeyed.sheets)
+        assertEquals(
+            2,
+            unkeyed.entries
+                .map { it.id }
+                .distinct()
+                .size,
+        )
+    }
+
     /** The slot isn't saved: a running session is attached to again at launch, and a done one is gone. */
     @Test
     fun `the runner's slot is not saved`() {

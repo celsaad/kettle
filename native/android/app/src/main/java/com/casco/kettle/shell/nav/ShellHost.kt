@@ -151,8 +151,11 @@ private fun SheetBack(
             motion.settleBack()
             throw cancelled
         }
-        // Enabled only while a sheet or a pushed screen shows, and never over the runner, so this always moves.
+        // Enabled only while a sheet or a pushed screen shows, but the runner can open in the same turn, and
+        // the navigator then drops the back: the shrink has to come undone rather than stay part way.
+        val before = navigator.entries
         navigator.back()
+        if (navigator.entries === before) motion.settleBack()
     }
 }
 
@@ -200,6 +203,9 @@ private fun PushedScreen(
  * How many times the pushed screen this is read in has shown again after something covered it: a sheet,
  * a screen pushed over it, or the runner (#377). Before #377 each of those composed it afresh as it
  * showed again; a screen that reads something once keys that read on this instead.
+ *
+ * Only pushed screens provide it. Everywhere else (a tab, a sheet, the runner) it stays 0: a tab was
+ * never composed afresh as it showed again, and a sheet under a sheet still is.
  */
 val LocalUncovered = compositionLocalOf { 0 }
 
@@ -304,7 +310,10 @@ private fun SheetScreen(
  * covers, or a screen on its way out.
  *
  * The focus it held is cleared as it turns inert, in the same frame, before the layer now on top can
- * focus anything of its own; with it goes the keyboard a covered field had up.
+ * focus anything of its own; with it goes the keyboard a covered field had up. That clear runs as an
+ * effect of the frame the layer turns inert in, so a screen arriving on top that requests focus from a
+ * SideEffect or a DisposableEffect composed before this layer would have it cleared: screens request
+ * focus from a LaunchedEffect, which runs after.
  */
 @Composable
 private fun Inert(

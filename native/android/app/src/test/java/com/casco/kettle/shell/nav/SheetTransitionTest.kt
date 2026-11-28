@@ -557,6 +557,36 @@ class SheetTransitionTest {
         finish()
     }
 
+    /**
+     * A short drag on a sheet caught part way up its Open stays: only the hand's own travel counts towards
+     * closing it, not how far down the Open had it when the hand took it.
+     */
+    @Test
+    fun `a short grabber drag during an Open leaves the sheet open`() {
+        show()
+        start { push(support) }
+        advance(CUT_MS)
+
+        val grabber = compose.onNodeWithContentDescription("Drag handle")
+        grabber.performTouchInput {
+            down(center)
+            repeat(DRAG_STEPS) { moveBy(Offset(0f, SHORT_DRAG_PX / DRAG_STEPS), delayMillis = DRAG_STEP_MS) }
+        }
+        compose.mainClock.advanceTimeByFrame()
+        // The hand took the sheet part way up, more than a quarter of the frame below its rest.
+        assertNull(playing)
+        assertTrue("at ${at("Screen Support").y}", at("Screen Support").y > sheetRest + height / 4)
+        // Held still before letting go, so the release is no fling.
+        grabber.performTouchInput {
+            repeat(DRAG_STEPS) { moveBy(Offset.Zero, delayMillis = HOLD_STEP_MS) }
+            up()
+        }
+        finish()
+
+        assertEquals(listOf(support), navigator.sheets)
+        assertEquals(sheetRest, at("Screen Support").y)
+    }
+
     // Predictive back.
 
     private fun backStarted() =
@@ -651,5 +681,11 @@ class SheetTransitionTest {
         const val CUT_MS = 48L
         const val GRAB_PX = 40f
         const val TOUCH_SLACK_PX = 20f
+
+        /** Well short of a quarter of the frame, in steps slow enough to be no fling. */
+        const val SHORT_DRAG_PX = 32f
+        const val DRAG_STEPS = 2
+        const val DRAG_STEP_MS = 8L
+        const val HOLD_STEP_MS = 60L
     }
 }

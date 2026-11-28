@@ -21,7 +21,8 @@ fun ExerciseDraft.canStep(
     field: ConfigField,
     by: Int,
 ): Boolean {
-    if (overflows(field)) return false
+    // Past a Long no step reads it right, except − on a field with a ceiling, which lands on the ceiling.
+    if (overflows(field) && (by > 0 || field.max == null)) return false
     val next = steppedCount(field, by)
     return next >= lowest(field) && next <= (field.max?.toLong() ?: Long.MAX_VALUE)
 }

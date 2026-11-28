@@ -100,12 +100,17 @@ class ExerciseStepsTest {
         assertEquals(huge, reps(ConfigKey.TargetRepsMin to huge).shownText(max))
     }
 
-    // No step reads a count past a Long right: − jumped to an unrelated 19 digits, + wrapped.
+    // No step reads a count past a Long right on a field with no ceiling: − jumped to an unrelated 19
+    // digits, + wrapped. With a ceiling, − lands on it, as from any count above it.
     @Test
-    fun `steps neither way a count too big for a Long`() {
+    fun `steps a count too big for a Long only down to a ceiling`() {
         val huge = reps(ConfigKey.TargetRepsMin to "123456789012345678901234")
         assertEquals(false, huge.canStep(min, -1))
         assertEquals(false, huge.canStep(min, +1))
+        val sets24 = reps(ConfigKey.Sets to "123456789012345678901234")
+        assertEquals(true, sets24.canStep(sets, -1))
+        assertEquals("$MAX_SETS", sets24.stepping(sets, -1).values[ConfigKey.Sets])
+        assertEquals(false, sets24.canStep(sets, +1))
     }
 
     // Only ASCII digits are a typed count: another script's read as 1 by the steppers.

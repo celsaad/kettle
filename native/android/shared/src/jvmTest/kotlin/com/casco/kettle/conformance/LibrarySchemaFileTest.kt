@@ -24,7 +24,6 @@ import org.junit.jupiter.api.DynamicNode
 import org.junit.jupiter.api.DynamicTest.dynamicTest
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestFactory
-import java.io.File
 import kotlin.math.abs
 
 /** A key no reader knows, which every level of the format drops. */
@@ -338,7 +337,6 @@ class LibrarySchemaFileTest {
         }
 
     private val validator by lazy {
-        val file = File(conformanceDir.parentFile, "content/library-schema.json")
-        Validator.forSchema(SchemaLoader(JsonParser(file.readText()).parse()).load())
+        Validator.forSchema(SchemaLoader(JsonParser(readRepoFile("content/library-schema.json")).parse()).load())
     }
 }

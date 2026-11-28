@@ -15,11 +15,13 @@ Each suite is two files:
 - **`<suite>.expected.json`** — the outputs, **generated** from `:shared` and keyed by case name.
   Never hand-edit these.
 
-`native/android/shared/src/jvmTest/.../ConformanceTest.kt` checks `:shared` against these files, read
-in place, and writes them. It finds suites by listing this directory, and one with no runner is
-reported as skipped under its own name, never as passing. Adding a suite is adding its runner there.
-`LibrarySchemaFileTest.kt` beside it holds `content/library-schema.json`, the hand-maintained
-JSON Schema the assistant brief carries, to the `library` suite's goldens.
+`native/android/shared/src/commonTest/.../ConformanceTest.kt` checks `:shared` against these files,
+read in place, on the JVM (`./gradlew :shared:jvmTest`) and on the iOS simulator
+(`./gradlew :shared:iosSimulatorArm64Test`, Mac only), and writes them, on the JVM only. It finds
+suites by listing this directory, and one with no runner fails the run, so none is ever skipped or
+passed by omission. Adding a suite is adding its runner there. `jvmTest/.../LibrarySchemaFileTest.kt`
+holds `content/library-schema.json`, the hand-maintained JSON Schema the assistant brief carries, to
+the `library` suite's goldens.
 
 When a change to `:shared` is meant to change behaviour, run
 `./gradlew :shared:jvmTest -PupdateConformance` from `native/android`, then `pnpm run format`. The

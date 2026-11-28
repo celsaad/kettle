@@ -52,25 +52,26 @@ import com.casco.kettle.domain.toDisplayWeight
 import com.casco.kettle.domain.translationFor
 import com.casco.kettle.domain.upcomingOutline
 import com.casco.kettle.domain.weightStep
+import com.casco.kettle.storage.listFileNames
+import com.casco.kettle.storage.readTextOrNull
 import it.krzeminski.snakeyaml.engine.kmp.api.Load
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assumptions.abort
-import org.junit.jupiter.api.DynamicContainer
-import org.junit.jupiter.api.DynamicContainer.dynamicContainer
-import org.junit.jupiter.api.DynamicNode
-import org.junit.jupiter.api.DynamicTest.dynamicTest
-import org.junit.jupiter.api.TestFactory
-import java.io.File
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertTrue
+import kotlin.test.fail
 
 /**
- * Runs the repo's `conformance/` corpus against `:shared`, and with `-PupdateConformance` writes its
- * goldens too (the corpus README). An update run compares each golden with the output it just
- * wrote, so it passes whatever the runners say: the golden diff it leaves is the only check, and
- * reading it is the review.
+ * Runs the repo's `conformance/` corpus against `:shared`, on the JVM and on the iOS simulator, and
+ * with `-PupdateConformance` writes its goldens too (the corpus README), on the JVM only. An update
+ * run compares each golden with the output it just wrote, so it passes whatever the runners say: the
+ * golden diff it leaves is the only check, and reading it is the review.
  *
- * Suites are discovered from the directory rather than listed, and a suite with no runner below is
- * reported as skipped under its own name, never as passing, and is never written. Adding a suite is
- * adding its runner.
+ * Suites are discovered from the directory rather than listed, and a suite with no runner below fails
+ * [everySuiteHasARunner], so none is skipped or passed by omission, and none is written. Adding a
+ * suite is adding its runner.
+ *
+ * This is `kotlin.test`, which runs on both platforms (#368) and has no dynamic tests, so each test
+ * checks every case and then fails once, naming each case that failed, rather than reporting per case.
  */
 class ConformanceTest {
     private val runners: Map<String, (Case) -> Any?> =
@@ -90,68 +91,68 @@ class ConformanceTest {
             "units" to ::runUnits,
         )
 
-    @TestFactory
-    fun conformance(): List<DynamicContainer> =
-        suiteNames().map { suite ->
-            val runner = runners[suite]
-            dynamicContainer(suite, if (runner == null) unported(suite) else ported(suite, runner))
-        }
+    /** "Zero skipped", asserted: JUnit could report an unported suite as skipped, and this can't. */
+    @Test
+    fun everySuiteHasARunner() {
+        val suites = suiteNames()
+        assertTrue(suites.isNotEmpty(), "no suites in $conformanceDir")
+        assertEquals(emptyList(), suites - runners.keys, "suites with no Kotlin runner")
+    }
+
+    @Test
+    fun everyCaseMatchesItsGolden() {
+        val write = goldenWriter()
+        assertAll(
+            suiteNames().filter { it in runners }.flatMap { suite ->
+                val runner = runners.getValue(suite)
+                val cases = readSuite(suite)
+                write?.invoke(corpusPath("$suite.expected.json"), goldenJson(cases.associate { it.name to runner(it) }))
+                val expected = readGoldens(suite)
+                val names = cases.map { it.name }
+                listOf(
+                    "$suite has unique case names" to { assertEquals(names.size, names.toSet().size) },
+                    // As sets: the README orders lists, not the goldens' keys.
+                    "$suite has a golden for every case and no golden without a case" to {
+                        assertEquals(names.toSet(), expected.keys)
+                    },
+                ) +
+                    cases.map { case ->
+                        "$suite / ${case.name}" to {
+                            assertEquals(normalise(expected[case.name]), normalise(runner(case)))
+                        }
+                    }
+            },
+        )
+    }
 
     /**
      * The README's other half: what a writer emits isn't pinned, but that it reads back is. Every
      * case that parses must survive serialize → parse unchanged, compared as domain values.
      */
-    @TestFactory
-    fun roundTrips(): List<DynamicContainer> =
-        listOf(
-            // The `source` cases are in too: the published examples are the largest real libraries
-            // the corpus has, and nothing about reading them from a file changes what the writer owes.
-            dynamicContainer(
-                "library",
-                readSuite("library").mapNotNull { case ->
-                    val parsed = parseLibraryYaml(libraryText(case)) as? ParseResult.Ok ?: return@mapNotNull null
-                    dynamicTest("${case.name} survives serialize → parse") {
-                        assertEquals(parsed, parseLibraryYaml(serializeLibraryYaml(parsed.value)))
-                    }
-                },
-            ),
-            dynamicContainer(
-                "session",
-                readSuite("session").mapNotNull { case ->
-                    val parsed = parseSessionYaml(case.string("input")!!) as? ParseResult.Ok ?: return@mapNotNull null
-                    dynamicTest("${case.name} survives serialize → parse") {
-                        assertEquals(parsed, parseSessionYaml(serializeSessionYaml(parsed.value)))
-                    }
-                },
-            ),
-        )
-
-    private fun unported(suite: String): List<DynamicNode> =
-        listOf(dynamicTest("not ported to Kotlin") { abort<Unit>("conformance/$suite has no Kotlin runner yet") })
-
-    private fun ported(
-        suite: String,
-        runner: (Case) -> Any?,
-    ): List<DynamicNode> {
-        val cases = readSuite(suite)
-        if (System.getProperty("kettle.updateConformance") == "true") {
-            val written = cases.associate { it.name to runner(it) }
-            File(conformanceDir, "$suite.expected.json").writeText(goldenJson(written))
-        }
-        val expected = readGoldens(suite)
-        val names = cases.map { it.name }
-        return listOf(
-            dynamicTest("has unique case names") { assertEquals(names.size, names.toSet().size) },
-            // As sets: the README orders lists, not the goldens' keys.
-            dynamicTest("has a golden for every case and no golden without a case") {
-                assertEquals(names.toSet(), expected.keys)
-            },
-        ) +
-            cases.map { case ->
-                dynamicTest(case.name) {
-                    assertEquals(normalise(expected[case.name]), normalise(runner(case)))
+    @Test
+    fun everyLibraryRoundTrips() {
+        // The `source` cases are in too: the published examples are the largest real libraries the
+        // corpus has, and nothing about reading them from a file changes what the writer owes.
+        assertAll(
+            readSuite("library").mapNotNull { case ->
+                val parsed = parseLibraryYaml(libraryText(case)) as? ParseResult.Ok ?: return@mapNotNull null
+                "${case.name} survives serialize → parse" to {
+                    assertEquals(parsed, parseLibraryYaml(serializeLibraryYaml(parsed.value)))
                 }
-            }
+            },
+        )
+    }
+
+    @Test
+    fun everySessionRoundTrips() {
+        assertAll(
+            readSuite("session").mapNotNull { case ->
+                val parsed = parseSessionYaml(case.string("input")!!) as? ParseResult.Ok ?: return@mapNotNull null
+                "${case.name} survives serialize → parse" to {
+                    assertEquals(parsed, parseSessionYaml(serializeSessionYaml(parsed.value)))
+                }
+            },
+        )
     }
 
     private fun runLibrary(case: Case): Any = golden(parseLibraryYaml(libraryText(case)), ::libraryJson)
@@ -162,7 +163,7 @@ class ConformanceTest {
             case.map("tables").entries.associate { (language, table) ->
                 language as String to
                     when (table) {
-                        is String -> parseLibraryTranslation(File(conformanceDir.parentFile, table).readText())
+                        is String -> parseLibraryTranslation(readRepoFile(table))
                         else -> libraryTranslationOf(table)
                     }
             }
@@ -414,17 +415,24 @@ class Case(
 internal fun libraryText(
     case: Case,
     key: String = "input",
-): String = case.string("source")?.let { File(conformanceDir.parentFile, it).readText() } ?: case.string(key)!!
+): String = case.string("source")?.let(::readRepoFile) ?: case.string(key)!!
 
-// Lazy so a missing property fails the test with this message, not as the ExceptionInInitializerError
+// Lazy so a missing setting fails the test with this message, not as the ExceptionInInitializerError
 // a top-level initialiser would throw.
-internal val conformanceDir: File by lazy {
-    File(
-        requireNotNull(System.getProperty("kettle.conformanceDir")) {
-            "kettle.conformanceDir is unset; run this through Gradle, which points it at the repo's conformance/"
-        },
-    )
+internal val conformanceDir: String by lazy {
+    requireNotNull(conformanceDirSetting()) {
+        "the corpus path is unset; run this through Gradle, which points it at the repo's conformance/"
+    }.trimEnd('/')
 }
+
+/** [name] in the corpus directory. */
+internal fun corpusPath(name: String): String = "$conformanceDir/$name"
+
+/** A repo file, [path] relative to the root, as `source:` cases and shipped tables name them. */
+internal fun readRepoFile(path: String): String = readFile("${conformanceDir.substringBeforeLast('/')}/$path")
+
+/** A file the corpus promises is there, so a missing one fails naming it rather than as a null. */
+private fun readFile(path: String): String = checkNotNull(readTextOrNull(path)) { "can't read $path" }
 
 /** A fixture library, which a case promises parses: one that doesn't is a broken case, not a result. */
 private fun mustParseLibrary(text: String): Library =
@@ -434,16 +442,31 @@ private fun mustParseLibrary(text: String): Library =
     }
 
 private fun suiteNames(): List<String> =
-    conformanceDir
-        .listFiles { file -> file.name.endsWith(".yaml") }
-        .orEmpty()
-        .map { it.name.removeSuffix(".yaml") }
+    listFileNames(conformanceDir)
+        .filter { it.endsWith(".yaml") }
+        .map { it.removeSuffix(".yaml") }
         .sorted()
 
 // The corpus files themselves, read with the engine's own defaults (the core schema) rather than
 // `:shared`'s configured loader, so a bug in that loader can't also misread the inputs it's tested on.
 // The goldens go through the same call, since JSON is a subset of YAML 1.2.
-private fun load(file: File): Any? = Load().loadOne(file.readText())
+private fun load(name: String): Any? = Load().loadOne(readFile(corpusPath(name)))
+
+/**
+ * Runs every check and fails once, listing each that failed, so one broken case can't hide the rest
+ * the way a first-failure assertion would. An empty list fails too: a suite that read as nothing
+ * would otherwise pass.
+ */
+private fun assertAll(checks: List<Pair<String, () -> Unit>>) {
+    assertTrue(checks.isNotEmpty(), "nothing to check")
+    val failures =
+        checks.mapNotNull { (name, check) ->
+            runCatching(check).exceptionOrNull()?.let { "$name: ${it.message ?: it}" }
+        }
+    if (failures.isNotEmpty()) {
+        fail("${failures.size} of ${checks.size} failed:\n" + failures.joinToString("\n"))
+    }
+}
 
 /** A parse result in the goldens' shape. The refusal's wording isn't pinned, so it isn't compared. */
 private fun <T> golden(
@@ -614,13 +637,12 @@ private fun entryJson(entry: SessionEntry): Map<String, Any?> =
 
 @Suppress("UNCHECKED_CAST")
 internal fun readSuite(suite: String): List<Case> {
-    val document = load(File(conformanceDir, "$suite.yaml")) as Map<String, Any?>
+    val document = load("$suite.yaml") as Map<String, Any?>
     return (document["cases"] as List<Map<String, Any?>>).map(::Case)
 }
 
 @Suppress("UNCHECKED_CAST")
-internal fun readGoldens(suite: String): Map<String, Any?> =
-    load(File(conformanceDir, "$suite.expected.json")) as Map<String, Any?>
+internal fun readGoldens(suite: String): Map<String, Any?> = load("$suite.expected.json") as Map<String, Any?>
 
 /**
  * Makes a value comparable under the corpus README's rules: numbers compare numerically, so `3` and

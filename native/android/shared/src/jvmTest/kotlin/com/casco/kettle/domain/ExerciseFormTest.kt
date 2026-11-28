@@ -485,6 +485,16 @@ class ExerciseFormTest {
                 (built as ExerciseSubmit.Built).exercise.config,
             )
         }
+
+        // The form doesn't show equipment yet (#393), and Save builds a whole new exercise: a field the
+        // draft didn't carry would be dropped from the file by an unrelated edit.
+        @Test
+        fun `keeps an existing exercise's equipment through an edit it doesn't show`() {
+            val tagged = pullUps.copy(equipment = listOf("pull_up_bar", "Dip belt"))
+            val reopened = draftOf(tagged, metric)
+            val built = submitExercise(reopened.copy(name = "Weighted pull-ups"), tagged, metric)
+            assertEquals(tagged.copy(name = "Weighted pull-ups"), (built as ExerciseSubmit.Built).exercise)
+        }
     }
 
     /**

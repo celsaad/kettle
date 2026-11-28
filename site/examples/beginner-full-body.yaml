@@ -25,6 +25,7 @@ exercises:
   - id: bfb-goblet-squat
     name: Goblet Squat
     type: reps
+    equipment: [dumbbell]
     config:
       sets: 3
       target_reps_min: 8
@@ -35,6 +36,7 @@ exercises:
   - id: bfb-floor-press
     name: Dumbbell Floor Press
     type: reps
+    equipment: [dumbbell]
     config:
       sets: 3
       target_reps_min: 8
@@ -45,6 +47,7 @@ exercises:
   - id: bfb-row
     name: Dumbbell Row
     type: reps
+    equipment: [dumbbell]
     config:
       sets: 3
       target_reps_min: 8
@@ -55,6 +58,7 @@ exercises:
   - id: bfb-romanian-deadlift
     name: Dumbbell Romanian Deadlift
     type: reps
+    equipment: [dumbbell]
     config:
       sets: 3
       target_reps_min: 8
@@ -64,6 +68,7 @@ exercises:
   - id: bfb-overhead-press
     name: Dumbbell Overhead Press
     type: reps
+    equipment: [dumbbell]
     config:
       sets: 3
       target_reps_min: 6

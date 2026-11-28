@@ -1,0 +1,58 @@
+# An exercise's equipment, matched. `match` gives each of `values` its match key (trimmed as the
+# schema trims, lowercased, every space and hyphen as `_`) and the known item it is, against the
+# shipped vocabulary in content/equipment.json, or null where it is the user's own words. `workout`
+# combines the equipment of workout `workout` in `library`: each item once, by match key, spelled as
+# it first appears, in the order the workout first reaches it.
+cases:
+  - name: known-spellings
+    why: case, spaces, hyphens and surrounding whitespace all fold to the key
+    op: match
+    values: [Dumbbell, pull-up bar, PULL_UP-BAR, " kettlebell\t", Jump Rope]
+  - name: own-words-stay-own
+    why: no plurals, no synonyms, no abbreviations, no other language; a doubled space is two underscores
+    op: match
+    values: [dumbbells, DB, Squat Rack, Foam Thing, pull up  bar, ダンベル]
+  - name: straight-blocks-in-order
+    op: workout
+    workout: w
+    library: |
+      version: 1
+      exercises:
+        - { id: a, name: A, type: rest, equipment: [Bench, barbell], config: { duration_sec: 1 } }
+        - { id: b, name: B, type: rest, equipment: [dumbbell, bench], config: { duration_sec: 1 } }
+      workouts:
+        - { id: w, name: W, blocks: [{ type: exercise, exercise: b }, { type: exercise, exercise: a }] }
+      programs: []
+  - name: circuit-and-straight-share-an-item
+    why: the circuit's first round reaches its members in order, and the later block's dumbbell is the circuit's
+    op: workout
+    workout: w
+    library: |
+      version: 1
+      exercises:
+        - { id: a, name: A, type: rest, equipment: [Kettlebell], config: { duration_sec: 1 } }
+        - { id: b, name: B, type: rest, equipment: [mat, Dumbbell], config: { duration_sec: 1 } }
+        - { id: c, name: C, type: rest, equipment: [dumbbell, Foam Thing], config: { duration_sec: 1 } }
+        - { id: d, name: D, type: rest, config: { duration_sec: 1 } }
+      workouts:
+        - id: w
+          name: W
+          blocks:
+            - { type: exercise, exercise: d }
+            - type: circuit
+              rounds: 3
+              exercises: [{ exercise: a }, { exercise: b }]
+            - { type: exercise, exercise: c }
+            - { type: exercise, exercise: a }
+      programs: []
+  - name: none-anywhere
+    why: a workout whose exercises need nothing needs nothing
+    op: workout
+    workout: w
+    library: |
+      version: 1
+      exercises:
+        - { id: a, name: A, type: rest, config: { duration_sec: 1 } }
+      workouts:
+        - { id: w, name: W, blocks: [{ type: exercise, exercise: a }, { type: exercise, exercise: missing }] }
+      programs: []

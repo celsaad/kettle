@@ -92,11 +92,15 @@ internal class SchemaReader {
         path: Path,
     ): Fields? = if (value is Map<*, *>) Fields(value, path, this) else refuse(path, "expected a mapping")
 
-    /** [minSize] is checked whatever the elements did, as zod checks a length even past a fatal element. */
+    /**
+     * [minSize] and [maxSize] are checked whatever the elements did, as zod checks a length even past
+     * a fatal element.
+     */
     fun <T : Any> list(
         value: Any?,
         path: Path,
         minSize: Int = 0,
+        maxSize: Int = Int.MAX_VALUE,
         element: Read<T>,
     ): List<T>? {
         if (value !is List<*>) return refuse(path, "expected a list")
@@ -104,6 +108,7 @@ internal class SchemaReader {
         val elements = value.mapIndexed { index, item -> element(item, path + index) }
         return when {
             value.size < minSize -> refuse(path, "expected at least $minSize", fatal = false)
+            value.size > maxSize -> refuse(path, "expected at most $maxSize", fatal = false)
             null in elements -> null
             else -> elements.filterNotNull()
         }

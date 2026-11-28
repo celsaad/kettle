@@ -47,6 +47,16 @@ class ShippedContent(
     ): Library = localized("packs/$id", language)
 
     /**
+     * The known equipment's keys (#393), from `equipment.json`, in the order a list of them is shown.
+     * An item that matches one of these (`knownEquipment`) reads in the reader's language; any other
+     * is the user's own words.
+     */
+    fun knownEquipment(): List<String> {
+        val list = JSONArray(read("equipment.json"))
+        return (0 until list.length()).map(list::getString)
+    }
+
+    /**
      * The JSON Schema of `exercises.yaml`, as the assistant brief carries it: hand-maintained, and held
      * to the conformance corpus by `:shared`'s `LibrarySchemaFileTest`.
      */

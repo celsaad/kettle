@@ -47,6 +47,16 @@
               },
               "notes": {
                 "type": "string"
+              },
+              "equipment": {
+                "type": "array",
+                "maxItems": 20,
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 60,
+                  "pattern": "\\S"
+                }
               }
             },
             "required": ["id", "name", "type", "config"]
@@ -88,6 +98,16 @@
               },
               "notes": {
                 "type": "string"
+              },
+              "equipment": {
+                "type": "array",
+                "maxItems": 20,
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 60,
+                  "pattern": "\\S"
+                }
               }
             },
             "required": ["id", "name", "type", "config"]
@@ -119,6 +139,16 @@
               },
               "notes": {
                 "type": "string"
+              },
+              "equipment": {
+                "type": "array",
+                "maxItems": 20,
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 60,
+                  "pattern": "\\S"
+                }
               }
             },
             "required": ["id", "name", "type", "config"]
@@ -169,6 +199,16 @@
               },
               "notes": {
                 "type": "string"
+              },
+              "equipment": {
+                "type": "array",
+                "maxItems": 20,
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 60,
+                  "pattern": "\\S"
+                }
               }
             },
             "required": ["id", "name", "type", "config"]
@@ -213,6 +253,16 @@
               },
               "notes": {
                 "type": "string"
+              },
+              "equipment": {
+                "type": "array",
+                "maxItems": 20,
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 60,
+                  "pattern": "\\S"
+                }
               }
             },
             "required": ["id", "name", "type", "config"]
@@ -247,6 +297,16 @@
               },
               "notes": {
                 "type": "string"
+              },
+              "equipment": {
+                "type": "array",
+                "maxItems": 20,
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 60,
+                  "pattern": "\\S"
+                }
               }
             },
             "required": ["id", "name", "type", "config"]
@@ -278,6 +338,16 @@
               },
               "notes": {
                 "type": "string"
+              },
+              "equipment": {
+                "type": "array",
+                "maxItems": 20,
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 60,
+                  "pattern": "\\S"
+                }
               }
             },
             "required": ["id", "name", "type", "config"]

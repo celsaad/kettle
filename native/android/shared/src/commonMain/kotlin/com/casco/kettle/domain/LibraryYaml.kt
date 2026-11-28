@@ -24,7 +24,14 @@ fun serializeLibraryYaml(library: Library): String =
 
 internal fun Exercise.toRaw(): Map<String, Any?> {
     val (type, raw) = config.toRaw()
-    return optionals("id" to id, "name" to name, "type" to type, "config" to raw, "notes" to notes)
+    return optionals(
+        "id" to id,
+        "name" to name,
+        "type" to type,
+        "config" to raw,
+        "notes" to notes,
+        "equipment" to equipment.ifEmpty { null },
+    )
 }
 
 internal fun ExerciseConfig.toRaw(): Pair<String, Map<String, Any?>> =

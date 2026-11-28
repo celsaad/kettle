@@ -23,3 +23,10 @@ internal const val SECONDS_PER_MINUTE = 60
 const val MAX_SETS = 500
 const val MAX_ROUNDS = 500
 const val MAX_TOTAL_MINUTES = 1440
+
+/**
+ * The ceilings on an exercise's `equipment:`: how many items, and how long each may be once trimmed.
+ * Not about the runner, as the three above are, but about what a list on a screen can hold.
+ */
+const val MAX_EQUIPMENT_ITEMS = 20
+const val MAX_EQUIPMENT_LENGTH = 60

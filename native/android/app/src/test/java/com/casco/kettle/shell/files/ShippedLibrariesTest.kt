@@ -92,6 +92,20 @@ class ShippedLibrariesTest {
     }
 
     @Test
+    fun tagsEquipmentWithKnownKeysOnly() {
+        // Shipped content reads in every language only through known items: an item spelled any other
+        // way, `Dumbbell` included, is shown as written, English in a Japanese library.
+        val known = shipped.content.knownEquipment().toSet()
+        val failures =
+            everyReading().flatMap { (name, language, library) ->
+                library.exercises.flatMap { exercise ->
+                    exercise.equipment.filter { it !in known }.map { "$name $language: ${exercise.id} $it" }
+                }
+            }
+        assertEquals(emptyList<String>(), failures)
+    }
+
+    @Test
     fun numbersEveryProgramsWeeksWithNoGap() {
         // Weeks resolve sparsely: a missing week 2 is skipped, not filled in from week 1.
         val failures =

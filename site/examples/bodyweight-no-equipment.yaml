@@ -102,6 +102,7 @@ exercises:
   - id: bw-wall-sit
     name: Wall Sit
     type: timed_hold
+    equipment: [wall]
     config:
       sets: 3
       hold_sec_min: 30

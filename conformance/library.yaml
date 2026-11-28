@@ -3,7 +3,7 @@
 # happens to check things in.
 cases:
   - name: every-shape
-    why: every exercise type with and without its optionals, both block kinds, both override kinds, a rest week
+    why: every exercise type with and without its optionals (equipment among them), both block kinds, both override kinds, a rest week
     input: |
       version: 1
       exercises:
@@ -15,6 +15,7 @@ cases:
           name: Bench
           type: reps
           notes: Brace
+          equipment: [barbell, Bench]
           config: { sets: 5, target_reps_min: 3, target_reps_max: 5, target_weight: 82.5, rest_sec: 180 }
         - { id: reps-bare, name: Push-ups, type: reps, config: { sets: 3, target_reps_min: 12, rest_sec: 45 } }
         - { id: hold-range, name: L-Sit, type: timed_hold, config: { sets: 4, hold_sec_min: 15, hold_sec_max: 25, rest_sec: 60 } }
@@ -535,6 +536,104 @@ cases:
       version: 1
       exercises: []
       workouts: [{ id: w, name: W, blocks: [{ type: exercise, exercise: nowhere }] }]
+      programs: []
+
+  # --- Equipment ---
+  # Any spelling is accepted and kept as written. Two that match the same way (trimmed, lowercased,
+  # spaces and hyphens as `_`) are one item, the first spelling kept: the `equipment` suite has the
+  # matching itself, and which values are known.
+
+  - name: equipment-known-and-own
+    why: two known items and one of the user's own; the second dumbbell matches the first and is dropped
+    input: |
+      version: 1
+      exercises:
+        - id: a
+          name: A
+          type: reps
+          equipment: [Dumbbell, pull-up bar, dumbbell, Foam Thing]
+          config: { sets: 3, target_reps_min: 5, rest_sec: 60 }
+      workouts: []
+      programs: []
+
+  - name: equipment-items-trimmed
+    why: each item is trimmed, and a duplicate is found after trimming
+    input: |
+      version: 1
+      exercises:
+        - id: a
+          name: A
+          type: reps
+          equipment: ['  bench  ', "\tbench", ' Mini band']
+          config: { sets: 3, target_reps_min: 5, rest_sec: 60 }
+      workouts: []
+      programs: []
+
+  - name: equipment-empty-is-none
+    why: an empty list and no key at all read the same, as no equipment
+    input: |
+      version: 1
+      exercises:
+        - { id: a, name: A, type: rest, equipment: [], config: { duration_sec: 1 } }
+        - { id: b, name: B, type: rest, config: { duration_sec: 1 } }
+      workouts: []
+      programs: []
+
+  - name: equipment-at-ceilings
+    why: 20 items, the last 60 characters long
+    input: |
+      version: 1
+      exercises:
+        - id: a
+          name: A
+          type: rest
+          equipment: [item-1, item-2, item-3, item-4, item-5, item-6, item-7, item-8, item-9, item-10, item-11, item-12, item-13, item-14, item-15, item-16, item-17, item-18, item-19, yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy]
+          config: { duration_sec: 1 }
+      workouts: []
+      programs: []
+
+  - name: equipment-too-many-items
+    why: 21 items, one past the ceiling
+    input: |
+      version: 1
+      exercises:
+        - id: a
+          name: A
+          type: rest
+          equipment: [item-1, item-2, item-3, item-4, item-5, item-6, item-7, item-8, item-9, item-10, item-11, item-12, item-13, item-14, item-15, item-16, item-17, item-18, item-19, item-20, item-21]
+          config: { duration_sec: 1 }
+      workouts: []
+      programs: []
+
+  - name: equipment-item-too-long
+    why: one item of 61 characters, one past the ceiling
+    input: |
+      version: 1
+      exercises:
+        - id: a
+          name: A
+          type: rest
+          equipment: [bench, xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx]
+          config: { duration_sec: 1 }
+      workouts: []
+      programs: []
+
+  - name: equipment-item-blank
+    why: an item that is empty once trimmed
+    input: |
+      version: 1
+      exercises:
+        - { id: a, name: A, type: rest, equipment: [bench, '   '], config: { duration_sec: 1 } }
+      workouts: []
+      programs: []
+
+  - name: equipment-bare-string-refused
+    why: a single item still goes in a list
+    input: |
+      version: 1
+      exercises:
+        - { id: a, name: A, type: rest, equipment: bench, config: { duration_sec: 1 } }
+      workouts: []
       programs: []
 
   # --- Programs ---

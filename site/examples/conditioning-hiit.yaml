@@ -48,6 +48,7 @@ exercises:
   - id: cnd-swings
     name: Kettlebell Swings
     type: emom
+    equipment: [kettlebell]
     config:
       interval_sec: 60
       total_minutes: 12
@@ -57,6 +58,7 @@ exercises:
   - id: cnd-amrap-12
     name: AMRAP 12
     type: amrap
+    equipment: [kettlebell]
     config:
       time_cap_sec: 720
     notes: One round is 10 swings, 10 push-ups, 15 air squats. Count the rounds.
@@ -64,6 +66,7 @@ exercises:
   - id: cnd-row-2k
     name: Row 2k
     type: cardio
+    equipment: [rower]
     config:
       distance_meters: 2000
     notes: A repeatable test. Same machine, same damper, log the time.

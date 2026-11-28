@@ -1,0 +1,64 @@
+{
+  "known-spellings": [
+    {
+      "value": "Dumbbell",
+      "matchKey": "dumbbell",
+      "known": "dumbbell"
+    },
+    {
+      "value": "pull-up bar",
+      "matchKey": "pull_up_bar",
+      "known": "pull_up_bar"
+    },
+    {
+      "value": "PULL_UP-BAR",
+      "matchKey": "pull_up_bar",
+      "known": "pull_up_bar"
+    },
+    {
+      "value": " kettlebell\t",
+      "matchKey": "kettlebell",
+      "known": "kettlebell"
+    },
+    {
+      "value": "Jump Rope",
+      "matchKey": "jump_rope",
+      "known": "jump_rope"
+    }
+  ],
+  "own-words-stay-own": [
+    {
+      "value": "dumbbells",
+      "matchKey": "dumbbells",
+      "known": null
+    },
+    {
+      "value": "DB",
+      "matchKey": "db",
+      "known": null
+    },
+    {
+      "value": "Squat Rack",
+      "matchKey": "squat_rack",
+      "known": null
+    },
+    {
+      "value": "Foam Thing",
+      "matchKey": "foam_thing",
+      "known": null
+    },
+    {
+      "value": "pull up  bar",
+      "matchKey": "pull_up__bar",
+      "known": null
+    },
+    {
+      "value": "ダンベル",
+      "matchKey": "ダンベル",
+      "known": null
+    }
+  ],
+  "straight-blocks-in-order": ["dumbbell", "bench", "barbell"],
+  "circuit-and-straight-share-an-item": ["Kettlebell", "mat", "Dumbbell", "Foam Thing"],
+  "none-anywhere": []
+}

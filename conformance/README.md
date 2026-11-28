@@ -41,6 +41,7 @@ shows up as a diff.
 | `program` | `findProgramWeek` / `resolveWorkoutForWeek` per query, `programWeekNumbers` per program | `{ weekNumbers, queries: [{ query, found, resolved }] }` |
 | `overrides` | `mergeExerciseOverride`, `mergeBlockOverride`, `diffExerciseOverride`, `diffBlockOverride` per op | `[{ op, result }]` |
 | `units` | `toDisplayWeight`, `fromDisplayWeight`, `weightStep`, `emomIntervalCount` | a number |
+| `equipment` | by `op`: `equipmentMatchKey` and `knownEquipment` per value in `values`, against `content/equipment.json`; or `workoutEquipment` of workout `workout` in the inline `library` | a list of `{ value, matchKey, known }`, `known` null for the user's own words; or the combined list |
 | `search` | `rankByName` and `filterByName` over `names` with `query` | `{ ranked, filtered }`, lists of names |
 | `preferences` | `parsePreferences(input)`, the text of a `preferences.json` | the preferences with defaults filled in, or `null` where the file is refused |
 | `supporter` | `parseSupporterState(input)`, the text of a `supporter.json` | the supporter state, the empty one where the file is refused |
@@ -55,6 +56,12 @@ labels, and its header lists the rules.
 `search` isn't part of the file format, but it is the same problem: every platform must find the
 same workout for the same search. Its rules are in `:shared`'s `Search.kt`, held by
 `search.yaml`.
+
+`equipment` is what an exercise's `equipment:` items mean once parsed: which known item each one is,
+and what a workout needs in all. The parse itself, trimming, the ceilings and the one-per-match rule,
+is the `library` suite's `equipment-*` cases. Matching is case folding and two characters, but a
+platform that trims or lowercases with its own tables can still disagree on an edge of either, so the
+corpus says it once. The vocabulary is read in place, so a key added to it can move a `match` golden.
 
 `preferences` is the same again, for `preferences.json`, and `supporter` for `supporter.json`: the
 app's own settings files, which a platform must read, and refuse, the same way. Both became suites

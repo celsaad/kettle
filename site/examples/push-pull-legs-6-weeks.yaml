@@ -29,6 +29,7 @@ exercises:
   - id: ppl-bench-press
     name: Bench Press
     type: reps
+    equipment: [barbell, plates, bench, rack]
     config:
       sets: 4
       target_reps_min: 5
@@ -40,6 +41,7 @@ exercises:
   - id: ppl-overhead-press
     name: Overhead Press
     type: reps
+    equipment: [barbell, plates, rack]
     config:
       sets: 3
       target_reps_min: 6
@@ -50,6 +52,7 @@ exercises:
   - id: ppl-dips
     name: Dips
     type: reps
+    equipment: [dip_bars]
     config:
       sets: 3
       target_reps_min: 6
@@ -60,6 +63,7 @@ exercises:
   - id: ppl-lateral-raise
     name: Dumbbell Lateral Raise
     type: reps
+    equipment: [dumbbell]
     config:
       sets: 3
       target_reps_min: 12
@@ -71,6 +75,7 @@ exercises:
   - id: ppl-deadlift
     name: Deadlift
     type: reps
+    equipment: [barbell, plates]
     config:
       sets: 3
       target_reps_min: 5
@@ -81,6 +86,7 @@ exercises:
   - id: ppl-pullups
     name: Pull-ups
     type: reps
+    equipment: [pull_up_bar]
     config:
       sets: 4
       target_reps_min: 5
@@ -91,6 +97,7 @@ exercises:
   - id: ppl-barbell-row
     name: Barbell Row
     type: reps
+    equipment: [barbell, plates]
     config:
       sets: 4
       target_reps_min: 6
@@ -101,6 +108,7 @@ exercises:
   - id: ppl-curl
     name: Dumbbell Curl
     type: reps
+    equipment: [dumbbell]
     config:
       sets: 3
       target_reps_min: 10
@@ -112,6 +120,7 @@ exercises:
   - id: ppl-back-squat
     name: Back Squat
     type: reps
+    equipment: [barbell, plates, rack]
     config:
       sets: 5
       target_reps_min: 5
@@ -121,6 +130,7 @@ exercises:
   - id: ppl-romanian-deadlift
     name: Romanian Deadlift
     type: reps
+    equipment: [barbell, plates]
     config:
       sets: 3
       target_reps_min: 8

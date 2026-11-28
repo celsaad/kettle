@@ -53,6 +53,20 @@ class SiteExamplesTest {
         assertEquals(emptyList<String>(), failures)
     }
 
+    @Test
+    fun `tags equipment with known keys only`() {
+        // A known item reads in the importer's language; any other spelling is shown exactly as written,
+        // so a published example tagged `Dumbbell` would stay English for a Japanese reader.
+        val known = vocabulary.toSet()
+        val failures =
+            files.flatMap { file ->
+                library(file).exercises.flatMap { exercise ->
+                    exercise.equipment.filter { it !in known }.map { "${file.name}: ${exercise.id} $it" }
+                }
+            }
+        assertEquals(emptyList<String>(), failures)
+    }
+
     /**
      * The page and the directory are kept by hand in different files: an example added without a card
      * is published but unreachable, and a card pointing at a renamed file is a 404 on both its buttons.

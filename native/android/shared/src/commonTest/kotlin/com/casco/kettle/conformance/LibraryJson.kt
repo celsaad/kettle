@@ -41,6 +41,8 @@ private fun exerciseJson(exercise: Exercise): Map<String, Any?> =
         put("type", type)
         put("config", config)
         exercise.notes?.let { put("notes", it) }
+        // Empty is none, and an absent optional is absent in a golden.
+        exercise.equipment.takeIf { it.isNotEmpty() }?.let { put("equipment", it) }
     }
 
 private fun configJson(config: ExerciseConfig): Pair<String, Map<String, Any?>> =

@@ -14,6 +14,7 @@ exercises:
   - id: gym-back-squat
     name: Back Squat
     type: reps
+    equipment: [barbell, plates, rack]
     config:
       sets: 3
       target_reps_min: 5
@@ -25,6 +26,7 @@ exercises:
   - id: gym-bench-press
     name: Bench Press
     type: reps
+    equipment: [barbell, plates, bench, rack]
     config:
       sets: 3
       target_reps_min: 5
@@ -34,6 +36,7 @@ exercises:
   - id: gym-deadlift
     name: Deadlift
     type: reps
+    equipment: [barbell, plates]
     config:
       sets: 3
       target_reps_min: 3
@@ -45,6 +48,7 @@ exercises:
   - id: gym-overhead-press
     name: Overhead Press
     type: reps
+    equipment: [barbell, plates, rack]
     config:
       sets: 3
       target_reps_min: 5
@@ -56,6 +60,7 @@ exercises:
   - id: gym-barbell-row
     name: Barbell Row
     type: reps
+    equipment: [barbell, plates]
     config:
       sets: 3
       target_reps_min: 6
@@ -64,6 +69,7 @@ exercises:
   - id: gym-pullups
     name: Pull-ups
     type: reps
+    equipment: [pull_up_bar]
     config:
       sets: 3
       target_reps_min: 3

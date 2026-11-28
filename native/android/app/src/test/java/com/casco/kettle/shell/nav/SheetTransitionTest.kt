@@ -608,7 +608,7 @@ class SheetTransitionTest {
         grabber.performTouchInput { up() }
         compose.mainClock.advanceTimeBy(SETTLE_PART_MS)
         val back = at("Screen Support").y
-        assertTrue("settled to rest, at $back", back > sheetRest)
+        assertTrue("not yet back at rest, at $back", back > sheetRest)
         assertTrue("still ${back - sheetRest} down", back - sheetRest < FIRST_STROKE_PX)
 
         grabber.performTouchInput {
@@ -620,6 +620,35 @@ class SheetTransitionTest {
         finish()
 
         assertTrue("sheets ${navigator.sheets}", navigator.sheets.isEmpty())
+    }
+
+    /**
+     * A tap on the grabber while a cut-short Open settles back, from more than a quarter of the frame down,
+     * is no drag: the origin stays where the Open was caught, so the release doesn't read it as a close.
+     */
+    @Test
+    fun `a tap on the grabber while a cut-short Open settles back leaves the sheet open`() {
+        show()
+        start { push(support) }
+        advance(CUT_MS)
+
+        val grabber = compose.onNodeWithContentDescription("Drag handle")
+        grabber.performTouchInput {
+            down(center)
+            repeat(DRAG_STEPS) { moveBy(Offset(0f, SHORT_DRAG_PX / DRAG_STEPS), delayMillis = DRAG_STEP_MS) }
+            repeat(DRAG_STEPS) { moveBy(Offset.Zero, delayMillis = HOLD_STEP_MS) }
+            up()
+        }
+        advance(SETTLE_PART_MS)
+        assertTrue("at ${at("Screen Support").y}", at("Screen Support").y > sheetRest + height / 4)
+
+        grabber.performTouchInput {
+            down(center)
+            up()
+        }
+        finish()
+
+        assertEquals(listOf(support), navigator.sheets)
     }
 
     // Predictive back.

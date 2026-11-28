@@ -25,14 +25,20 @@ fun fencedYaml(text: String): String? {
         val start = i + 1
         var end = start
         while (end < lines.size && !closes(lines[end], open)) end++
-        val language = open.info.substringBefore(' ').lowercase()
+        val language =
+            open.info
+                .split(WHITESPACE, limit = 2)
+                .first()
+                .lowercase()
         // An unclosed block runs to the end, less the empty line after the text's last line end.
         val last = if (end == lines.size && lines.last().isEmpty()) end - 1 else end
         blocks += language to lines.subList(start, maxOf(start, last)).joinToString("") { "$it\n" }
         i = end + 1
     }
     val (language, body) = blocks.singleOrNull() ?: return null
-    return body.takeIf { language in YAML_TAGS }
+    // An empty block, a reply cut off at its opener say, reviews the text as it came: blank, it would
+    // reach no review at all, and say nothing.
+    return body.takeIf { language in YAML_TAGS && it.isNotBlank() }
 }
 
 private class Fence(
@@ -64,5 +70,6 @@ private fun closes(
 }
 
 private val YAML_TAGS = setOf("", "yaml", "yml")
+private val WHITESPACE = Regex("\\s")
 private const val MIN_FENCE = 3
 private const val MAX_INDENT = 3

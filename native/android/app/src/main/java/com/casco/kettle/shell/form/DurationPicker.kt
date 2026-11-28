@@ -36,8 +36,8 @@ import com.casco.kettle.domain.steppingMinutes
 import com.casco.kettle.domain.steppingSeconds
 import com.casco.kettle.domain.wholeSeconds
 import com.casco.kettle.shell.R
+import com.casco.kettle.shell.i18n.formatClock
 import com.casco.kettle.shell.i18n.pluralText
-import com.casco.kettle.shell.runner.formatClock
 import com.casco.kettle.shell.theme.DialogAction
 import com.casco.kettle.shell.theme.KettleAlertDialog
 import com.casco.kettle.shell.theme.KettleTheme

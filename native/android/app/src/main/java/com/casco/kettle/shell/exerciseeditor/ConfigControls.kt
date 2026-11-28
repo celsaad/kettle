@@ -30,14 +30,13 @@ import com.casco.kettle.domain.UnitSystem
 import com.casco.kettle.domain.canStep
 import com.casco.kettle.domain.configFields
 import com.casco.kettle.domain.jsNumber
-import com.casco.kettle.domain.shownCount
+import com.casco.kettle.domain.shownText
 import com.casco.kettle.domain.stepping
 import com.casco.kettle.domain.storedWeightKg
 import com.casco.kettle.domain.typing
 import com.casco.kettle.shell.R
 import com.casco.kettle.shell.form.DurationButton
 import com.casco.kettle.shell.form.StepButton
-import com.casco.kettle.shell.library.rangeLabel
 import com.casco.kettle.shell.theme.KettleTheme
 import com.casco.kettle.shell.theme.KettleType
 import com.casco.kettle.shell.theme.Spacing
@@ -131,14 +130,22 @@ private fun repsHint(
     max: ConfigField,
 ): String {
     val sets = configFields(draft.type).first { it.key == ConfigKey.Sets }
-    val count = draft.shownCount(sets).toInt()
-    val bottom = draft.shownCount(min).toDouble()
-    val top = draft.shownCount(max).toDouble()
+    // As the steppers show them (#569): a count typed past a Long read "-1 × 8–12" through toInt.
+    val count = draft.shownText(sets)
+    val bottom = draft.shownText(min)
+    val top = draft.shownText(max)
     // The library's own "3 × 8–12", so the shape reads as every row that shows a reps target does.
-    val fixed = stringResource(R.string.library_targetReps, rangeLabel(bottom, null), count, "")
-    val shape = stringResource(R.string.library_targetReps, rangeLabel(bottom, top.takeIf { it > bottom }), count, "")
+    val fixed = stringResource(R.string.library_targetReps, bottom, count, "")
+    val range = if (countAbove(top, bottom)) "$bottom–$top" else bottom
+    val shape = stringResource(R.string.library_targetReps, range, count, "")
     return stringResource(R.string.exerciseEditor_repsHint, fixed, shape)
 }
+
+/** Whether the digits [a] count more than [b]'s, compared as written: neither need fit a Long. */
+private fun countAbove(
+    a: String,
+    b: String,
+): Boolean = a.length > b.length || (a.length == b.length && a > b)
 
 /**
  * − value +, each button named by the field it moves, and the value announced as it changes. A tap on
@@ -161,7 +168,7 @@ private fun Stepper(
     val latest by rememberUpdatedState(context)
     val focus = LocalFocusManager.current
     Row(verticalAlignment = Alignment.CenterVertically) {
-        val shown = "${draft.shownCount(field)}"
+        val shown = draft.shownText(field)
         StepButton(
             R.drawable.icon_remove,
             stringResource(R.string.common_decrease, label),

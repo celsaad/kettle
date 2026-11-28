@@ -41,10 +41,10 @@ import com.casco.kettle.shell.form.BLANK
 import com.casco.kettle.shell.form.DurationDialog
 import com.casco.kettle.shell.form.InlineField
 import com.casco.kettle.shell.form.RemoveButton
+import com.casco.kettle.shell.i18n.formatClock
 import com.casco.kettle.shell.library.ExerciseBadge
 import com.casco.kettle.shell.list.ListRowSeparator
 import com.casco.kettle.shell.list.TextAction
-import com.casco.kettle.shell.runner.formatClock
 import com.casco.kettle.shell.theme.KettleTheme
 import com.casco.kettle.shell.theme.KettleType
 import com.casco.kettle.shell.theme.Spacing

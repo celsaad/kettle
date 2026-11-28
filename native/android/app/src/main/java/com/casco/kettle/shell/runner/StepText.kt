@@ -19,12 +19,6 @@ import com.casco.kettle.shell.i18n.timeText
 // The step's own words: its clock and targets, what a screen reader hears as it comes up, and Home's
 // preview lines. Placeholders go in the alphabetical order of their names, as in RunnerText.
 
-/** `m:ss`, as RN's `formatClock`. */
-fun formatClock(totalSeconds: Double): String {
-    val whole = totalSeconds.toLong()
-    return "${whole / SECONDS_PER_MINUTE}:${(whole % SECONDS_PER_MINUTE).toString().padStart(2, '0')}"
-}
-
 /** "0:15" or "0:15–0:25". */
 fun holdTargetText(target: HoldTarget): String = timeRange(target.minSec, target.maxSec)
 
@@ -164,5 +158,3 @@ internal val COUNT_KEYS: Map<WorkUnit, Pair<Pair<Int, Int>, Pair<Int, Int>>> =
                     (R.plurals.session_upcoming_moreIntervals to R.string.session_upcoming_moreIntervals_zero)
             ),
     )
-
-private const val SECONDS_PER_MINUTE = 60L

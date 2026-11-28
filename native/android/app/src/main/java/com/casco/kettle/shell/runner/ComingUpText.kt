@@ -6,6 +6,7 @@ import com.casco.kettle.domain.TimelineStop
 import com.casco.kettle.domain.WorkUnit
 import com.casco.kettle.domain.jsNumber
 import com.casco.kettle.shell.R
+import com.casco.kettle.shell.i18n.formatClock
 import com.casco.kettle.shell.i18n.pluralText
 import com.casco.kettle.shell.i18n.timeText
 

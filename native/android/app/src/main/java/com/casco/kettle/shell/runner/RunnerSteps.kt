@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.casco.kettle.domain.RunnerStep
 import com.casco.kettle.shell.R
+import com.casco.kettle.shell.i18n.formatClock
 import com.casco.kettle.shell.theme.KettleType
 import com.casco.kettle.shell.theme.Spacing
 

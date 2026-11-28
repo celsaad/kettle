@@ -4,7 +4,8 @@ package com.casco.kettle.domain
 // kept in order, "8 to 12", so the form can't hold a range Save would refuse.
 
 /** [key]'s whole-number value, or null for a blank or a value that isn't one. */
-fun ExerciseDraft.countOf(key: ConfigKey): Long? = values[key]?.trim()?.let(::jsNumberOrNull)?.toLong()
+fun ExerciseDraft.countOf(key: ConfigKey): Long? =
+    values[key]?.trim()?.let { it.toLongOrNull() ?: jsNumberOrNull(it)?.toLong() }
 
 /**
  * The count [field] holds, as its stepper shows it: the value, or for a blank reps max the min, since
@@ -20,8 +21,23 @@ fun ExerciseDraft.canStep(
     field: ConfigField,
     by: Int,
 ): Boolean {
-    val next = shownCount(field) + by
+    // Past a Long no step reads it right, except − on a field with a ceiling, which lands on the ceiling.
+    if (overflows(field) && (by > 0 || field.max == null)) return false
+    val next = steppedCount(field, by)
     return next >= lowest(field) && next <= (field.max?.toLong() ?: Long.MAX_VALUE)
+}
+
+/**
+ * [field]'s count after a step of [by]. A count typed past its ceiling (#569) comes down to the ceiling
+ * in one step of −, which a step at a time from 501 couldn't, its next value still past the max.
+ */
+private fun ExerciseDraft.steppedCount(
+    field: ConfigField,
+    by: Int,
+): Long {
+    val shown = shownCount(field)
+    val top = field.max?.toLong() ?: Long.MAX_VALUE
+    return if (by < 0 && shown > top) top else shown + by
 }
 
 /**
@@ -33,7 +49,7 @@ fun ExerciseDraft.stepping(
     by: Int,
 ): ExerciseDraft {
     if (!canStep(field, by)) return this
-    val next = shownCount(field) + by
+    val next = steppedCount(field, by)
     var stepped = values + (field.key to "$next")
     val max = countOf(ConfigKey.TargetRepsMax)
     if (field.key == ConfigKey.TargetRepsMin && max != null &&
@@ -55,7 +71,7 @@ fun ExerciseDraft.typing(
     field: ConfigField,
     text: String,
 ): ExerciseDraft {
-    val digits = text.trim().takeIf { it.isNotEmpty() && it.all(Char::isDigit) }
+    val digits = text.trim().takeIf { it.isCount() }
     // Past a Long, it's still a whole number, and Save's ceiling says so; dropped, it read as accepted.
     val count = digits?.toLongOrNull()
     val held = count?.let { if (field.key == ConfigKey.TargetRepsMax) maxOf(it, lowest(field)) else it }

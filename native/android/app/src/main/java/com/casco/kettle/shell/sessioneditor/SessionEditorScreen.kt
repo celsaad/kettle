@@ -57,10 +57,10 @@ import com.casco.kettle.shell.files.writeOrRefusal
 import com.casco.kettle.shell.form.EditorTitleBar
 import com.casco.kettle.shell.history.entryResultText
 import com.casco.kettle.shell.i18n.deviceUnitSystem
+import com.casco.kettle.shell.i18n.formatClock
 import com.casco.kettle.shell.i18n.formatMonthDay
 import com.casco.kettle.shell.library.ExerciseBadge
 import com.casco.kettle.shell.nav.LocalNavigator
-import com.casco.kettle.shell.runner.formatClock
 import com.casco.kettle.shell.theme.KettleTheme
 import com.casco.kettle.shell.theme.KettleType
 import com.casco.kettle.shell.theme.MaxContentWidth

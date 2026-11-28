@@ -1,10 +1,15 @@
 package com.casco.kettle.shell.i18n
 
 import com.casco.kettle.domain.wholeSeconds
-import com.casco.kettle.shell.runner.formatClock
 
 // Times as every visible line writes them (#462): m:ss, as the runner's clocks and the duration picker
-// show them. Spoken sentences keep their seconds, which a screen reader says better than "0:30".
+// show them. The runner's spoken step announcements keep their seconds.
+
+/** `m:ss`, minutes uncapped: an hour reads "60:00", as the runner's clock counts it. */
+fun formatClock(totalSeconds: Double): String {
+    val whole = totalSeconds.toLong()
+    return "${whole / SECONDS_PER_MINUTE}:${(whole % SECONDS_PER_MINUTE).toString().padStart(2, '0')}"
+}
 
 /** [seconds] as m:ss, to the whole second it rounds to: a file's 74.6 s reads 1:15 everywhere. */
 fun timeText(seconds: Double): String = formatClock(wholeSeconds(seconds).toDouble())
@@ -20,3 +25,5 @@ fun timeRange(
     val top = max?.takeIf { it != 0.0 && wholeSeconds(it) != wholeSeconds(min) }
     return if (top == null) timeText(min) else "${timeText(min)}–${timeText(top)}"
 }
+
+private const val SECONDS_PER_MINUTE = 60L

@@ -80,6 +80,45 @@ class ExerciseStepsTest {
         assertEquals("12", lower.values[ConfigKey.TargetRepsMax])
     }
 
+    // Typed past its ceiling, a count's − brings it to the ceiling; one step at a time from 1000 stayed
+    // past it, and both steppers went disabled (#569).
+    @Test
+    fun `steps a count past its ceiling down to it, and not further up`() {
+        val over = reps(ConfigKey.Sets to "1000")
+        assertEquals(true, over.canStep(sets, -1))
+        assertEquals("$MAX_SETS", over.stepping(sets, -1).values[ConfigKey.Sets])
+        assertEquals(false, over.canStep(sets, +1))
+    }
+
+    // Past a Long, the count clamps; the stepper shows what was typed (#569).
+    @Test
+    fun `shows a count past 2^53 or past a Long as typed, a blank max mirroring the min's`() {
+        val huge = "123456789012345678901234"
+        assertEquals(huge, reps(ConfigKey.Sets to huge).shownText(sets))
+        assertEquals("12345678901234567", reps(ConfigKey.Sets to "12345678901234567").shownText(sets))
+        assertEquals("12", reps(ConfigKey.Sets to "012").shownText(sets))
+        assertEquals(huge, reps(ConfigKey.TargetRepsMin to huge).shownText(max))
+    }
+
+    // No step reads a count past a Long right on a field with no ceiling: − jumped to an unrelated 19
+    // digits, + wrapped. With a ceiling, − lands on it, as from any count above it.
+    @Test
+    fun `steps a count too big for a Long only down to a ceiling`() {
+        val huge = reps(ConfigKey.TargetRepsMin to "123456789012345678901234")
+        assertEquals(false, huge.canStep(min, -1))
+        assertEquals(false, huge.canStep(min, +1))
+        val sets24 = reps(ConfigKey.Sets to "123456789012345678901234")
+        assertEquals(true, sets24.canStep(sets, -1))
+        assertEquals("$MAX_SETS", sets24.stepping(sets, -1).values[ConfigKey.Sets])
+        assertEquals(false, sets24.canStep(sets, +1))
+    }
+
+    // Only ASCII digits are a typed count: another script's read as 1 by the steppers.
+    @Test
+    fun `takes only ASCII digits as a typed count`() {
+        assertEquals("3", reps(ConfigKey.Sets to "3").typing(sets, "\u0661\u0662").values[ConfigKey.Sets])
+    }
+
     // A name-only Save writes something a person would train (#456), not 1 × 1 with no rest.
     @Test
     fun `starts a new reps exercise at 3 x 8-12 with a 1-30 rest, and no weight`() {

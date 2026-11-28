@@ -110,11 +110,12 @@ jobs:
   # `:shared`'s iOS targets (#368, M8's groundwork): the klibs for a device and the simulator, and the
   # conformance corpus run on the simulator, read in place from the checkout as the JVM reads it. The
   # Linux job above leaves the iOS targets out (gradle.properties), so only this job needs a Mac.
-  # Xcode 27.2 is past Kotlin 2.4's tested range, and that was decided on #403: its warning in the log
-  # is kept on purpose, and an Xcode 27 failure moves this job to Xcode 26.4.1 on `macos-26`.
+  # Xcode 27.2 is past Kotlin 2.4's tested range, and that was decided on #403: any compatibility warning
+  # stays in the log (no `nowarn`), and an Xcode 27 failure moves this job to Xcode 26.4.1 on `macos-26`.
   ios:
     runs-on: xcode-27
-    timeout-minutes: 45
+    # A cold run takes about 5 minutes; a hung simulator boot shouldn't hold a macOS runner for long.
+    timeout-minutes: 20
     env:
       DEVELOPER_DIR: /Applications/Xcode_27.2.app/Contents/Developer
     defaults:
@@ -123,7 +124,8 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      # As the Linux job: Gradle runs on 17, and 21 is the test toolchain gradle.properties names.
+      # As the Linux job: Gradle runs on 17. 21 is :app's test toolchain, unused by these tasks, kept so a
+      # task added here that reaches :app finds it.
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -136,7 +138,8 @@ jobs:
           cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
 
       # Kotlin/Native's compiler and its LLVM live in ~/.konan, outside Gradle's caches, and are the
-      # slowest part of a cold run. They are fixed by the Kotlin version, so that is the key.
+      # slowest part of a cold run. They are fixed by the Kotlin version and built against the Xcode, so
+      # both are the key: a move to the #403 fallback Xcode starts a fresh cache rather than a stale one.
       - name: Name the Kotlin version
         id: kotlin
         run: echo "version=$(grep -m1 '^kotlin = "' gradle/libs.versions.toml | cut -d'"' -f2)" >> "$GITHUB_OUTPUT"
@@ -145,7 +148,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.konan
-          key: konan-${{ runner.os }}-${{ steps.kotlin.outputs.version }}
+          key: konan-${{ runner.os }}-${{ steps.kotlin.outputs.version }}-xcode-27.2
 
       - name: Compile the iOS klibs and run the corpus on the simulator
         run: ./gradlew :shared:compileKotlinIosArm64 :shared:compileKotlinIosSimulatorArm64 :shared:iosSimulatorArm64Test

@@ -1,3 +1,4 @@
+import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.targets.native.tasks.KotlinNativeSimulatorTest
 
@@ -74,15 +75,18 @@ tasks.named<Test>("jvmTest") {
         systemProperty("kettle.updateConformance", "true")
         outputs.upToDateWhen { false }
     }
+    // In full, so a corpus failure names its case in the CI log: one test now holds every case (#368).
     testLogging {
         events("passed", "skipped", "failed")
+        exceptionFormat = TestExceptionFormat.FULL
     }
 }
 
 // The same corpus on the simulator, which sees the Mac's file system, so it is read in place there
-// too. `simctl spawn` passes the test binary each `SIMCTL_CHILD_` variable with the prefix dropped;
-// untracked, for the cache-key reason above, with the directories tracked as inputs instead. It only
-// ever checks the goldens: `-PupdateConformance` is the JVM's.
+// too. `simctl spawn` passes the test binary each `SIMCTL_CHILD_` variable with the prefix dropped,
+// left untracked so the checkout's absolute path stays out of any key. The Kotlin plugin never caches
+// or skips this task, so it reruns on every build whatever its inputs say. It only ever checks the
+// goldens: `-PupdateConformance` is the JVM's.
 tasks.named<KotlinNativeSimulatorTest>("iosSimulatorArm64Test") {
     environment(
         "SIMCTL_CHILD_KETTLE_CONFORMANCE_DIR",
@@ -92,7 +96,9 @@ tasks.named<KotlinNativeSimulatorTest>("iosSimulatorArm64Test") {
     listOf("conformance", "content", "site/examples").forEach {
         inputs.dir(repoRoot.dir(it)).withPathSensitivity(PathSensitivity.RELATIVE)
     }
+    // In full, so a corpus failure names its case in the CI log: one test now holds every case (#368).
     testLogging {
         events("passed", "skipped", "failed")
+        exceptionFormat = TestExceptionFormat.FULL
     }
 }

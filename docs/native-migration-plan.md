@@ -225,9 +225,9 @@ Nothing user-visible ships in M1. It builds the pieces every later milestone dep
   `conformance/search.yaml`), ported from `src/domain/`. The selectors in `src/state/selectors/`
   that the native screens will need are ported when those screens are, not here. *(Units landed with
   the skeleton, name search with #142, the YAML loader and session files with #143, and the library file with
-  #144, and repair, merge, program resolution and overrides with #145.)* The module has a JVM target
-  only, which `:app` consumes as it is: `androidTarget()` waits for the first code that needs an
-  Android API, and the iOS targets for M8.
+  #144, and repair, merge, program resolution and overrides with #145.)* The module has a JVM target,
+  which `:app` consumes as it is, and `iosArm64` and `iosSimulatorArm64` since #368: `androidTarget()`
+  waits for the first code that needs an Android API.
 - **A conformance corpus** in `conformance/` *(TS side and the Kotlin runner landed; see its README
   for the contract)*:
   YAML inputs plus generated golden outputs (parsed library and session, refusal paths, repair,
@@ -588,9 +588,10 @@ haptics), switched in `:theme` or the shell rather than per-platform screens.
 
 **What it commits M7 to:** Kotlin and the Compose BOM no newer than stable CMP supports.
 
-**After M7's release**, one PR adds `iosArm64` and `iosSimulatorArm64` to `:shared` with a macOS CI
-job that compiles the klibs and runs the conformance corpus on the simulator. The production file
-layer that replaces `java.io.File`/`java.time` is M8's.
+**Done in #368**, ahead of M7's release: `:shared` has `iosArm64` and `iosSimulatorArm64`, and a macOS
+CI job compiles the klibs and runs the conformance corpus on the simulator. Its test reader
+(`readTextOrNull`, `listFileNames`) is the production file layer's first slice; the rest of that layer,
+replacing `java.io.File`/`java.time`, is M8's.
 
 **Phase 1, Android groundwork**, gated only on Xcode:
 - First, two spikes. Does Robolectric's `@Config(qualifiers = "pt")` still pick Portuguese from CMP's

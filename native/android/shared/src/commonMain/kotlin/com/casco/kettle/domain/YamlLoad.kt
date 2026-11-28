@@ -245,9 +245,9 @@ private class MappingKeys {
  * empty line, fine at any indent, and a comment line is no token's, so neither is checked. Nor are
  * block scalars, where the two loaders agree.
  *
- * Not mirrored, deliberately: js-yaml 5 also refuses a TAB on the same line as a flow collection under
+ * Not mirrored, deliberately: js-yaml 5 also refuses a TAB between tokens inside a flow collection under
  * a block node (`a: {b:<TAB>1}`), which YAML 1.2 allows as separation. Where the two part, the spec
- * decides (#382). Those cases join the corpus once Kotlin writes its goldens (#348).
+ * decides (#382); the corpus pins it in the `tab-separating-in-*` cases and `tab-before-flow-value`.
  *
  * On tokens rather than events, because no event carries where a sequence's `-` was. An indentless
  * sequence (`a:` / `- x`) opens no collection token, and needs none: it sits at its parent's column,

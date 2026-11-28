@@ -183,6 +183,22 @@ cases:
     why: a TAB within a block-mapping value, quoted or plain, is content rather than indentation, and survives as is
     input: "version: 1\nexercises:\n  - id: a\n    name: \"Push\tups\"\n    type: reps\n    notes: Slow\tdown\n    config: { sets: 3, target_reps_min: 5, rest_sec: 60 }\nworkouts: []\nprograms: []\n"
 
+  - name: tab-separating-in-flow-mapping
+    why: a TAB between a block key's colon and its flow mapping (`config:<TAB>{`), between the mapping's entries, and after a key's colon inside it is separation, as a space is; js-yaml 5 refused each as deficient indentation
+    input: "version: 1\nexercises:\n  - id: a\n    name: A\n    type: reps\n    config:\t{ sets:\t3,\ttarget_reps_min: 5, rest_sec: 60 }\nworkouts: []\nprograms: []\n"
+
+  - name: tab-before-flow-value
+    why: a TAB between a top-level key's colon and its flow sequence (`exercises:<TAB>[`) is separation, as a space is; js-yaml 5 refused it as deficient indentation
+    input: "version: 1\nexercises:\t[{ id: a, name: A, type: rest, config: { duration_sec: 1 } }]\nworkouts: []\nprograms: []\n"
+
+  - name: tab-separating-in-flow-sequence
+    why: a TAB between a flow sequence's entries in a top-level key's value, on its first line and between the entries of a continuation line; js-yaml 5 refused it as deficient indentation
+    input: "version: 1\nexercises: [{ id: a, name: A, type: rest, config: { duration_sec: 1 } },\t{ id: b, name: B, type: rest, config: { duration_sec: 1 } },\n  { id: c, name: C, type: rest, config: { duration_sec: 1 } },\t{ id: d, name: D, type: rest, config: { duration_sec: 1 } }]\nworkouts: []\nprograms: []\n"
+
+  - name: tab-separating-in-nested-flow-sequence
+    why: a TAB between a flow sequence's entries where the sequence is the value of a block mapping nested in a block sequence (a workout's `blocks:`), and where it is directly a block sequence's entry (`- [a,<TAB>b]`, under a key the schema drops, since no field holds a list of lists); js-yaml 5 refused both as deficient indentation
+    input: "version: 1\nexercises: [{ id: a, name: A, type: rest, config: { duration_sec: 1 } }, { id: b, name: B, type: rest, config: { duration_sec: 1 } }]\nworkouts:\n  - id: w\n    name: W\n    blocks: [{ type: exercise, exercise: a },\t{ type: exercise, exercise: b }]\nprograms: []\nextra:\n  - [a,\tb]\n"
+
   # --- Not YAML at all ---
 
   - name: unclosed-flow-sequence

@@ -93,11 +93,11 @@ class RunnerRestLineTest : RunnerScreenHarness() {
     @Test
     fun `a HIIT's rest names its own round, in a circuit too`() {
         show(running(plan(block(burpees)), started(plan(block(burpees))).advanced()))
-        text("hiit · rodada 2 de 2").assertExists()
+        text("HIIT · rodada 2 de 2").assertExists()
 
         val circuit = plan(WorkoutBlock.Circuit(rounds = 2, members = listOf(CircuitMember(burpees.id))))
         show(running(circuit, started(circuit).advanced()))
-        text("hiit · rodada 2 de 2").assertExists()
+        text("HIIT · rodada 2 de 2").assertExists()
     }
 
     private fun planWith(

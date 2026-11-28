@@ -9,8 +9,8 @@ import androidx.compose.ui.unit.sp
 import com.casco.kettle.domain.PreviousSet
 import com.casco.kettle.domain.RunnerStep
 import com.casco.kettle.domain.holdTarget
-import com.casco.kettle.domain.jsNumber
 import com.casco.kettle.shell.R
+import com.casco.kettle.shell.i18n.timeText
 
 /**
  * A hold counts up. Its bar runs to the top of the range, with the range itself a band from the minimum
@@ -65,16 +65,19 @@ private fun HoldClock(
     Secondary(holdCaption(step))
 }
 
-/** "Target 20–45 s · stops at 45"; a single target is where it stops; no target counts up. */
+/**
+ * "Target 0:20–0:45 · stops at 0:45" (#462); a single target is where it stops; no target counts up. The
+ * counting numeral above stays in seconds: it's a clock running, not a time written down.
+ */
 @Composable
 private fun holdCaption(step: RunnerStep.Hold): String {
     val target = holdTarget(step) ?: return stringResource(R.string.session_hold_captionOpen)
-    val end = step.holdEndSec?.let(::jsNumber)
+    val end = step.holdEndSec?.let(::timeText)
     val max = target.maxSec
     return when {
-        end == null -> stringResource(R.string.session_hold_targetOnly, jsNumber(target.minSec))
+        end == null -> stringResource(R.string.session_hold_targetOnly, timeText(target.minSec))
         max == null -> stringResource(R.string.session_hold_stopsAt, end)
-        else -> stringResource(R.string.session_hold_target, end, "${jsNumber(target.minSec)}–${jsNumber(max)}")
+        else -> stringResource(R.string.session_hold_target, end, holdTargetText(target))
     }
 }
 

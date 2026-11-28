@@ -2,6 +2,7 @@ package com.casco.kettle.shell.runner
 
 import android.content.res.Resources
 import com.casco.kettle.domain.HoldTarget
+import com.casco.kettle.domain.IntervalVariant
 import com.casco.kettle.domain.RepsTarget
 import com.casco.kettle.domain.RunnerStep
 import com.casco.kettle.domain.UpcomingItem
@@ -12,6 +13,8 @@ import com.casco.kettle.domain.jsNumber
 import com.casco.kettle.domain.repsTarget
 import com.casco.kettle.shell.R
 import com.casco.kettle.shell.i18n.pluralText
+import com.casco.kettle.shell.i18n.timeRange
+import com.casco.kettle.shell.i18n.timeText
 
 // The step's own words: its clock and targets, what a screen reader hears as it comes up, and Home's
 // preview lines. Placeholders go in the alphabetical order of their names, as in RunnerText.
@@ -22,11 +25,22 @@ fun formatClock(totalSeconds: Double): String {
     return "${whole / SECONDS_PER_MINUTE}:${(whole % SECONDS_PER_MINUTE).toString().padStart(2, '0')}"
 }
 
-/** "15 s" or "15–25 s", as RN's `formatHoldTarget`. */
-fun Resources.holdTargetText(target: HoldTarget): String =
+/** "0:15" or "0:15–0:25". */
+fun holdTargetText(target: HoldTarget): String = timeRange(target.minSec, target.maxSec)
+
+/** An interval variant's name, as the library's type filter and badges say it, never its YAML id (#462). */
+internal fun Resources.variantName(variant: IntervalVariant): String =
     getString(
-        R.string.format_seconds,
-        target.maxSec?.let { "${jsNumber(target.minSec)}–${jsNumber(it)}" } ?: jsNumber(target.minSec),
+        when (variant) {
+            IntervalVariant.HIIT -> R.string.format_type_hiit
+
+            IntervalVariant.EMOM -> R.string.format_type_emom
+
+            IntervalVariant.AMRAP -> R.string.format_type_amrap
+
+            // Its badge's: format.type's lower-case "cardio" is for lists, where it reads mid-sentence.
+            IntervalVariant.CARDIO -> R.string.library_badge_cardio
+        },
     )
 
 fun repsTargetText(target: RepsTarget): String = target.max?.let { "${target.min}–$it" } ?: "${target.min}"
@@ -111,8 +125,8 @@ fun Resources.upcomingDetail(item: UpcomingItem.Exercise): String {
 }
 
 /**
- * "hiit · round 2 of 4", "emom · 30 s" or "cardio · counting up": the variant as its YAML id, as RN
- * puts it, then how far in. [rounds] says the round when there are several; Coming up's targets don't.
+ * "HIIT · round 2 of 4", "EMOM · 0:30" or "Cardio · counting up": the variant by its name, then how far
+ * in. [rounds] says the round when there are several; Coming up's targets don't.
  */
 internal fun Resources.intervalLine(
     step: RunnerStep.Interval,
@@ -122,9 +136,9 @@ internal fun Resources.intervalLine(
         when {
             step.countUp -> getString(R.string.session_countingUp)
             rounds && step.setTotal > 1 -> getString(R.string.preview_round, "${step.setIndex}", "${step.setTotal}")
-            else -> getString(R.string.preview_seconds, jsNumber(step.targetSec))
+            else -> timeText(step.targetSec)
         }
-    return getString(R.string.preview_interval, progress, step.variant.json)
+    return getString(R.string.preview_interval, progress, variantName(step.variant))
 }
 
 internal val COUNT_KEYS: Map<WorkUnit, Pair<Pair<Int, Int>, Pair<Int, Int>>> =

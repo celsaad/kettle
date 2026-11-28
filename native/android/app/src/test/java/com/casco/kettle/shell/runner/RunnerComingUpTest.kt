@@ -58,7 +58,7 @@ class RunnerComingUpTest : RunnerScreenHarness() {
         compose.onNodeWithText("Agachamento · 5 repetições").assertExists()
         compose.onNodeWithText("Agora").assertExists()
         // The stop on screen says "Alvo"; the circuit's last round ends the workout, which End says (#479).
-        compose.onNodeWithText("Alvo 20–30 s").assertExists()
+        compose.onNodeWithText("Alvo 0:20–0:30").assertExists()
         compose.onNodeWithText("Depois, rodadas 2–3: os 2 de novo").assertExists()
         compose.onNodeWithText("Após a rodada 3").assertExists()
     }
@@ -72,7 +72,7 @@ class RunnerComingUpTest : RunnerScreenHarness() {
         show(running(loop, started(loop).advanced().advanced()))
         button("Pernas").performClick()
         compose.onNodeWithText("Alvo 5 · rodada 1: 5").assertExists()
-        compose.onNodeWithText("Prancha · isometria 20–30 s").assertExists()
+        compose.onNodeWithText("Prancha · isometria 0:20–0:30").assertExists()
         compose.onNodeWithText("alvo", substring = true).assertDoesNotExist()
     }
 

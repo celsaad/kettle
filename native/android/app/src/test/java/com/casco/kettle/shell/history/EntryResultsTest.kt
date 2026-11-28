@@ -24,10 +24,10 @@ class EntryResultsTest {
         units: UnitSystem = UnitSystem.METRIC,
     ) = resources.entryResultText(result, units)
 
-    // As JS prints them: a whole second has no ".0", and a half keeps its ".5".
+    // As every time reads (#462), m:ss to the whole second: a half rounds up.
     @Test
-    fun `holds are each set's seconds`() {
-        assertEquals("40 s · 52.5 s", text(EntryResult.Holds(listOf(40.0, 52.5))))
+    fun `holds are each set's time`() {
+        assertEquals("0:40 · 0:53", text(EntryResult.Holds(listOf(40.0, 52.5))))
     }
 
     @Test
@@ -104,12 +104,12 @@ class EntryResultsTest {
 
     @Test
     fun `cardio says whichever of time and distance it has`() {
-        assertEquals("600 s · 2000 m", text(EntryResult.Cardio(600.0, 2000.0)))
+        assertEquals("10:00 · 2000 m", text(EntryResult.Cardio(600.0, 2000.0)))
         assertEquals("1500 m", text(EntryResult.Cardio(null, 1500.0)))
     }
 
     @Test
     fun `rest is the seconds taken`() {
-        assertEquals("90 s", text(EntryResult.Rest(90.0)))
+        assertEquals("1:30", text(EntryResult.Rest(90.0)))
     }
 }

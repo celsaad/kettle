@@ -4,16 +4,16 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
 import com.casco.kettle.domain.ExerciseConfig
 import com.casco.kettle.domain.UnitSystem
-import com.casco.kettle.domain.wholeSeconds
 import com.casco.kettle.shell.R
+import com.casco.kettle.shell.i18n.timeRange
+import com.casco.kettle.shell.i18n.timeText
 import com.casco.kettle.shell.library.exerciseSummary
 import com.casco.kettle.shell.library.exerciseTarget
 import com.casco.kettle.shell.library.rangeLabel
 import com.casco.kettle.shell.library.weightSuffix
-import com.casco.kettle.shell.runner.formatClock
 
-// What a block's row says under its name (#440), in m:ss where it's a time. Reps and holds are written
-// here; the timed types keep the library's own line, which isn't this ticket's to reword.
+// What a block's row says under its name (#440), in m:ss where it's a time, as every timed line is
+// (#462). Reps and holds are written here; the timed types take the library's own line.
 
 /** A plain block's target and its rest between sets: "3 × 6–12 · 48.5 lb · rest 1:15". */
 @Composable
@@ -33,7 +33,7 @@ internal fun blockTarget(
                 if (min == null) {
                     stringResource(R.string.workoutEditor_targetHoldOpen, config.sets)
                 } else {
-                    stringResource(R.string.workoutEditor_targetHold, holdText(min, config.holdSecMax), config.sets)
+                    stringResource(R.string.workoutEditor_targetHold, timeRange(min, config.holdSecMax), config.sets)
                 }
             hold + restSuffix(config.restSec)
         }
@@ -64,7 +64,7 @@ internal fun memberTarget(
             config.holdSecMin?.let {
                 stringResource(
                     R.string.workoutEditor_memberHold,
-                    holdText(it, config.holdSecMax),
+                    timeRange(it, config.holdSecMax),
                 )
             }
                 ?: stringResource(R.string.workoutEditor_memberHoldOpen)
@@ -75,19 +75,7 @@ internal fun memberTarget(
         }
     }
 
-/** "0:20–0:45", or "0:30" for a fixed hold: a hold with no target says so in its own words. */
-private fun holdText(
-    min: Double,
-    max: Double?,
-): String {
-    val top = max?.takeIf { it != 0.0 }
-    return if (top == null) clock(min) else "${clock(min)}–${clock(top)}"
-}
-
-/** A time as the picker shows it, to the whole second it rounds to: a file's 74.6 s reads 1:15 on both. */
-private fun clock(seconds: Double): String = formatClock(wholeSeconds(seconds).toDouble())
-
 /** " · rest 1:15", or nothing for no rest. */
 @Composable
 private fun restSuffix(seconds: Double): String =
-    if (seconds > 0) " · " + stringResource(R.string.workoutEditor_restSuffix, clock(seconds)) else ""
+    if (seconds > 0) " · " + stringResource(R.string.workoutEditor_restSuffix, timeText(seconds)) else ""

@@ -7,6 +7,7 @@ import com.casco.kettle.domain.WorkUnit
 import com.casco.kettle.domain.jsNumber
 import com.casco.kettle.shell.R
 import com.casco.kettle.shell.i18n.pluralText
+import com.casco.kettle.shell.i18n.timeText
 
 // The words on Coming up's stops (#415). Logged values come from the session file as written; counts
 // from the steps, and targets from `ComingUpTargets.kt`'s own lines (#479).
@@ -143,5 +144,4 @@ private fun Resources.stepCount(
     return pluralText(plural, zero, count)
 }
 
-private fun Resources.holdValues(seconds: List<Double>): String =
-    getString(R.string.session_comingUp_holdValues, seconds.joinToString(", ") { jsNumber(it) })
+private fun holdValues(seconds: List<Double>): String = seconds.joinToString(", ") { timeText(it) }

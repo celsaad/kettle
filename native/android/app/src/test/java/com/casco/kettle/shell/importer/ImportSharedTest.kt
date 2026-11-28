@@ -39,10 +39,20 @@ class ImportSharedTest : ImportHarness() {
         files.nothingWritten()
     }
 
-    /** A chat sends prose around the YAML: the box shows what came, to trim and review again. */
+    /** A chat sends prose around one fenced block: the block is reviewed, the box keeps all that came (#569). */
     @Test
-    fun `shared text that isn't a library is refused, with the text in the box to fix`() {
+    fun `a chat reply's fenced block goes to its preview`() {
         val chat = "Sure! Here it is:\n```yaml\n" + serializeLibraryYaml(incoming) + "```\n"
+        val files = share(ImportStart.Paste, Incoming.Text(chat))
+
+        shown("YAML colado")
+        files.nothingWritten()
+    }
+
+    /** Two blocks could be a plan and its alternative: refused as it came, with the text in the box to fix. */
+    @Test
+    fun `a reply with two blocks is refused, with the text in the box to fix`() {
+        val chat = "Sure! Here it is:\n```yaml\na: 1\n```\nor\n```yaml\nb: 2\n```\n"
         val files = share(ImportStart.Paste, Incoming.Text(chat))
 
         compose.onNode(hasContentDescription(PASTE_BOX)).assertTextContains("Sure! Here it is:", substring = true)
@@ -50,7 +60,6 @@ class ImportSharedTest : ImportHarness() {
         files.nothingWritten()
     }
 
-    /** A share can cold-start the app ahead of the library's first read: it waits rather than refuse. */
     @Test
     fun `a share that lands before the library is read waits for it`() {
         sharedIn = Incoming.Text(serializeLibraryYaml(incoming))

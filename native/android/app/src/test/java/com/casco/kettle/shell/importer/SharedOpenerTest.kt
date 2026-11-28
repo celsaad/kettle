@@ -100,9 +100,39 @@ class SharedOpenerTest {
         opener.open(second)
         assertEquals(second, inbox.take(shownToken()))
 
+        // Back off the share, over the editor (#569), then off the editor.
+        navigator.back()
         navigator.back()
         opener.openHeld()
 
         assertNull(navigator.sheet)
+    }
+
+    /** A share arriving over an editor opened over it, not in its place, so the draft survives (#569). */
+    @Test
+    fun `a share over an open sheet opens on top of it`() {
+        val editor = Route(Destination.ExerciseEditor, mapOf("id" to "squat"))
+        navigator.navigate(editor)
+        opener.open(first)
+
+        assertEquals(first, inbox.take(shownToken()))
+        navigator.back()
+        assertEquals(editor, navigator.sheet)
+    }
+
+    /** Held over a sheet that never comes back, a relaunch's empty stack say: it opens anyway (#569). */
+    @Test
+    fun `a held share opens once the sheet it was held over is gone`() {
+        val program = Route(Destination.ProgramDetail, mapOf("id" to "p"))
+        navigator.navigate(program)
+        navigator.openRunner(null)
+        opener.open(first)
+        navigator.closeRunner()
+        navigator.back()
+        assertNull(navigator.sheet)
+
+        opener.openHeld()
+
+        assertEquals(first, inbox.take(shownToken()))
     }
 }

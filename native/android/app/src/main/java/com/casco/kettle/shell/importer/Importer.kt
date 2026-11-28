@@ -10,6 +10,7 @@ import com.casco.kettle.domain.MergeError
 import com.casco.kettle.domain.MergeResult
 import com.casco.kettle.domain.ParseResult
 import com.casco.kettle.domain.exceedsImportSize
+import com.casco.kettle.domain.fencedYaml
 import com.casco.kettle.domain.mergeLibraries
 import com.casco.kettle.domain.parseLibraryYaml
 import com.casco.kettle.shell.files.LatestFiles
@@ -288,7 +289,8 @@ internal class Importer(
     fun reviewPaste(text: String = pasted) {
         if (busy) return
         clear()
-        val text = text.trim()
+        // A chat reply's one fenced block (#569), the box still showing all that arrived.
+        val text = (fencedYaml(text) ?: text).trim()
         // Blank never reaches the parser, whose "the input is empty" would be an accusation before
         // anything was done wrong.
         pasteNote = null

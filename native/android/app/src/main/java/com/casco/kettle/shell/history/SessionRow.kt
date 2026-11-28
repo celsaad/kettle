@@ -21,11 +21,13 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.collapse
 import androidx.compose.ui.semantics.disabled
 import androidx.compose.ui.semantics.expand
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
@@ -252,9 +254,11 @@ private fun Detail(
         failure?.let {
             Text(stringResource(R.string.common_deleteFailed, it), style = KettleType.small, color = colors.accentText)
         }
+        // Read as the button's own state (below), so not again here, out of its context.
         if (actions.again == StartAgain.Gone) {
             Text(
                 stringResource(R.string.history_startAgainGone),
+                Modifier.clearAndSetSemantics {},
                 style = KettleType.small,
                 color = colors.textSecondary,
             )
@@ -292,8 +296,10 @@ private fun StartAgainAction(
             TextAction(words, KettleType.small, colors.accentText, { start(again.params) })
         }
 
-        // Still a button, saying it can't act, so a screen reader hears why the line above is there.
+        // Still a button, saying it can't act and why, as Delete exercise does when it's in use; dimmed,
+        // since Delete and Edit beside it are drawn in the same secondary ink and can act.
         StartAgain.Gone -> {
+            val reason = stringResource(R.string.history_startAgainGone)
             Text(
                 words,
                 Modifier
@@ -301,16 +307,19 @@ private fun StartAgainAction(
                     .semantics {
                         role = Role.Button
                         disabled()
+                        stateDescription = reason
                     }.padding(horizontal = Spacing.two)
                     .wrapContentHeight(Alignment.CenterVertically),
                 style = KettleType.small,
-                color = colors.textSecondary,
+                color = colors.textSecondary.copy(alpha = DISABLED_ALPHA),
             )
         }
     }
 }
 
 private const val HALF_TURN = 180f
+
+private const val DISABLED_ALPHA = 0.5f
 
 private val DAY_COLUMN_MIN = 38.dp
 

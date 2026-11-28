@@ -296,7 +296,7 @@ private fun rowActions(
     delete = { deleting.confirming = row }.takeIf { row.id != runningId },
     edit = { actions.open(Route(Destination.SessionEditor, mapOf("id" to row.id))) },
     export = { actions.export(row.id) },
-    // Hidden while a session runs, as Delete and Edit are: the runner's slot takes no second session.
+    // Hidden while a session runs, as Delete is on its row: the runner's slot takes no second session.
     again = row.again.takeIf { runningId == null },
     start = actions.start,
 )

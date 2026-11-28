@@ -385,9 +385,16 @@ class HistoryScreenTest {
         show(Files(session("gone-1", "deleted-day", "2026-07-28T09:00:00.000Z", "dips")))
 
         row("deleted-day").performClick()
-        action("Começar de novo").assertIsNotEnabled().performClick()
+        action("Começar de novo")
+            .assertIsNotEnabled()
+            .assert(
+                SemanticsMatcher.expectValue(
+                    SemanticsProperties.StateDescription,
+                    "O treino não está mais na sua biblioteca.",
+                ),
+            ).performClick()
 
-        compose.onNodeWithText("O treino não está mais na sua biblioteca.").assertExists()
+        // Said once, as the button's state: the line drawn above it is kept out of the tree.
         assertEquals(emptyList<SessionParams>(), started)
     }
 

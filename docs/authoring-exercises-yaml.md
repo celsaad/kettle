@@ -383,8 +383,8 @@ The known items:
 `cable_machine` `leg_press` `lat_pulldown` `landmine` `dip_belt` `weight_vest` `sandbag`
 `ankle_weights` `pull_up_bar` `dip_bars` `rings` `parallettes` `suspension_trainer`
 `resistance_band` `mini_band` `ab_wheel` `climbing_rope` `mat` `reformer` `pilates_ring`
-`stability_ball` `foam_roller` `yoga_block` `yoga_strap` `balance_board` `sliders` `chair` `wall` `step`
-`box` `towel` `table` `jump_rope` `medicine_ball` `slam_ball` `wall_ball` `battle_ropes` `sled`
+`stability_ball` `foam_roller` `yoga_block` `yoga_strap` `balance_board` `sliders` `chair` `wall`
+`step` `box` `towel` `table` `jump_rope` `medicine_ball` `slam_ball` `wall_ball` `battle_ropes` `sled`
 `tire` `treadmill` `bike` `rower` `ski_erg` `elliptical` `stair_climber` `ball` `cones`
 `agility_ladder` `hurdles` `racket` `net`
 

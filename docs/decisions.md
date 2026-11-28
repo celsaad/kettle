@@ -1221,8 +1221,13 @@ decision assembled across several commits. Open work belongs in the sections at 
     didn't make. It also keeps the parser free of the vocabulary, so adding a key changes what an
     item shows as, not what a file parses to.
   - **An item is one thing the exercise needs.** "A dumbbell or a kettlebell" is not an item, and
-    neither is a list of both: an alternative goes in `notes`. Equipment is what slice 2 combines
-    into a workout's "you'll need" line, and an alternative listed there reads as needing both.
+    neither is a list of both: an alternative goes in `notes`. A workout's equipment line (#394)
+    combines its exercises' items, and an alternative listed there reads as needing both.
+  - **Aliases stay possible because of this.** Since nothing is rewritten, a later alias
+    (`dumbbells` read as `dumbbell`) is a change to the matching alone, with no file to migrate; don't
+    "fix" the mixed singular and plural keys by canonicalising on save.
+  - **The brief carries every key**, since the schema's `equipment` description lists them, so a key
+    is held to `AssistantBriefWordsTest`'s training words too: that is why `goal` became `net`.
 
 
 

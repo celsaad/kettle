@@ -62,7 +62,8 @@ and what a workout needs in all. The parse itself, trimming, the ceilings and th
 is the `library` suite's `equipment-*` cases. Matching is trimming (JavaScript's whitespace set,
 spelled out in `Equipment.kt`), lowercasing (Unicode's default, locale-independent mapping, not full
 case folding: `ß` stays `ß`), and spaces and hyphens as `_`. A platform that trims or lowercases with
-its own tables can still disagree on an edge of either, so the corpus says it once. The vocabulary is read in place, so a key added to it can move a `match` golden.
+its own tables can still disagree on an edge of either, so the corpus says it once. The vocabulary
+is read in place, so a key added to it can move a `match` golden.
 
 `preferences` is the same again, for `preferences.json`, and `supporter` for `supporter.json`: the
 app's own settings files, which a platform must read, and refuse, the same way. Both became suites

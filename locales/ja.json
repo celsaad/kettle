@@ -151,7 +151,7 @@
     "typedSummary": "{{type}} · {{summary}}",
     "workoutInProgram": "プログラムで使用中 · {{shape}}",
     "targetReps": "{{sets}} × {{reps}}{{weight}}",
-    "targetHold": "{{sets}} × {{hold}}秒",
+    "targetHold": "{{sets}} × {{hold}}",
     "targetHoldOpen": "{{sets}} × 最大ホールド",
     "badge": {
       "hold": "ホールド",
@@ -480,7 +480,6 @@
       "lastRound": "{{round}}ラウンド目：{{reps}}",
       "nowLine": "{{first}} · {{then}}",
       "end": "ワークアウト終了",
-      "holdValues": "{{values}}秒",
       "reps_other": "{{count}}回",
       "line": "{{name}} · {{detail}}",
       "rests": "{{moves}} · {{rounds}}"
@@ -975,16 +974,14 @@
     "oneRepMax": "推定1RM {{weight}}"
   },
   "summary": {
-    "hiit": "運動{{work}}秒 · 休憩{{rest}}秒 · ×{{rounds}}",
-    "reps": "{{sets}} × {{reps}}{{weight}} · 休憩{{rest}}秒",
+    "hiit": "運動{{work}} · 休憩{{rest}} · ×{{rounds}}",
+    "reps": "{{sets}} × {{reps}}{{weight}} · 休憩{{rest}}",
     "repsWeight": " · {{weight}} {{unit}}",
-    "hold": "{{sets}} × {{hold}}秒 · 休憩{{rest}}秒",
-    "holdOpen": "{{sets}} × 最大ホールド · 休憩{{rest}}秒",
-    "emom": "{{interval}}秒インターバル · {{minutes}}分",
-    "amrap": "制限{{cap}}秒",
-    "cardioDistance": "{{n}} m",
-    "cardioDuration": "{{n}}秒",
-    "restSeconds": "{{n}}秒"
+    "hold": "{{sets}} × {{hold}} · 休憩{{rest}}",
+    "holdOpen": "{{sets}} × 最大ホールド · 休憩{{rest}}",
+    "emom": "インターバル{{interval}} · {{minutes}}分",
+    "amrap": "制限{{cap}}",
+    "cardioDistance": "{{n}} m"
   },
   "units": {
     "kg": "kg",
@@ -1001,8 +998,7 @@
     "repsTarget": "{{target}}レップ",
     "noTarget": "目標なし",
     "interval": "{{variant}} · {{progress}}",
-    "round": "{{total}}ラウンド中{{index}}ラウンド目",
-    "seconds": "{{n}}秒"
+    "round": "{{total}}ラウンド中{{index}}ラウンド目"
   },
   "file": {
     "counts": "{{exercises}} · {{workouts}} · {{programs}}",

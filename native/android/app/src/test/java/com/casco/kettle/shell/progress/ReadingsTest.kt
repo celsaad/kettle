@@ -32,7 +32,7 @@ class ReadingsTest {
 
     @Test
     fun `a hold's top line is in seconds, and reps' in reps`() {
-        assertEquals("60 s", readings(RecordKind.LongestHold).axis(60.0, top = true))
+        assertEquals("1:00", readings(RecordKind.LongestHold).axis(60.0, top = true))
         assertEquals("15 repetições", readings(RecordKind.MostReps).axis(15.0, top = true))
     }
 

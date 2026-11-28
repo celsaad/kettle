@@ -30,8 +30,6 @@ fun Resources.sessionName(workoutName: String?): String = workoutName ?: getStri
 internal fun Resources.reps(count: Long): String =
     pluralText(R.plurals.format_rep, R.string.format_rep_zero, count.toInt())
 
-internal fun Resources.seconds(value: Double): String = getString(R.string.format_seconds, jsNumber(value))
-
 /**
  * What Undo would take back, after "Logged": "set 1 · 10 × 48.5 lb", "round 3", or the entry's name. A
  * circuit's member logs a round, which "set 2" read as a second set of the same move (#473), and says
@@ -82,7 +80,7 @@ private fun Resources.setText(
 
     return when (set) {
         is PreviousSet.Hold -> {
-            say(R.string.session_logged_setHold, R.string.session_logged_roundHold, seconds(set.holdSec))
+            say(R.string.session_logged_setHold, R.string.session_logged_roundHold, timeText(set.holdSec))
         }
 
         is PreviousSet.Reps -> {
@@ -138,9 +136,9 @@ fun Resources.previewDetail(
                 val progress =
                     when (val at = preview.progress) {
                         is IntervalProgress.Round -> getString(R.string.preview_round, "${at.index}", "${at.total}")
-                        is IntervalProgress.Seconds -> getString(R.string.preview_seconds, jsNumber(at.seconds))
+                        is IntervalProgress.Seconds -> timeText(at.seconds)
                     }
-                listOf(getString(R.string.preview_interval, progress, preview.variant.json))
+                listOf(getString(R.string.preview_interval, progress, variantName(preview.variant)))
             }
         }
     return parts.joinToString(" · ")
@@ -153,7 +151,7 @@ fun Resources.previousSetText(
 ): String =
     when (previous) {
         is PreviousSet.Hold -> {
-            getString(R.string.format_previous_hold, seconds(previous.holdSec))
+            getString(R.string.format_previous_hold, timeText(previous.holdSec))
         }
 
         is PreviousSet.Reps -> {

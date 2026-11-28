@@ -8,6 +8,7 @@ import com.casco.kettle.domain.jsNumber
 import com.casco.kettle.domain.toDisplayWeight
 import com.casco.kettle.shell.R
 import com.casco.kettle.shell.i18n.weightUnit
+import com.casco.kettle.shell.runner.timeText
 
 /**
  * An exercise's target in one line, its weight in the reader's [units]. Zeros read as absent, so a 0 kg
@@ -24,7 +25,7 @@ fun exerciseSummary(
 ): String =
     when (config) {
         is ExerciseConfig.Hiit -> {
-            stringResource(R.string.summary_hiit, jsNumber(config.restSec), config.rounds, jsNumber(config.workSec))
+            stringResource(R.string.summary_hiit, timeText(config.restSec), config.rounds, timeText(config.workSec))
         }
 
         is ExerciseConfig.Reps -> {
@@ -36,11 +37,11 @@ fun exerciseSummary(
         }
 
         is ExerciseConfig.Emom -> {
-            stringResource(R.string.summary_emom, jsNumber(config.intervalSec), jsNumber(config.totalMinutes))
+            stringResource(R.string.summary_emom, timeText(config.intervalSec), jsNumber(config.totalMinutes))
         }
 
         is ExerciseConfig.Amrap -> {
-            stringResource(R.string.summary_amrap, jsNumber(config.timeCapSec))
+            stringResource(R.string.summary_amrap, timeText(config.timeCapSec))
         }
 
         is ExerciseConfig.Cardio -> {
@@ -48,7 +49,7 @@ fun exerciseSummary(
         }
 
         is ExerciseConfig.Rest -> {
-            stringResource(R.string.summary_restSeconds, jsNumber(config.durationSec))
+            timeText(config.durationSec)
         }
     }
 
@@ -77,7 +78,7 @@ internal fun exerciseTarget(
             config.holdSecMin?.let {
                 stringResource(
                     R.string.library_targetHold,
-                    rangeLabel(it, config.holdSecMax),
+                    timeRange(it, config.holdSecMax),
                     config.sets,
                 )
             }
@@ -114,7 +115,7 @@ private fun repsSummary(
     return stringResource(
         R.string.summary_reps,
         rangeLabel(config.targetRepsMin.toDouble(), config.targetRepsMax?.toDouble()),
-        jsNumber(config.restSec),
+        timeText(config.restSec),
         config.sets,
         weight,
     )
@@ -125,9 +126,9 @@ private fun holdSummary(config: ExerciseConfig.TimedHold): String {
     val min = config.holdSecMin
     // A max-effort hold has no duration to show, and "3 × s" is what the shared string reads without one.
     return if (min == null) {
-        stringResource(R.string.summary_holdOpen, jsNumber(config.restSec), config.sets)
+        stringResource(R.string.summary_holdOpen, timeText(config.restSec), config.sets)
     } else {
-        stringResource(R.string.summary_hold, rangeLabel(min, config.holdSecMax), jsNumber(config.restSec), config.sets)
+        stringResource(R.string.summary_hold, timeRange(min, config.holdSecMax), timeText(config.restSec), config.sets)
     }
 }
 
@@ -137,7 +138,7 @@ private fun cardioSummary(config: ExerciseConfig.Cardio): String {
     return if (meters != null && meters != 0.0) {
         stringResource(R.string.summary_cardioDistance, jsNumber(meters))
     } else {
-        stringResource(R.string.summary_cardioDuration, jsNumber(config.durationSec ?: 0.0))
+        timeText(config.durationSec ?: 0.0)
     }
 }
 
@@ -145,3 +146,9 @@ internal fun rangeLabel(
     min: Double,
     max: Double?,
 ): String = if (max == null || max == 0.0) jsNumber(min) else "${jsNumber(min)}–${jsNumber(max)}"
+
+/** "0:20–0:45", or "0:30" for a fixed time or a range whose top is 0 or missing. */
+internal fun timeRange(
+    min: Double,
+    max: Double?,
+): String = max?.takeIf { it != 0.0 }?.let { "${timeText(min)}–${timeText(it)}" } ?: timeText(min)

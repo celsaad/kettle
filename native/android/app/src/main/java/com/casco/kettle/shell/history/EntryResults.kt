@@ -7,6 +7,7 @@ import com.casco.kettle.domain.jsNumber
 import com.casco.kettle.domain.toDisplayWeight
 import com.casco.kettle.shell.R
 import com.casco.kettle.shell.i18n.pluralText
+import com.casco.kettle.shell.runner.timeText
 import com.casco.kettle.shell.runner.weightText
 
 /**
@@ -89,6 +90,6 @@ private fun Resources.repsText(
     }
 }
 
-private fun Resources.seconds(seconds: Double) = getString(R.string.format_seconds, jsNumber(seconds))
+private fun seconds(seconds: Double) = timeText(seconds)
 
 private fun Resources.reps(count: Long) = pluralText(R.plurals.format_rep, R.string.format_rep_zero, count.toInt())

@@ -26,7 +26,7 @@ class LoggedTextTest {
         assertEquals("série 2 · 8 × 60 kg", text(LoggedUnit.Set(2, PreviousSet.Reps(8, 60.0))))
         assertEquals("série 1 · 8 repetições", text(LoggedUnit.Set(1, PreviousSet.Reps(8, null))))
         assertEquals("série 1 · 1 repetição", text(LoggedUnit.Set(1, PreviousSet.Reps(1, 0.0))))
-        assertEquals("série 3 · 45 s", text(LoggedUnit.Set(3, PreviousSet.Hold(45.0))))
+        assertEquals("série 3 · 0:45", text(LoggedUnit.Set(3, PreviousSet.Hold(45.0))))
     }
 
     @Test
@@ -39,7 +39,7 @@ class LoggedTextTest {
             "Pull-ups · rodada 1 · 6 repetições",
             text(LoggedUnit.Set(1, PreviousSet.Reps(6, null), "Pull-ups")),
         )
-        assertEquals("L-Sit · rodada 3 · 20 s", text(LoggedUnit.Set(3, PreviousSet.Hold(20.0), "L-Sit")))
+        assertEquals("L-Sit · rodada 3 · 0:20", text(LoggedUnit.Set(3, PreviousSet.Hold(20.0), "L-Sit")))
     }
 
     @Test

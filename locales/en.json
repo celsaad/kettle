@@ -161,7 +161,7 @@
     "typedSummary": "{{type}} · {{summary}}",
     "workoutInProgram": "In your program · {{shape}}",
     "targetReps": "{{sets}} × {{reps}}{{weight}}",
-    "targetHold": "{{sets}} × {{hold}} s",
+    "targetHold": "{{sets}} × {{hold}}",
     "targetHoldOpen": "{{sets}} × max hold",
     "badge": {
       "hold": "Hold",
@@ -517,7 +517,6 @@
       "lastRound": "round {{round}}: {{reps}}",
       "nowLine": "{{first}} · {{then}}",
       "end": "End of workout",
-      "holdValues": "{{values}} s",
       "reps_one": "{{count}} rep",
       "reps_other": "{{count}} reps",
       "line": "{{name}} · {{detail}}",
@@ -1038,16 +1037,14 @@
     "oneRepMax": "Est. 1RM {{weight}}"
   },
   "summary": {
-    "hiit": "{{work}} s work · {{rest}} s rest · ×{{rounds}}",
-    "reps": "{{sets}} × {{reps}}{{weight}} · {{rest}} s rest",
+    "hiit": "{{work}} work · rest {{rest}} · ×{{rounds}}",
+    "reps": "{{sets}} × {{reps}}{{weight}} · rest {{rest}}",
     "repsWeight": " · {{weight}} {{unit}}",
-    "hold": "{{sets}} × {{hold}} s · {{rest}} s rest",
-    "holdOpen": "{{sets}} × max hold · {{rest}} s rest",
-    "emom": "{{interval}} s interval · {{minutes}} min",
-    "amrap": "{{cap}} s cap",
-    "cardioDistance": "{{n}} m",
-    "cardioDuration": "{{n}} s",
-    "restSeconds": "{{n}} seconds"
+    "hold": "{{sets}} × {{hold}} · rest {{rest}}",
+    "holdOpen": "{{sets}} × max hold · rest {{rest}}",
+    "emom": "{{interval}} interval · {{minutes}} min",
+    "amrap": "{{cap}} cap",
+    "cardioDistance": "{{n}} m"
   },
   "units": {
     "kg": "kg",
@@ -1064,8 +1061,7 @@
     "repsTarget": "{{target}} reps",
     "noTarget": "no target",
     "interval": "{{variant}} · {{progress}}",
-    "round": "round {{index}} of {{total}}",
-    "seconds": "{{n}} s"
+    "round": "round {{index}} of {{total}}"
   },
   "file": {
     "counts": "{{exercises}} · {{workouts}} · {{programs}}",

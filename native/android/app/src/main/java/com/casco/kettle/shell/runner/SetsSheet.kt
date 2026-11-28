@@ -303,7 +303,7 @@ private fun Resources.loggedText(
         }
 
         is PreviousSet.Hold -> {
-            seconds(set.holdSec)
+            timeText(set.holdSec)
         }
     }
 

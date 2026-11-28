@@ -9,6 +9,7 @@ import com.casco.kettle.domain.toDisplayWeight
 import com.casco.kettle.shell.R
 import com.casco.kettle.shell.i18n.pluralText
 import com.casco.kettle.shell.i18n.weightUnit
+import com.casco.kettle.shell.runner.timeText
 import kotlin.math.abs
 import kotlin.math.sign
 
@@ -48,7 +49,7 @@ class Readings(
             }
 
             RecordKind.LongestHold -> {
-                resources.getString(R.string.format_seconds, jsNumber(value))
+                timeText(value)
             }
 
             RecordKind.MostReps, RecordKind.MostRounds -> {

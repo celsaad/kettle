@@ -143,5 +143,4 @@ private fun Resources.stepCount(
     return pluralText(plural, zero, count)
 }
 
-private fun Resources.holdValues(seconds: List<Double>): String =
-    getString(R.string.session_comingUp_holdValues, seconds.joinToString(", ") { jsNumber(it) })
+private fun holdValues(seconds: List<Double>): String = seconds.joinToString(", ") { timeText(it) }

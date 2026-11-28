@@ -114,6 +114,21 @@ class WorkoutPreviewScreenTest {
         compose.onNodeWithText("3 séries · alvo 8 · 20 kg · descanso 1:30").assertExists()
     }
 
+    /**
+     * A HIIT's line names its type as the library does and writes its times in m:ss, as the rest beside it
+     * already did (#462): it read "hiit · 30 s · descanso 0:30", the YAML id and two units in one line.
+     */
+    @Test
+    fun `a HIIT's line names its type and writes its time as minutes and seconds`() {
+        val sprints = Exercise("sprints", "Tiros", ExerciseConfig.Hiit(30.0, 30.0, 4))
+        val day = Workout("day", "Day", listOf(WorkoutBlock.ExerciseBlock("sprints")))
+        show(planned(SessionParams.Workout("day")), library(day, exercises = listOf(sprints)))
+
+        compose.onNodeWithText("HIIT · 0:30", substring = true).assertExists()
+        compose.onNodeWithText("hiit", substring = true).assertDoesNotExist()
+        compose.onNodeWithText("30 s", substring = true).assertDoesNotExist()
+    }
+
     @Test
     fun `a workout that is not in the library is not found`() {
         show(planned(SessionParams.Workout("gone")), library(pullUpsDay))

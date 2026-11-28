@@ -64,7 +64,7 @@ class RunnerSheetsTest : RunnerScreenHarness() {
         compose.onNode(hasContentDescription("Buscar exercícios")).performTextInput("prancha")
         compose.onNodeWithText("Também de repetições").assertDoesNotExist()
         compose.onNodeWithText("Outros tipos").assertExists()
-        compose.onNodeWithText("Isometria · 2 × 20–30 s").assertExists()
+        compose.onNodeWithText("Isometria · 2 × 0:20–0:30").assertExists()
         button("Prancha").performClick()
         assertEquals(RunnerCommand.Swap(plank), sent.last())
     }

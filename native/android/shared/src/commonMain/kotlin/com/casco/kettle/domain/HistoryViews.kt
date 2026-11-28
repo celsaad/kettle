@@ -51,7 +51,43 @@ data class HistorySessionView(
     val inRounds: Boolean,
     val editable: Boolean,
     val entries: List<HistoryEntryView>,
+    /** What Start again starts (#281), or null for a session with no workout to start. */
+    val again: StartAgain? = null,
 )
+
+/**
+ * What a logged session's Start again does (#281): a fresh session of what it ran, at its current
+ * version, the old file untouched; or nothing, said why, once what it ran has gone from the library.
+ */
+sealed interface StartAgain {
+    data class Start(
+        val params: SessionParams,
+    ) : StartAgain
+
+    data object Gone : StartAgain
+}
+
+/**
+ * [session]'s Start again: its program slot while the program still trains that week and day, else
+ * its workout while the library has it, else [StartAgain.Gone]. Null for an ad-hoc session, which ran
+ * no workout and so has none to start.
+ */
+fun startAgain(
+    session: Session,
+    library: Library,
+): StartAgain? {
+    val workout = session.workout ?: return null
+    val program = library.programs.firstOrNull { it.id == session.program }
+    val slot =
+        program?.weeks?.firstOrNull {
+            it is ProgramWeek.Training && it.week == session.programWeek && it.day == session.programDay
+        }
+    return when {
+        program != null && slot != null -> StartAgain.Start(SessionParams.ProgramSlot(program.id, slot.week, slot.day))
+        library.workouts.any { it.id == workout } -> StartAgain.Start(SessionParams.Workout(workout))
+        else -> StartAgain.Gone
+    }
+}
 
 /**
  * Every row of History, in [sessions]' order. Rests are left out of a row's entries. [HistorySessionView.inRounds]
@@ -80,6 +116,7 @@ fun historySessionsView(
                         index,
                     )
                 },
+            again = startAgain(session, library),
         )
     }
 

@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -21,13 +22,17 @@ import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.collapse
+import androidx.compose.ui.semantics.disabled
 import androidx.compose.ui.semantics.expand
+import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.casco.kettle.domain.HistorySessionView
+import com.casco.kettle.domain.SessionParams
+import com.casco.kettle.domain.StartAgain
 import com.casco.kettle.domain.UnitSystem
 import com.casco.kettle.shell.R
 import com.casco.kettle.shell.i18n.formatMonthDay
@@ -247,9 +252,18 @@ private fun Detail(
         failure?.let {
             Text(stringResource(R.string.common_deleteFailed, it), style = KettleType.small, color = colors.accentText)
         }
+        if (actions.again == StartAgain.Gone) {
+            Text(
+                stringResource(R.string.history_startAgainGone),
+                style = KettleType.small,
+                color = colors.textSecondary,
+            )
+        }
         // Anchored right, the destructive one first and muted: Export keeps the outermost spot, and
-        // Delete never reads as the intended action.
+        // Delete never reads as the intended action. Start again leads, on the left, being a new
+        // session rather than anything done to this one (#281).
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+            actions.again?.let { StartAgainAction(it, actions.start) }
             Spacer(Modifier.weight(1f))
             // Hidden on the row the runner's service is writing (#295): the next set logged would write it back.
             actions.delete?.let {
@@ -261,6 +275,37 @@ private fun Detail(
                 TextAction(stringResource(R.string.history_edit), KettleType.small, colors.textSecondary, actions.edit)
             }
             TextAction(stringResource(R.string.common_export), KettleType.small, colors.accentText, actions.export)
+        }
+    }
+}
+
+/** Start again, or the same words greyed out once its workout is gone, the line above saying why. */
+@Composable
+private fun StartAgainAction(
+    again: StartAgain,
+    start: (SessionParams) -> Unit,
+) {
+    val colors = KettleTheme.colors
+    val words = stringResource(R.string.history_startAgain)
+    when (again) {
+        is StartAgain.Start -> {
+            TextAction(words, KettleType.small, colors.accentText, { start(again.params) })
+        }
+
+        // Still a button, saying it can't act, so a screen reader hears why the line above is there.
+        StartAgain.Gone -> {
+            Text(
+                words,
+                Modifier
+                    .heightIn(min = 48.dp)
+                    .semantics {
+                        role = Role.Button
+                        disabled()
+                    }.padding(horizontal = Spacing.two)
+                    .wrapContentHeight(Alignment.CenterVertically),
+                style = KettleType.small,
+                color = colors.textSecondary,
+            )
         }
     }
 }

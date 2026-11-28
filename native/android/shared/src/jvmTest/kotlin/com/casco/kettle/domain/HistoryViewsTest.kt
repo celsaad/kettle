@@ -182,4 +182,43 @@ class HistoryViewsTest {
             historyWeeks(rows, DayOfWeek.MONDAY).map { it.start },
         )
     }
+
+    // Start again (#281): what ran, at its current version, and said so when it's gone.
+
+    private val program =
+        Program("base", "Base", listOf(ProgramWeek.Training(2, "Mon", workoutId = "push-day")))
+
+    private fun slot(
+        week: Long,
+        day: String?,
+    ) = Session(1, "s", "push-day", "base", week, day, "2026-07-24T09:00:00.000Z", null, emptyList())
+
+    @Test
+    fun `starts a plain session's workout again`() {
+        assertEquals(StartAgain.Start(SessionParams.Workout("push-day")), startAgain(session(), library))
+    }
+
+    @Test
+    fun `starts a program session's slot again while the program still trains it`() {
+        val withProgram = library.copy(programs = listOf(program))
+        assertEquals(
+            StartAgain.Start(SessionParams.ProgramSlot("base", 2, "Mon")),
+            startAgain(slot(2, "Mon"), withProgram),
+        )
+    }
+
+    // The program changed under it: the workout it ran still runs, outside the program.
+    @Test
+    fun `falls back to the workout when the slot is gone`() {
+        val withProgram = library.copy(programs = listOf(program))
+        assertEquals(StartAgain.Start(SessionParams.Workout("push-day")), startAgain(slot(3, "Mon"), withProgram))
+        assertEquals(StartAgain.Start(SessionParams.Workout("push-day")), startAgain(slot(2, "Mon"), library))
+    }
+
+    @Test
+    fun `says a workout deleted since is gone, and offers nothing for an ad-hoc session`() {
+        assertEquals(StartAgain.Gone, startAgain(session(workout = "deleted"), library))
+        assertNull(startAgain(session(workout = null), library))
+        assertEquals(StartAgain.Gone, view(session(workout = "deleted")).again)
+    }
 }

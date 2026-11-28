@@ -35,7 +35,10 @@ import com.casco.kettle.domain.HistorySessionView
 import com.casco.kettle.domain.HistoryStats
 import com.casco.kettle.domain.HistoryWeek
 import com.casco.kettle.domain.Library
+import com.casco.kettle.domain.RunnerStart
 import com.casco.kettle.domain.Session
+import com.casco.kettle.domain.SessionParams
+import com.casco.kettle.domain.StartAgain
 import com.casco.kettle.domain.filterByName
 import com.casco.kettle.domain.historySessionsView
 import com.casco.kettle.domain.historyStats
@@ -105,6 +108,7 @@ fun HistoryRoute() {
                     logShareRefused(sheet.session(id))
                 }
             },
+            start = { navigator.openRunner(RunnerStart.Planned(it)) },
         ),
         runningId = (runner as? RunnerView.Running)?.session?.id,
     )
@@ -127,6 +131,8 @@ class HistoryTime(
 class HistoryActions(
     val open: (Route) -> Unit,
     val export: (id: String) -> Unit,
+    /** A fresh session of what a logged one ran (#281). */
+    val start: (SessionParams) -> Unit = {},
 )
 
 /**
@@ -200,7 +206,7 @@ fun HistoryScreen(
                             dayWidth,
                         ),
                         recordIndex = records[row.id],
-                        rowActions(row, actions, deleting, deletable = row.id != runningId) {
+                        rowActions(row, actions, deleting, runningId) {
                             expandedId = if (expandedId == row.id) null else row.id
                         },
                     )
@@ -270,6 +276,9 @@ internal class RowActions(
     val delete: (() -> Unit)?,
     val edit: () -> Unit,
     val export: () -> Unit,
+    /** Start again's, null for none: an ad-hoc session, or any while a session runs. */
+    val again: StartAgain? = null,
+    val start: (SessionParams) -> Unit = {},
 )
 
 /** [row]'s controls. A toggle also dismisses a refused delete's message, once its row has been read. */
@@ -277,16 +286,19 @@ private fun rowActions(
     row: HistorySessionView,
     actions: HistoryActions,
     deleting: Deleting,
-    deletable: Boolean,
+    runningId: String?,
     toggle: () -> Unit,
 ) = RowActions(
     toggle = {
         toggle()
         deleting.dismissFailure(row.id)
     },
-    delete = { deleting.confirming = row }.takeIf { deletable },
+    delete = { deleting.confirming = row }.takeIf { row.id != runningId },
     edit = { actions.open(Route(Destination.SessionEditor, mapOf("id" to row.id))) },
     export = { actions.export(row.id) },
+    // Hidden while a session runs, as Delete and Edit are: the runner's slot takes no second session.
+    again = row.again.takeIf { runningId == null },
+    start = actions.start,
 )
 
 /**

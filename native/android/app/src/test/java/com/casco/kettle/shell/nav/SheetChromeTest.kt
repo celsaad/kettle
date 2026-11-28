@@ -69,7 +69,7 @@ class SheetChromeTest {
 
     private fun grabber(label: String = "Drag handle") = compose.onNodeWithContentDescription(label)
 
-    private val stack get() = compose.runOnIdle { navigator.stack }
+    private val stack get() = compose.runOnIdle { navigator.sheets }
 
     @Test
     fun `the close button is a labelled 48dp button that goes back`() {

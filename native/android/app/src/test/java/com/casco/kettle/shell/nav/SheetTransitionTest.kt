@@ -3,11 +3,15 @@ package com.casco.kettle.shell.nav
 import androidx.activity.BackEventCompat
 import androidx.compose.material3.Text
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
+import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.performTouchInput
 import com.casco.kettle.domain.RunnerStart
 import com.casco.kettle.domain.SessionParams
 import org.junit.Assert.assertEquals
@@ -39,11 +43,18 @@ class SheetTransitionTest {
     private val alive = mutableSetOf<String>()
     private val placed = mutableMapOf<String, LayoutCoordinates>()
 
+    /** Each stand-in's composition, by name: the last one to compose it. */
+    private val instances = mutableMapOf<String, Int>()
+    private var compositions = 0
+
     private fun show() {
         navigator = Navigator()
         shell =
             compose.showShell(navigator) { route ->
                 val name = standInName(route)
+                // Which composition of the screen this is: a fresh one counts up.
+                val instance = remember { ++compositions }
+                SideEffect { instances[name] = instance }
                 DisposableEffect(name) {
                     alive += name
                     onDispose {
@@ -75,7 +86,7 @@ class SheetTransitionTest {
         compose.waitForIdle()
     }
 
-    private val playing get() = compose.runOnIdle { navigator.motion.motion?.transition }
+    private val playing get() = compose.runOnIdle { navigator.motion.playing?.transition }
 
     private fun at(name: String): Offset = compose.runOnIdle { placed.getValue(name).positionInRoot() }
 
@@ -465,6 +476,87 @@ class SheetTransitionTest {
         assertEquals(false, isAlive("Screen Import"))
     }
 
+    /**
+     * A route opened again while its last opening is still leaving is a new screen: the one leaving held
+     * a discarded editor's draft, and its effects have run.
+     */
+    private fun assertReopenedFresh(route: Route) {
+        show()
+        go { push(route) }
+        val name = standInName(route)
+        val first = instances.getValue(name)
+
+        start { back() }
+        advance(REOPEN_MS)
+        compose.runOnUiThread { navigator.push(route) }
+        compose.mainClock.advanceTimeByFrame()
+        finish()
+
+        assertTrue("composed afresh, not opening ${instances[name]} again", instances.getValue(name) > first)
+    }
+
+    @Test
+    fun `a sheet opened again during its close is a fresh screen`() = assertReopenedFresh(import)
+
+    @Test
+    fun `a pushed screen opened again as it leaves is a fresh screen`() = assertReopenedFresh(settings)
+
+    // A move part way through another starts from where that one had got to.
+
+    @Test
+    fun `back during an Open closes from where the sheet had got to`() {
+        show()
+        start { push(support) }
+        advance(CUT_MS)
+        val there = at("Screen Support").y
+        assertTrue(there > sheetRest)
+
+        compose.runOnUiThread { navigator.back() }
+        compose.mainClock.advanceTimeByFrame()
+
+        assertEquals(Transition.Close, playing)
+        assertTrue("from ${at("Screen Support").y}, not $there", at("Screen Support").y >= there - 1f)
+        finish()
+    }
+
+    @Test
+    fun `back during a PushIn pushes out from where the screen had got to`() {
+        show()
+        start { push(settings) }
+        advance(CUT_MS)
+        val there = at("Screen Settings").x
+        assertTrue(there > 0f)
+
+        compose.runOnUiThread { navigator.back() }
+        compose.mainClock.advanceTimeByFrame()
+
+        assertEquals(Transition.PushOut, playing)
+        assertTrue("from ${at("Screen Settings").x}, not $there", at("Screen Settings").x >= there - 1f)
+        finish()
+    }
+
+    @Test
+    fun `a grab during an Open holds the sheet where it had got to`() {
+        show()
+        start { push(support) }
+        advance(CUT_MS)
+        val there = at("Screen Support").y
+
+        compose.onNodeWithContentDescription("Drag handle").performTouchInput {
+            down(center)
+            moveBy(Offset(0f, GRAB_PX))
+        }
+        compose.mainClock.advanceTimeByFrame()
+
+        assertNull(playing)
+        // The injected touch's own time lets the Open run on a few ms before the drag takes it; at rest it
+        // would be a whole Open short of there.
+        val held = at("Screen Support").y
+        assertTrue("held at $held, not near $there", held >= there - TOUCH_SLACK_PX)
+        compose.onNodeWithContentDescription("Drag handle").performTouchInput { up() }
+        finish()
+    }
+
     // Predictive back.
 
     private fun backStarted() =
@@ -488,7 +580,7 @@ class SheetTransitionTest {
 
         compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
         compose.waitForIdle()
-        assertEquals(emptyList<Route>(), navigator.stack)
+        assertEquals(emptyList<Route>(), navigator.sheets)
         assertEquals(false, isAlive("Screen Support"))
     }
 
@@ -504,7 +596,7 @@ class SheetTransitionTest {
         compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
         compose.waitForIdle()
 
-        assertEquals(listOf(import), navigator.stack)
+        assertEquals(listOf(import), navigator.sheets)
         assertEquals(sheetRest, at("Screen Import").y)
     }
 
@@ -515,10 +607,14 @@ class SheetTransitionTest {
 
         backStarted()
         backAt(PART_WAY)
+        compose.waitForIdle()
+        // Shrunk first, so the settle has somewhere to come back from.
+        assertTrue(at("Screen Support").y > sheetRest)
+
         compose.runOnUiThread { compose.activity.onBackPressedDispatcher.dispatchOnBackCancelled() }
         compose.waitForIdle()
 
-        assertEquals(listOf(support), navigator.stack)
+        assertEquals(listOf(support), navigator.sheets)
         assertEquals(sheetRest, at("Screen Support").y)
     }
 
@@ -535,7 +631,7 @@ class SheetTransitionTest {
 
         compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
         compose.waitForIdle()
-        assertEquals(emptyList<Route>(), navigator.stack)
+        assertEquals(emptyList<Route>(), navigator.sheets)
     }
 
     private companion object {
@@ -547,5 +643,13 @@ class SheetTransitionTest {
         const val PUSH_MS = ShellMotion.PUSH_MS.toLong()
         const val POP_MS = ShellMotion.POP_MS.toLong()
         const val PART_WAY = 0.5f
+
+        /** Into a Close or a PushOut, with what leaves still on screen. */
+        const val REOPEN_MS = 50L
+
+        /** Into an Open or a PushIn: a few frames, well short of its end. */
+        const val CUT_MS = 48L
+        const val GRAB_PX = 40f
+        const val TOUCH_SLACK_PX = 20f
     }
 }

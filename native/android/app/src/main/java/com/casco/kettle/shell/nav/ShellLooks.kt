@@ -2,7 +2,11 @@ package com.casco.kettle.shell.nav
 
 import androidx.compose.ui.graphics.TransformOrigin
 
-/** [transition]'s timing: today's durations and Material 3's easing, as `SheetMotion` played them. */
+// What each frame of #155's transitions draws. The durations, curves and numbers are the View sheet's
+// (`SheetMotion`, before #377), carried over unchanged. Every `when` names each transition, with no
+// `else`, so a new one fails to compile until it's given a look of its own.
+
+/** [transition]'s timing: its duration and Material 3's easing. */
 internal fun timingOf(transition: Transition): Timing? =
     with(ShellMotion) {
         when (transition) {
@@ -53,7 +57,7 @@ internal fun frameLook(
             Look(translationY = motion.fromY, scale = motion.fromScale, alpha = fadeOut(p))
         }
 
-        // Back to its place from a predictive back's shrink, as the next sheet comes in.
+        // Back to its place from where the hand or a cut-short transition had it, as the next sheet comes in.
         Transition.Forward, Transition.Backward, Transition.FadeThrough -> {
             Look(translationY = lerp(motion.fromY, 0f, p), scale = lerp(motion.fromScale, 1f, p))
         }
@@ -66,7 +70,9 @@ internal fun frameLook(
             Look(translationY = frame.top * p)
         }
 
-        else -> {
+        null, Transition.None, Transition.Release, Transition.PushIn, Transition.PushOut, Transition.PushFadeIn,
+        Transition.PushFadeOut,
+        -> {
             Look(translationY = dragY, scale = backScale)
         }
     }
@@ -78,8 +84,13 @@ internal fun cornerFraction(
 ): Float =
     when (motion?.transition) {
         Transition.Grow -> 1 - p
+
         Transition.Shrink -> p
-        else -> 1f
+
+        null, Transition.None, Transition.Open, Transition.Close, Transition.Forward, Transition.Backward,
+        Transition.FadeIn, Transition.FadeOut, Transition.FadeThrough, Transition.Release, Transition.PushIn,
+        Transition.PushOut, Transition.PushFadeIn, Transition.PushFadeOut,
+        -> 1f
     }
 
 /** The scrim's opacity at [p]: in as a sheet opens, out as the last one closes. */
@@ -89,8 +100,13 @@ internal fun scrimAlpha(
 ): Float =
     when (motion?.transition) {
         Transition.Open, Transition.FadeIn -> p
+
         Transition.Close, Transition.FadeOut -> 1 - p
-        else -> 1f
+
+        null, Transition.None, Transition.Forward, Transition.Backward, Transition.FadeThrough, Transition.Grow,
+        Transition.Shrink, Transition.Release, Transition.PushIn, Transition.PushOut, Transition.PushFadeIn,
+        Transition.PushFadeOut,
+        -> 1f
     }
 
 /**
@@ -106,9 +122,15 @@ internal fun sheetContentLook(
     val direction =
         when (motion?.transition) {
             Transition.Forward -> 1
+
             Transition.Backward -> -1
+
             Transition.FadeThrough -> 0
-            else -> return Look()
+
+            null, Transition.None, Transition.Open, Transition.Close, Transition.FadeIn, Transition.FadeOut,
+            Transition.Grow, Transition.Shrink, Transition.Release, Transition.PushIn, Transition.PushOut,
+            Transition.PushFadeIn, Transition.PushFadeOut,
+            -> return Look()
         }
     val travel = shift * direction
     return if (leaving) {
@@ -134,15 +156,37 @@ internal fun pushedLook(
 ): Look =
     if (leaving) {
         when (motion?.transition) {
-            Transition.PushOut -> Look(translationX = lerp(motion.fromX, endward, p))
-            Transition.PushFadeOut -> Look(translationX = motion.fromX, alpha = fadeOut(p))
-            else -> Look()
+            Transition.PushOut -> {
+                Look(translationX = lerp(motion.fromX, endward, p))
+            }
+
+            Transition.PushFadeOut -> {
+                Look(translationX = motion.fromX, alpha = fadeOut(p))
+            }
+
+            null, Transition.None, Transition.Open, Transition.Close, Transition.Forward, Transition.Backward,
+            Transition.FadeIn, Transition.FadeOut, Transition.FadeThrough, Transition.Grow, Transition.Shrink,
+            Transition.Release, Transition.PushIn, Transition.PushFadeIn,
+            -> {
+                Look()
+            }
         }
     } else {
         when (motion?.transition) {
-            Transition.PushIn -> Look(translationX = (1 - p) * endward)
-            Transition.PushFadeIn -> Look(scale = lerp(ShellMotion.FADE_SCALE, 1f, p), alpha = fadeIn(p))
-            else -> Look(translationX = backX)
+            Transition.PushIn -> {
+                Look(translationX = (1 - p) * endward)
+            }
+
+            Transition.PushFadeIn -> {
+                Look(scale = lerp(ShellMotion.FADE_SCALE, 1f, p), alpha = fadeIn(p))
+            }
+
+            null, Transition.None, Transition.Open, Transition.Close, Transition.Forward, Transition.Backward,
+            Transition.FadeIn, Transition.FadeOut, Transition.FadeThrough, Transition.Grow, Transition.Shrink,
+            Transition.Release, Transition.PushOut, Transition.PushFadeOut,
+            -> {
+                Look(translationX = backX)
+            }
         }
     }
 

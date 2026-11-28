@@ -203,11 +203,11 @@ class ShellTest {
         compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
         compose.waitForIdle()
 
-        assertEquals(listOf(Route(Destination.Import)), navigator.stack)
+        assertEquals(listOf(Route(Destination.Import)), navigator.sheets)
     }
 
     @Test
-    fun `the bar leaves while a sheet shows, and comes back with the tab`() {
+    fun `the bar is out of reach under a sheet, and reachable again with the tab`() {
         show()
 
         go { push(Route(Destination.Import)) }
@@ -317,6 +317,31 @@ class ShellTest {
 
         compose.onNodeWithText("Screen Settings").assertTopPositionInRootIsEqualTo(0.dp)
         compose.onNodeWithContentDescription("Close").assertDoesNotExist()
+    }
+
+    /**
+     * A pushed screen stays composed under what covers it, so it hears each time it shows again: Settings
+     * re-reads the supporter file after a tip in the Support sheet over it, and Exercise detail retakes its
+     * clock.
+     */
+    @Test
+    fun `a pushed screen hears each time it shows again from under a sheet, a pushed screen or the runner`() {
+        screen = { Text("${standInName(it)} shown again ${LocalUncovered.current}") }
+        show()
+        go { push(Route(Destination.Settings)) }
+        compose.onNodeWithText("Screen Settings shown again 0").assertIsDisplayed()
+
+        go { push(Route(Destination.Support)) }
+        go { back() }
+        compose.onNodeWithText("Screen Settings shown again 1").assertIsDisplayed()
+
+        go { push(Route(Destination.ExerciseDetail, mapOf("id" to "dips"))) }
+        go { back() }
+        compose.onNodeWithText("Screen Settings shown again 2").assertIsDisplayed()
+
+        go { openRunner(RunnerStart.Planned(SessionParams.Workout("bench"))) }
+        go { closeRunner() }
+        compose.onNodeWithText("Screen Settings shown again 3").assertIsDisplayed()
     }
 
     /** Exercise detail's Used in → Program detail, and back. */

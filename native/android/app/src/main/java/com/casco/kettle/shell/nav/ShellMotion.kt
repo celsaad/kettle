@@ -15,45 +15,38 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
 /**
- * A screen in the navigator's stack, keyed by where it sits, so it keeps its composition as the stack
- * grows over it.
- */
-internal data class Layer(
-    val index: Int,
-    val route: Route,
-)
-
-/**
  * What a stack shows: the [sheet] on top, if the top is a sheet; the [pushed] screen at the top or
  * under the sheets, which covers the tab; and the pushed screen [beneath] that one, which a push slides
  * in over and a back uncovers. A sheet under another sheet shows nothing, so isn't composed: back to it
- * is a fresh screen, as it always was.
+ * is a fresh screen, as it always was. A pushed screen under a sheet, or under another pushed screen,
+ * stays composed and live.
  */
 internal data class Shown(
-    val pushed: Layer?,
-    val beneath: Layer?,
-    val sheet: Layer?,
+    val pushed: StackEntry?,
+    val beneath: StackEntry?,
+    val sheet: StackEntry?,
 )
 
-internal fun shownBy(stack: List<Route>): Shown {
+internal fun shownBy(stack: List<StackEntry>): Shown {
     val top = stack.lastOrNull()
-    val pushedAt = stack.indexOfLast { it.pushed }
+    val pushedAt = stack.indexOfLast { it.route.pushed }
     return Shown(
-        pushed = if (pushedAt >= 0) Layer(pushedAt, stack[pushedAt]) else null,
-        beneath = (pushedAt - 1).takeIf { it >= 0 && stack[it].pushed }?.let { Layer(it, stack[it]) },
-        sheet = if (top != null && !top.pushed) Layer(stack.lastIndex, top) else null,
+        pushed = stack.getOrNull(pushedAt),
+        beneath = stack.getOrNull(pushedAt - 1)?.takeIf { pushedAt > 0 && it.route.pushed },
+        sheet = top?.takeIf { !it.route.pushed },
     )
 }
 
 /**
  * One transition playing: [transition], with the sheet or pushed screen it takes off the stack kept
- * composed and drawn until it has gone, and where a drag or a predictive back had left the sheet (or a
- * pushed screen) when it started, which it leaves from.
+ * composed and drawn until it has gone, and where the sheet (or a pushed screen) was when it started,
+ * which it leaves from: where a drag or a predictive back had it, or where the transition it cut short
+ * had got it to.
  */
 internal class Motion(
     val transition: Transition,
-    val leavingSheet: Layer? = null,
-    val leavingPushed: Layer? = null,
+    val leavingSheet: StackEntry? = null,
+    val leavingPushed: StackEntry? = null,
     val fromY: Float = 0f,
     val fromScale: Float = 1f,
     val fromX: Float = 0f,
@@ -84,8 +77,8 @@ internal data class Frame(
  * The sheet's transitions (#155's table, which [transitionBetween] decides), played in the shell's own
  * composition (#377). It hears every move the [navigator] makes, and the move's first frame draws the
  * route it arrives at with its transition at the start: the arriving screen composes in the same frame
- * the transition starts, so there is nothing to hold the window for and nothing to picture. What leaves
- * stays composed, live, through its exit. One plays at a time: starting the next ends the last.
+ * the transition starts, so there is nothing to hold the window for. What leaves stays composed, live,
+ * through its exit. One plays at a time: starting the next takes over from where the last had got to.
  *
  * The hand on the sheet is here too: a grabber drag ([dragY]), and a predictive back's shrink
  * ([backScale]) or, on a pushed screen, its slide ([backX]). A transition that starts leaves from there.
@@ -95,7 +88,8 @@ internal class ShellMotion(
     private val navigator: Navigator,
     private val scope: CoroutineScope,
 ) : MoveListener {
-    var motion by mutableStateOf<Motion?>(null)
+    /** The transition playing, or null when nothing is. */
+    var playing by mutableStateOf<Motion?>(null)
         private set
 
     /** The transition's eased progress, 0 to 1: read in the draw phase, so a frame recomposes nothing. */
@@ -108,31 +102,35 @@ internal class ShellMotion(
     var settling by mutableStateOf(false)
         private set
 
-    private var playing: Job? = null
+    /** The sheet's frame as last laid out, and how far off a pushed screen goes: where a cut-short one had got to. */
+    var frame = Frame(offscreen = 0f, top = 0f)
+    var endward = 0f
+
+    private var player: Job? = null
     private var settle: Job? = null
     private var before = Shown(null, null, null)
 
     override fun willMove(move: Move) {
-        before = shownBy(navigator.stack)
+        before = shownBy(navigator.entries)
     }
 
     override fun moved(move: Move) {
-        val now = shownBy(navigator.stack)
+        val now = shownBy(navigator.entries)
         val transition = transitionBetween(move.from, move.to, move.kind)
         play(
             transition,
-            leavingSheet = before.sheet.takeIf { transition in SHEET_LEAVES && it != now.sheet },
+            leavingSheet = before.sheet.takeIf { transition.leavesSheet() && it != now.sheet },
             leavingPushed =
                 before.pushed.takeIf {
-                    transition in PUSHED_LEAVES && it != now.pushed && it != now.beneath
+                    transition.leavesPushed() && it != now.pushed && it != now.beneath
                 },
         )
     }
 
     private fun play(
         transition: Transition,
-        leavingSheet: Layer?,
-        leavingPushed: Layer?,
+        leavingSheet: StackEntry?,
+        leavingPushed: StackEntry?,
     ) {
         grab()
         val next =
@@ -148,18 +146,21 @@ internal class ShellMotion(
         backScale.floatValue = 1f
         backX.floatValue = 0f
         val timing = timingOf(transition) ?: return
-        motion = next
+        playing = next
         progress.floatValue = 0f
-        playing =
+        player =
             scope.launch {
                 animate(0f, 1f, animationSpec = tween(timing.millis, easing = timing.easing)) { value, _ ->
                     progress.floatValue = value
                 }
-                if (motion === next) motion = null
+                if (playing === next) playing = null
             }
     }
 
-    /** The transition playing, ended where it ends, and any settle with it: a hand has taken the sheet. */
+    /**
+     * A hand has taken the sheet, or the next move has: the transition playing stops where it has got
+     * to, which becomes where the hand has the sheet, and any settle stops with it.
+     */
     fun grab() {
         stop()
         settle?.cancel()
@@ -167,9 +168,18 @@ internal class ShellMotion(
     }
 
     private fun stop() {
-        playing?.cancel()
+        val cut = playing
+        if (cut != null) {
+            val p = progress.floatValue
+            heldFrame(cut, p, frame)?.let {
+                dragY.floatValue = it.translationY
+                backScale.floatValue = it.scale
+            }
+            heldX(cut, p, endward)?.let { backX.floatValue = it }
+        }
+        player?.cancel()
+        player = null
         playing = null
-        motion = null
         progress.floatValue = 1f
     }
 
@@ -210,16 +220,20 @@ internal class ShellMotion(
             }
     }
 
-    /** A predictive back's progress, 0 to 1: a pushed screen starts to leave by its side, a sheet shrinks. */
+    /**
+     * A predictive back's progress, 0 to 1: a pushed screen starts to leave by its side, a sheet shrinks,
+     * from wherever the hand or a cut-short transition had it.
+     */
     fun followBack(
         progress: Float,
         pushed: Boolean,
-        endward: Float,
+        startX: Float,
+        startScale: Float,
     ) {
         if (pushed) {
-            backX.floatValue = PREDICTIVE_SLIDE * endward * progress
+            backX.floatValue = startX + PREDICTIVE_SLIDE * endward * progress
         } else {
-            backScale.floatValue = 1 - PREDICTIVE_SHRINK * progress
+            backScale.floatValue = startScale * (1 - PREDICTIVE_SHRINK * progress)
         }
     }
 
@@ -258,10 +272,6 @@ internal class ShellMotion(
 
         /** The point where the outgoing has faded out and the incoming starts to fade in. */
         const val FADE_SPLIT = 0.35f
-
-        private val SHEET_LEAVES =
-            setOf(Transition.Close, Transition.FadeOut, Transition.Forward, Transition.Backward, Transition.FadeThrough)
-        private val PUSHED_LEAVES = setOf(Transition.PushOut, Transition.PushFadeOut)
     }
 }
 

@@ -17,13 +17,13 @@ enum class Transition {
     /** Nothing of the sheet's moves: a tab switch, or the runner opening over a tab. */
     None,
 
-    /** The sheet slides up over the scrim and the picture of the tab. */
+    /** The sheet slides up over the scrim and the live tab. */
     Open,
 
-    /** The sheet's last picture slides down over the live tab, and the scrim fades out. */
+    /** The sheet slides down off the live tab, live itself until it has gone, and the scrim fades out. */
     Close,
 
-    /** Shared axis X inside the one sheet: the old picture leaves, the live surface enters. */
+    /** Shared axis X inside the one sheet: the old screen leaves as the new one enters, both live. */
     Forward,
 
     /** [Forward], reversed. */
@@ -32,7 +32,7 @@ enum class Transition {
     /** Fade through, in place: the sheet appears over the tab. */
     FadeIn,
 
-    /** Fade through, in place: the sheet's picture goes, leaving the live tab. */
+    /** Fade through, in place: the sheet fades out, leaving the live tab. */
     FadeOut,
 
     /** Fade through, in place, from one sheet to the next. */
@@ -47,16 +47,16 @@ enum class Transition {
     /** The runner leaves for a tab or a pushed screen: whatever sheet it grew from goes with it, with no animation. */
     Release,
 
-    /** A pushed screen slides in from the side, over the picture of what it covers (#489). */
+    /** A pushed screen slides in from the side, over the live screen it covers (#489). */
     PushIn,
 
-    /** The pushed screen's last picture slides back out to the side, over the live screen it covered. */
+    /** The pushed screen slides back out to the side, live, over the live screen it covered. */
     PushOut,
 
     /** Fade through, in place: a pushed screen appears over what it covers. */
     PushFadeIn,
 
-    /** Fade through, in place: the pushed screen's picture goes, leaving the live screen under it. */
+    /** Fade through, in place: the pushed screen fades out, leaving the live screen under it. */
     PushFadeOut,
 }
 

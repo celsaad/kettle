@@ -82,8 +82,13 @@ class ShellFocusTest {
         compose.onNodeWithTag(FIELD).assertIsNotFocused()
     }
 
+    /**
+     * A behaviour check, no longer #380's: with one view, closing a sheet shows no view, so the platform
+     * hands out no focus. What it holds is that the shell itself puts no focus back into the tab it
+     * uncovers, which it took the tab's focus from as the sheet opened.
+     */
     @Test
-    fun `closing a sheet focuses no text field`() {
+    fun `the tab a sheet closes onto gets no focus back`() {
         show()
         compose.runOnUiThread { navigator.push(Route(Destination.Support)) }
         compose.waitForIdle()

@@ -6,8 +6,8 @@ import org.junit.Assert.assertNull
 import org.junit.Test
 
 /**
- * What each frame of #155's transitions sets, as `SheetMotion` set it on the views before #377: the same
- * durations and easing, and the same travel, fades and scales, at the start and the end of each.
+ * What each frame of #155's transitions sets, at the start and the end of each. The durations, easing,
+ * travel, fades and scales are the View sheet's (`SheetMotion`, before #377), carried over unchanged.
  */
 class ShellMotionTest {
     private val frame = Frame(offscreen = HEIGHT, top = TOP)
@@ -156,18 +156,44 @@ class ShellMotionTest {
     /** What a stack shows: a sheet over sheets shows one, and a pushed screen covers the tab under the sheets. */
     @Test
     fun `a stack shows its top sheet, the pushed screen under the sheets, and the one beneath that`() {
-        val settings = Route(Destination.Settings)
-        val dips = Route(Destination.ExerciseDetail, mapOf("id" to "dips"))
-        val import = Route(Destination.Import)
-        val support = Route(Destination.Support)
+        val settings = StackEntry(1, Route(Destination.Settings))
+        val dips = StackEntry(2, Route(Destination.ExerciseDetail, mapOf("id" to "dips")))
+        val import = StackEntry(3, Route(Destination.Import))
+        val support = StackEntry(4, Route(Destination.Support))
 
         assertEquals(Shown(null, null, null), shownBy(emptyList()))
-        assertEquals(Shown(null, null, Layer(1, support)), shownBy(listOf(import, support)))
-        assertEquals(Shown(Layer(1, dips), Layer(0, settings), null), shownBy(listOf(settings, dips)))
+        assertEquals(Shown(null, null, support), shownBy(listOf(import, support)))
+        assertEquals(Shown(dips, settings, null), shownBy(listOf(settings, dips)))
+        assertEquals(Shown(dips, settings, support), shownBy(listOf(settings, dips, import, support)))
+        // A sheet under a pushed screen is no pushed screen beneath it.
+        assertEquals(Shown(dips, null, null), shownBy(listOf(import, dips)))
+    }
+
+    /** A transition cut short hands the next one the frame it had got to, for the sheet or pushed screen that stays. */
+    @Test
+    fun `a transition cut short holds the sheet or pushed screen where it had got to`() {
+        assertEquals(Look(translationY = HEIGHT / 2), heldFrame(Motion(Transition.Open), 0.5f, frame))
+        assertEquals(WIDTH / 2, heldX(Motion(Transition.PushIn), 0.5f, WIDTH))
+        // What leaves has nothing to hand on.
+        assertNull(heldFrame(Motion(Transition.Close), 0.5f, frame))
+        assertNull(heldX(Motion(Transition.PushOut), 0.5f, WIDTH))
+    }
+
+    @Test
+    fun `only the transitions that take a screen off play it out`() {
+        val sheets = Transition.entries.filter { it.leavesSheet() }.toSet()
+        val pushed = Transition.entries.filter { it.leavesPushed() }.toSet()
         assertEquals(
-            Shown(Layer(1, dips), Layer(0, settings), Layer(3, support)),
-            shownBy(listOf(settings, dips, import, support)),
+            setOf(
+                Transition.Close,
+                Transition.FadeOut,
+                Transition.Forward,
+                Transition.Backward,
+                Transition.FadeThrough,
+            ),
+            sheets,
         )
+        assertEquals(setOf(Transition.PushOut, Transition.PushFadeOut), pushed)
     }
 
     private companion object {

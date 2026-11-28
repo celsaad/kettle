@@ -59,7 +59,7 @@ fun ImportScreen(
     val scope = rememberCoroutineScope()
     val importer =
         remember {
-            Importer(files, scope, actions).also {
+            Importer(files, scope, actions, content.equipmentVocabulary().toSet()).also {
                 it.pasting = start == ImportStart.Paste
                 // The file sheet's Share the brief already failed: say so here, beside the copy that covers it.
                 if (opening.shareFailed) it.handoff.sharedElsewhereFailed()

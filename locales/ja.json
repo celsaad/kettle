@@ -620,6 +620,8 @@
     "diff": {
       "type": "種類",
       "notes": "メモ",
+      "equipmentRemoved": "削除される器具",
+      "equipmentAdded": "追加される器具",
       "blocks": "ブロック",
       "exercises": "エクササイズ",
       "weeks": "週",

@@ -1,6 +1,9 @@
 package com.casco.kettle.shell.i18n
 
 import androidx.annotation.StringRes
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.stringResource
+import com.casco.kettle.domain.equipmentMatchKey
 import com.casco.kettle.shell.R
 
 /**
@@ -12,6 +15,15 @@ import com.casco.kettle.shell.R
  */
 @StringRes
 fun equipmentName(key: String): Int? = EQUIPMENT_NAMES[key]
+
+/**
+ * [item] as the reader sees it: a known item's name in their language, anything else exactly as the
+ * file spells it. Looking its match key up here is `knownEquipment` against the vocabulary, since this
+ * map's keys are the vocabulary's (`EquipmentVocabularyTest`), so a screen showing an item needs no
+ * vocabulary at hand.
+ */
+@Composable
+fun equipmentText(item: String): String = equipmentName(equipmentMatchKey(item))?.let { stringResource(it) } ?: item
 
 private val EQUIPMENT_NAMES: Map<String, Int> =
     mapOf(

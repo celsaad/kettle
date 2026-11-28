@@ -419,6 +419,40 @@ class ImportScreenTest : ImportHarness() {
         compose.onNodeWithContentDescription("Descanso: era 90 s, agora: 60 s").assertExists()
     }
 
+    // A known item reads in the reader's language; the user's own words stay as they wrote them.
+    @Test
+    fun `names equipment added, a known item translated and the user's own words verbatim`() {
+        val gripped = pullUps.copy(equipment = listOf("Pull-up bar", "fat grips"))
+        picks(Library(1, listOf(gripped), emptyList(), emptyList()))
+        chooseFile()
+
+        compose
+            .onNodeWithContentDescription("Equipamento adicionado: era —, agora: Barra fixa, fat grips")
+            .assertExists()
+    }
+
+    // An item still listed is never heard as taken away: TalkBack says "removed" of the bench alone.
+    // Known by the shipped vocabulary, which only Import hands the preview: without it, these differ.
+    @Test
+    fun `reads a known item's change of spelling as no change`() {
+        val before = current.copy(exercises = listOf(pullUps.copy(equipment = listOf("Pull-up bar"))))
+        picks(Library(1, listOf(pullUps.copy(equipment = listOf("pull_up_bar"))), emptyList(), emptyList()))
+        chooseFile(Files(library = before))
+
+        compose.onAllNodesWithText(SAME_VALUES).assertCountEquals(1)
+    }
+
+    @Test
+    fun `speaks a swap as the item that goes and the item that comes`() {
+        val before = current.copy(exercises = listOf(pullUps.copy(equipment = listOf("Barbell", "bench"))))
+        picks(Library(1, listOf(pullUps.copy(equipment = listOf("Barbell", "rack"))), emptyList(), emptyList()))
+        chooseFile(Files(library = before))
+
+        compose.onNodeWithContentDescription("Equipamento removido: era Banco, agora: removido").assertExists()
+        compose.onNodeWithContentDescription("Equipamento adicionado: era —, agora: Rack").assertExists()
+        compose.onAllNodes(hasContentDescription("Barra", substring = true)).assertCountEquals(0)
+    }
+
     @Test
     fun `says so when an updated id is byte-identical rather than showing a blank indent`() {
         picks(current)

@@ -1,6 +1,5 @@
 package com.casco.kettle.shell.exerciseeditor
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,16 +15,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.LiveRegionMode
-import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.liveRegion
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.casco.kettle.domain.ConfigField
 import com.casco.kettle.domain.ConfigKey
@@ -41,7 +35,6 @@ import com.casco.kettle.domain.storedWeightKg
 import com.casco.kettle.domain.typing
 import com.casco.kettle.shell.R
 import com.casco.kettle.shell.form.DurationButton
-import com.casco.kettle.shell.form.InlineField
 import com.casco.kettle.shell.form.StepButton
 import com.casco.kettle.shell.library.rangeLabel
 import com.casco.kettle.shell.theme.KettleTheme
@@ -149,7 +142,7 @@ private fun repsHint(
 /**
  * − value +, each button named by the field it moves, and the value announced as it changes. A tap on
  * the value types one (#463), as the session editor's cells do: a 50-rep or 100-round count is dozens of
- * presses otherwise. Save's validation judges what's typed, as for every typed field.
+ * presses otherwise. Each keystroke is applied as [typing] takes it; Save judges its ceiling.
  */
 @Composable
 private fun Stepper(
@@ -158,7 +151,13 @@ private fun Stepper(
     context: FieldContext,
 ) {
     val draft = context.draft
-    var typing by remember { mutableStateOf(false) }
+    var open by remember(field.key) { mutableStateOf(false) }
+
+    /** What the field and the max it carries held as it opened: each keystroke is applied to these. */
+    var opened by remember(field.key) { mutableStateOf(emptyMap<ConfigKey, String?>()) }
+
+    // The draft as it is at each keystroke, not as it was when the field opened.
+    val latest by rememberUpdatedState(context)
     Row(verticalAlignment = Alignment.CenterVertically) {
         val shown = "${draft.shownCount(field)}"
         StepButton(
@@ -169,16 +168,15 @@ private fun Stepper(
         ) {
             context.onChange(draft.stepping(field, -1))
         }
-        if (typing) {
+        if (open) {
             Box(Modifier.widthIn(min = TYPING_WIDTH, max = TYPING_WIDTH)) {
-                InlineField(draft.values[field.key] ?: shown, label, { context.onChange(draft.typing(field, it)) }) {
-                    typing = false
-                    // Left blank, the count goes back to what it showed rather than save a blank it never read as.
-                    if (draft.values[field.key].isNullOrBlank()) context.onChange(draft.typing(field, shown))
-                }
+                TypedCount(shown, label, onText = { text -> latest.retyped(field, opened, text) }) { open = false }
             }
         } else {
-            CountValue(shown, label) { typing = true }
+            CountValue(shown, label) {
+                opened = typedKeys(field).associateWith { draft.values[it] }
+                open = true
+            }
         }
         StepButton(
             R.drawable.icon_add,
@@ -188,32 +186,6 @@ private fun Stepper(
         ) {
             context.onChange(draft.stepping(field, +1))
         }
-    }
-}
-
-/** The count, a button that types a new one: named by its field and value, "Sets, 3", and announced as it moves. */
-@Composable
-private fun CountValue(
-    shown: String,
-    label: String,
-    onTap: () -> Unit,
-) {
-    val name = stringResource(R.string.exerciseEditor_countValue, label, shown)
-    val action = stringResource(R.string.exerciseEditor_typeCount)
-    Box(
-        Modifier
-            .widthIn(min = VALUE_WIDTH)
-            .heightIn(min = MIN_TARGET)
-            .clickable(onClickLabel = action, role = Role.Button, onClick = onTap)
-            // A live region still: TalkBack doesn't speak a focused button's state change (checked on the
-            // AVD for #456), so this is what says "4" after a press; the buttons' state says it on focus.
-            .semantics {
-                contentDescription = name
-                liveRegion = LiveRegionMode.Polite
-            },
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(shown, style = KettleType.heading, color = KettleTheme.colors.text, textAlign = TextAlign.Center)
     }
 }
 
@@ -258,8 +230,6 @@ private fun WeightField(
 }
 
 private val ROW_HEIGHT = 52.dp
-private val VALUE_WIDTH = 40.dp
-private val MIN_TARGET = 44.dp
 
 /** Wide enough for a ceiling's digits at the default size; the field scrolls past it at a larger one. */
 private val TYPING_WIDTH = 72.dp

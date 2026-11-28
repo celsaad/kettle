@@ -45,17 +45,20 @@ fun ExerciseDraft.stepping(
 }
 
 /**
- * [field]'s count as typed into it (#463), kept as typed: Save's `validateConfig` refuses what's out of
- * range, or not a whole number, in its own words, as it does for every typed field. A reps min typed
- * past the max carries the max up with it, as stepping does, rather than leave a range the form refuses.
+ * [field]'s count as typed into it (#463): a whole number, of any
+ * size, so Save's `validateConfig` refuses one past its ceiling in its own words; anything else, a blank
+ * included, leaves the count as it was, since a "–" or "8.5" closed into a valid-looking count would
+ * read as accepted. A reps min typed past the max carries the max up with it, and a max typed below the
+ * min is held at it, as the steppers keep the two, rather than leave a range the form refuses.
  */
 fun ExerciseDraft.typing(
     field: ConfigField,
     text: String,
 ): ExerciseDraft {
-    val typed = values + (field.key to text)
-    val count = text.trim().toLongOrNull()?.takeIf { field.key == ConfigKey.TargetRepsMin }
-    val carried = count?.takeIf { top -> countOf(ConfigKey.TargetRepsMax)?.let { it < top } == true }
+    val count = text.trim().toLongOrNull()?.takeIf { it >= 0 }
+    val held = count?.let { if (field.key == ConfigKey.TargetRepsMax) maxOf(it, lowest(field)) else it }
+    val carried = held?.takeIf { field.key == ConfigKey.TargetRepsMin && (countOf(ConfigKey.TargetRepsMax) ?: it) < it }
+    val typed = if (held == null) values else values + (field.key to "$held")
     return copy(values = if (carried == null) typed else typed + (ConfigKey.TargetRepsMax to "$carried"))
 }
 

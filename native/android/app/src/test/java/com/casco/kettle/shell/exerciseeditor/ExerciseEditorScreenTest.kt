@@ -5,6 +5,7 @@ import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertHeightIsAtLeast
+import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasContentDescription
@@ -226,6 +227,85 @@ class ExerciseEditorScreenTest {
                 .config as ExerciseConfig.Reps
         assertEquals(20L, config.targetRepsMin)
         assertEquals(null, config.targetRepsMax)
+    }
+
+    // Cleared and left, a count stays what it was: it fell back to the field's least, Sets 3 to 1.
+    @Test
+    fun `leaves a count cleared and closed as it was`() {
+        val files = Files()
+        show(null, files)
+
+        type("Nome", "Pull-ups")
+        press("Séries, 3")
+        type("Séries", "")
+        type("Nome", "Pull-ups")
+        press("Salvar")
+
+        assertEquals(
+            3L,
+            (
+                files.written
+                    .single()
+                    .exercises
+                    .single()
+                    .config as ExerciseConfig.Reps
+            ).sets,
+        )
+    }
+
+    // The open field's close wrote the reps draft back over the hold just picked.
+    @Test
+    fun `switches type with a count open, and saves the new type`() {
+        val files = Files()
+        show(null, files)
+
+        type("Nome", "Plank")
+        press("Reps alvo, 8")
+        type("Reps alvo", "")
+        press("Isometria")
+        press("Salvar")
+
+        assertEquals(
+            true,
+            files.written
+                .single()
+                .exercises
+                .single()
+                .config is ExerciseConfig.TimedHold,
+        )
+    }
+
+    // Each keystroke carried the max from the one before: "155" on its way to "15" left a max of 155.
+    @Test
+    fun `carries the reps max from what it was, not from the keystroke before`() {
+        val files = Files()
+        show(null, files)
+
+        type("Nome", "Pull-ups")
+        press("Reps alvo, 8")
+        type("Reps alvo", "155")
+        type("Reps alvo", "15")
+        press("Salvar")
+
+        val config =
+            files.written
+                .single()
+                .exercises
+                .single()
+                .config as ExerciseConfig.Reps
+        assertEquals(15L, config.targetRepsMin)
+        assertEquals(null, config.targetRepsMax)
+    }
+
+    // A max typed below the min is held at it, as the steppers keep them: both had gone disabled.
+    @Test
+    fun `holds a reps max typed below the min at the min`() {
+        show(null, Files())
+
+        press("Reps alvo (máx), 12")
+        type("Reps alvo (máx)", "5")
+
+        compose.onNodeWithContentDescription("Aumentar Reps alvo (máx)").assertIsEnabled()
     }
 
     // Each type keys a different config: switching an existing one's would zero every field.

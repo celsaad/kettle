@@ -37,6 +37,7 @@ import com.casco.kettle.domain.isZeroForm
 import com.casco.kettle.domain.jsNumber
 import com.casco.kettle.domain.wholeSeconds
 import com.casco.kettle.shell.R
+import com.casco.kettle.shell.form.BLANK
 import com.casco.kettle.shell.form.DurationDialog
 import com.casco.kettle.shell.form.InlineField
 import com.casco.kettle.shell.form.RemoveButton
@@ -260,6 +261,3 @@ private fun setWidth(): Dp {
 
 private val MIN_SET_WIDTH = 36.dp
 private val REMOVE_WIDTH = 44.dp
-
-/** A blank value's dash, as the log's own tables write none: a placeholder, not an icon, so read as "none". */
-private const val BLANK = "\u2013"

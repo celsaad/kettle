@@ -12,7 +12,7 @@ import androidx.compose.ui.unit.dp
 // A value a tap turns into a field: the session editor's cells (#442) and the exercise editor's counts
 // (#463), so the two edit a number the same way.
 
-/** The cell as a field, focused at once, done when focus leaves it: the next cell tapped, or the keyboard closed. */
+/** A value as a field, focused at once, done when focus leaves it: another value tapped, or the keyboard closed. */
 @Composable
 internal fun InlineField(
     value: String,
@@ -34,6 +34,9 @@ internal fun InlineField(
             }
         },
     ) {
-        FormField(value, onChange, name = name, placeholder = "\u2013", FieldOptions(minHeight = 44.dp, focus = focus))
+        FormField(value, onChange, name = name, placeholder = BLANK, FieldOptions(minHeight = 44.dp, focus = focus))
     }
 }
+
+/** A blank value's dash, as the log's own tables write none: a placeholder, not an icon, so read as "none". */
+internal const val BLANK = "\u2013"

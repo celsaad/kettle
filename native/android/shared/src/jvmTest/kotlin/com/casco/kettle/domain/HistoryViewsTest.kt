@@ -219,13 +219,18 @@ class HistoryViewsTest {
         )
     }
 
-    // Newest by the same rule as Home's active program (#569): a hand-edited session with a program and
-    // no week still makes another program's older slot an old row, not the program's place.
+    // By Home's rules (#569): a hand-edited session with a program and no week still picks the active
+    // program, so another program's older slot is an old row; but the place is read from a session with
+    // a week, so the same program's older slot is still its place.
     @Test
-    fun `reads the newest program session as Home does, a session with no week included`() {
-        val unweeked = slot(2, "Mon", id = "new").copy(program = "other", programWeek = null)
-        val rows = historySessionsView(listOf(unweeked, slot(2, "Mon", id = "old")), withProgram, TimeZone.UTC)
-        assertEquals(StartAgain.Start(SessionParams.Workout("push-day")), rows.last().again)
+    fun `reads the program's place as Home does around a session with no week`() {
+        val noWeek = slot(2, "Mon", id = "new").copy(programWeek = null)
+        val elsewhere = noWeek.copy(program = "other")
+        val older = slot(2, "Mon", id = "old")
+        val other = historySessionsView(listOf(elsewhere, older), withProgram, TimeZone.UTC)
+        assertEquals(StartAgain.Start(SessionParams.Workout("push-day")), other.last().again)
+        val same = historySessionsView(listOf(noWeek, older), withProgram, TimeZone.UTC)
+        assertEquals(StartAgain.Start(SessionParams.ProgramSlot("base", 2, "Mon")), same.last().again)
     }
 
     @Test
